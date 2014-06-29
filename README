@@ -1,0 +1,56 @@
+alt64
+=====
+
+alternative everdrive64 menu
+
+
+Kuroneko!
+
+       :\     /;               _
+      ;  \___/  ;             ; ;
+     ,:-"'   `"-:.            / ;
+_   /,---.   ,---.\   _     _; /
+_:>((  |  ) (  |  ))<:_ ,-""_,"
+    \`````   `````/""""",-""
+     '-.._ v _..-'      )
+       / ___   ____,..  \
+      / /   | |   | ( \. \
+ctr  / /    | |    | |  \ \
+     `"     `"     `"    `"
+
+nyannyannyannyannyannyannyannyannyannyannyannyannyannyannyannyannyan
+
+
+hello here is my menu for the everdrive64.
+if you don't have one you should visit krikzzs homepage
+for ordering information. ^^
+
+if you want to build the menu, you need a n64 toolchain
+you can get one free from
+
+http://www.dragonminded.com/n64dev/libdragon/
+https://github.com/DragonMinded/libdragon
+
+i used the libmikmod linked on his site too for the menu
+http://www.dragonminded.com/n64dev/libmikmod-3.2.0-beta2.tgz
+
+
+if you are on linux, try out the build script
+https://github.com/DragonMinded/libdragon/tree/master/tools/build
+
+here are a few setting hints
+export INSTALL_PATH=/usr/mips64-elf
+set this to your home directory if you don't have root access
+
+i was in need to alter the cxxflags to G0 to lowercase
+CXXFLAGS="-g0 -O2"
+
+it's a good idea to the latest versions for the toolchain
+export BINUTILS_V=2.23.52
+export GCC_V=4.8.0
+export NEWLIB_V=1.20.0
+
+
+optional:
+get libn64-hkz to get more into flashram savegames
+http://sourceforge.net/projects/n64dev/

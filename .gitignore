@@ -1,0 +1,15 @@
+## Build files
+*.v64
+*.elf
+*.o
+*.bin
+*.dfs
+
+## OSX junk
+.DS_Store
+.Trashes
+._*
+
+## Temporary files
+*.tmp
+*~
