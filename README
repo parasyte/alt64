@@ -1,56 +1,119 @@
-alt64
-=====
+# alt64
 
-alternative everdrive64 menu
+Alternative Everdrive64 menu
 
+    Kuroneko!
 
-Kuroneko!
+           :\     /;               _
+          ;  \___/  ;             ; ;
+         ,:-"'   `"-:.            / ;
+    _   /,---.   ,---.\   _     _; /
+    _:>((  |  ) (  |  ))<:_ ,-""_,"
+        \`````   `````/""""",-""
+         '-.._ v _..-'      )
+           / ___   ____,..  \
+          / /   | |   | ( \. \
+    ctr  / /    | |    | |  \ \
+         `"     `"     `"    `"
 
-       :\     /;               _
-      ;  \___/  ;             ; ;
-     ,:-"'   `"-:.            / ;
-_   /,---.   ,---.\   _     _; /
-_:>((  |  ) (  |  ))<:_ ,-""_,"
-    \`````   `````/""""",-""
-     '-.._ v _..-'      )
-       / ___   ____,..  \
-      / /   | |   | ( \. \
-ctr  / /    | |    | |  \ \
-     `"     `"     `"    `"
-
-nyannyannyannyannyannyannyannyannyannyannyannyannyannyannyannyannyan
+    nyannyannyannyannyannyannyannyannyannyannyannyannyannyannyannyannyan
 
 
-hello here is my menu for the everdrive64.
-if you don't have one you should visit krikzzs homepage
-for ordering information. ^^
+`alt64` is an open source menu for [Everdrive64](http://krikzz.com/). It was
+originally written by saturnu, and released on the
+[Everdrive64 forum](http://krikzz.com/forum/index.php?topic=816.0).
 
-if you want to build the menu, you need a n64 toolchain
-you can get one free from
+## Building
 
-http://www.dragonminded.com/n64dev/libdragon/
-https://github.com/DragonMinded/libdragon
+If you want to build the menu, you need an n64 toolchain. We'll use the
+toolchain recommended by libdragon, with some updated versions.
 
-i used the libmikmod linked on his site too for the menu
-http://www.dragonminded.com/n64dev/libmikmod-3.2.0-beta2.tgz
+### Dependencies
 
+* [libdragon](https://github.com/parasyte/libdragon)
+* [libmikmod-n64](https://github.com/parasyte/libmikmod-n64)
+* [libmad-n64](https://github.com/parasyte/libmad-n64)
 
-if you are on linux, try out the build script
-https://github.com/DragonMinded/libdragon/tree/master/tools/build
+### Build the Toolchain
 
-here are a few setting hints
-export INSTALL_PATH=/usr/mips64-elf
-set this to your home directory if you don't have root access
+*You may skip this step if it's already installed.*
 
-i was in need to alter the cxxflags to G0 to lowercase
-CXXFLAGS="-g0 -O2"
+Clone the `libdragon` repo and create a directory for the build.
 
-it's a good idea to the latest versions for the toolchain
-export BINUTILS_V=2.23.52
-export GCC_V=4.8.0
-export NEWLIB_V=1.20.0
+```bash
+$ git clone https://github.com/parasyte/libdragon.git
+$ mkdir libdragon/build_gcc
+$ cp libdragon/tools/build libdragon/build_gcc
+$ cd libdragon/build_gcc
+```
 
+Modify the `build` script to set your installation path. Here is the default:
 
-optional:
-get libn64-hkz to get more into flashram savegames
-http://sourceforge.net/projects/n64dev/
+```bash
+# EDIT THIS LINE TO CHANGE YOUR INSTALL PATH!
+export INSTALL_PATH=/usr/local/mips64-elf
+```
+
+Build it! This can take an hour or more.
+
+```bash
+$ ./build
+```
+
+### Configure your Environment
+
+Add the following environment variable to your `~/.bash_profile` or `~/.bashrc`
+Be sure to use the same path that you configured in the build script!
+
+```bash
+export N64_INST=/usr/local/mips64-elf
+```
+
+### Build `libdragon`
+
+Make sure you are in the `libdragon` top-level directory, and make sure `libpng`
+is installed:
+
+```bash
+$ make && make install
+$ make tools && make tools-install
+```
+
+### Build `libmikmod`
+
+Clone `libmikmod-n64` and build:
+
+```bash
+$ git clone https://github.com/parasyte/libdragon.git
+$ cd libmikmod-n64
+$ make
+$ make install
+```
+
+### Build `libmad-n64`
+
+Clone `libmad-n64` and build, be sure to set the path according to your
+toolchain installation path:
+
+```bash
+$ git clone https://github.com/parasyte/libmad-n64.git
+$ cd libmad-n64
+$ export PATH=$PATH:/usr/local/mips64-elf/bin
+$ CFLAGS="-march=vr4300 -mtune=vr4300 -mno-extern-sdata" \
+  LDFLAGS="-L/usr/local/mips64-elf/lib" LIBS="-lc -lnosys" \
+  ./configure --host=mips64-elf --disable-shared \
+  --prefix=/usr/local/mips64-elf --enable-speed --enable-fpm=mips
+$ make
+$ make install
+```
+
+### Build `alt64`
+
+Finally, we can clone `alt64` and build it!
+
+```bash
+$ git clone https://github.com/parasyte/alt64.git
+$ make
+```
+
+If it all worked, you will find `OS64.v64` in the `alt64` top-level directory.
