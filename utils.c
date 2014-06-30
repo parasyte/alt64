@@ -732,7 +732,7 @@ void simulate_boot(u32 cic_chip, u8 gBootCic) {
     u32 info = *(vu32 *)0xB000003C;
     vu64 *gGPR = (vu64 *)0xA03E0000;
     vu32 *codes = (vu32 *)0xA0000180;
-    u32 bootAddr = 0xA4000040;
+    u64 bootAddr = 0xFFFFFFFFA4000040LL;
     char *cp, *vp, *tp;
     char temp[8];
     int i, type, val;
@@ -773,7 +773,7 @@ void simulate_boot(u32 cic_chip, u8 gBootCic) {
             *dp++ = *sp++;
         // default boot address with cheats
         sp = (vu32 *)0xB0000008;
-        bootAddr = 0x00000000 | *sp;
+        bootAddr = 0xFFFFFFFF00000000LL | *sp;
 
         // move general int handler
         sp = (vu32 *)0xA0000180;
@@ -1083,7 +1083,7 @@ void simulate_boot(u32 cic_chip, u8 gBootCic) {
                         temp[5] = cp[7];
                         temp[6] = 0;
                         val = strtol(temp, (char **)NULL, 16);
-                        bootAddr = 0x80000000 | (val & 0xFFFFF);
+                        bootAddr = 0xFFFFFFFF80000000LL | (val & 0xFFFFF);
                         break;
 
                     case 0xEE:
@@ -1180,8 +1180,8 @@ void simulate_boot(u32 cic_chip, u8 gBootCic) {
         data_cache_hit_writeback_invalidate((void *)0x802A0000, 0x100000);
 
         // flush os boot segment memory
-        data_cache_hit_writeback_invalidate((void *)bootAddr, 0x100000);
-        inst_cache_hit_invalidate((void *)bootAddr, 0x100000);
+        data_cache_hit_writeback_invalidate((void *)(u32)bootAddr, 0x100000);
+        inst_cache_hit_invalidate((void *)(u32)bootAddr, 0x100000);
     }
 
     // Copy low 0x1000 bytes to DMEM
