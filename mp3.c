@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <mad.h>
 #include "fat.h"
+#include "mp3.h"
 
 #include <libdragon.h>
 

@@ -37,6 +37,7 @@
 
 //sound
 #include <mikmod.h>
+#include "mp3.h"
 
 //cheats
 struct gscEntry {
