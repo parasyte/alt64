@@ -5,7 +5,6 @@
  * by saturnu
  */
 
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -57,14 +56,14 @@ gscEntry_t gGSCodes[256];
 #include "stb_truetype.h"
 
 struct glyph {
-	int xoff;
-	int yoff;
-	int adv;
-	int lsb;
-	float scale;
-	unsigned int color;
-	unsigned char *alpha;
-	sprite_t sprite;
+    int xoff;
+    int yoff;
+    int adv;
+    int lsb;
+    float scale;
+    unsigned int color;
+    unsigned char *alpha;
+    sprite_t sprite;
 };
 typedef struct glyph glyph_t;
 
@@ -88,30 +87,27 @@ typedef struct
     const char* name;
     char* background_image;
     char* border_color_1;
-	char* border_color_2;
-	char* box_color;
-	char* selection_color;
-	char* list_font_color;
-	char* list_dir_font_color;
-	char* selection_font_color;
-	char* mempak_path;
-	char* save_path;	
-	int sound_on;
-	int page_display;
-	int tv_mode;
-	int quick_boot;
-	int enable_colored_list;
-	int ext_type;
-	int cd_behaviour;
-	int scroll_behaviour;
-	int text_offset;
-	int hide_sysfolder;
-	int sd_speed;
-   
+    char* border_color_2;
+    char* box_color;
+    char* selection_color;
+    char* list_font_color;
+    char* list_dir_font_color;
+    char* selection_font_color;
+    char* mempak_path;
+    char* save_path;
+    int sound_on;
+    int page_display;
+    int tv_mode;
+    int quick_boot;
+    int enable_colored_list;
+    int ext_type;
+    int cd_behaviour;
+    int scroll_behaviour;
+    int text_offset;
+    int hide_sysfolder;
+    int sd_speed;
+
 } configuration;
-
-
-
 
 
 volatile u32 *romaddr_ptr = (u32 *) ROM_ADDR;
@@ -151,7 +147,7 @@ u8 empty=0;
 u8 playing=0;
 u8 gb_load_y=0;
 
-//start with filebrowser menu key settings 
+//start with filebrowser menu key settings
 int input_mapping=1;
 /* 1=filemanager
  * 2=mempak-menu
@@ -167,7 +163,6 @@ int input_mapping=1;
  * 98= A/B abort screen
  */
 
-
 //holds the string of the character input screen result
 int text_input_on=0;
 
@@ -175,9 +170,8 @@ int text_input_on=0;
 int x,y,position,set;
 
 unsigned char input_text[32];
-uint32_t 	chr_forecolor;  
-uint32_t 	chr_backcolor; 
-
+uint32_t     chr_forecolor;
+uint32_t     chr_backcolor;
 
 //save type still set - save todo after reboot
 int save_reboot=0;
@@ -199,7 +193,6 @@ int checksum_fix_on=0;
 short int gCheats = 0;                  /* 0 = off, 1 = select, 2 = all */
 short int force_tv = 0;
 short int boot_country=0;
-
 
 static resolution_t res = RESOLUTION_320x240;
 
@@ -228,7 +221,6 @@ char*  list_dir_font_color_s;
 char*  mempak_path;
 char*  save_path;
 
-
 u8 sound_on=0;
 u8 page_display=0;
 int text_offset=0;
@@ -256,9 +248,6 @@ int page = 0;
 int cursor = 0;
 direntry_t *list;
 
-
-
-
 int filesize( FILE *pFile )
 {
     fseek( pFile, 0, SEEK_END );
@@ -268,110 +257,85 @@ int filesize( FILE *pFile )
     return lSize;
 }
 
-sprite_t *read_sprite( const char * const spritename )
-{
+sprite_t *read_sprite( const char * const spritename ) {
     FILE *fp = fopen( spritename, "r" );
 
-    if( fp )
-    {
+    if( fp ) {
         sprite_t *sp = malloc( filesize( fp ) );
         fread( sp, 1, filesize( fp ), fp );
         fclose( fp );
 
         return sp;
     }
-    else
-    {
+    else {
         return 0;
     }
 }
 
 
 void drawSelection(display_context_t disp,int p){
-	
-	
-int s_x=23+(text_offset*8);
+    int s_x=23+(text_offset*8);
 
-	if(scroll_behaviour){
-		
+    if(scroll_behaviour){
+        if(select_mode){
+            if(cursor_lastline>cursor && cursor_line > 0) {
+                cursor_line--;
+            }
 
-			if(select_mode){
+            if(cursor_lastline<cursor && cursor_line < 19) {
+                cursor_line++;
+            }
 
-					if(cursor_lastline>cursor && cursor_line > 0) {
-						cursor_line--;
-					}
-					
-					if(cursor_lastline<cursor && cursor_line < 19) {
-						cursor_line++;
-					}
-
-					p=cursor_line;
-					graphics_draw_box_trans(disp, s_x, (((p+3)*8)+24), 272, 8, selection_color); //(p+3) diff
-					cursor_lastline=cursor;
-				}
-	}
-	else //new page-system
-	{ 
-		//accept p
-		graphics_draw_box_trans(disp, s_x, (((p+3)*8)+24), 272, 8, selection_color);
-		
-	}
-	
+            p=cursor_line;
+            graphics_draw_box_trans(disp, s_x, (((p+3)*8)+24), 272, 8, selection_color); //(p+3) diff
+            cursor_lastline=cursor;
+        }
+    }
+    else { //new page-system
+        //accept p
+        graphics_draw_box_trans(disp, s_x, (((p+3)*8)+24), 272, 8, selection_color);
+    }
 }
 
 void drawConfigSelection(display_context_t disp,int l){
+    int s_x=62+(text_offset*8);
 
-
-int s_x=62+(text_offset*8);
-
-	l=l+5;
-	graphics_draw_box_trans(disp, s_x, (((l+3)*8)+24), 193, 8, 0x00000080); //(p+3) diff
-
-		
+    l=l+5;
+    graphics_draw_box_trans(disp, s_x, (((l+3)*8)+24), 193, 8, 0x00000080); //(p+3) diff
 }
 
 void drawToplistSelection(display_context_t disp,int l){
+    int s_x=30+(text_offset*8);
 
-
-int s_x=30+(text_offset*8);
-
-	l=l+2;
-	graphics_draw_box_trans(disp, s_x, (((l+3)*8)+24), 256, 8, 0xFFFFFF70); //(p+3) diff
-
-		
+    l=l+2;
+    graphics_draw_box_trans(disp, s_x, (((l+3)*8)+24), 256, 8, 0xFFFFFF70); //(p+3) diff
 }
 
 
 
-void chdir( const char * const dirent )
-{
+void chdir( const char * const dirent ) {
     /* Ghetto implementation */
-    if( strcmp( dirent, ".." ) == 0 )
-    {
+    if( strcmp( dirent, ".." ) == 0 ) {
         /* Go up one */
         int len = strlen( dirz ) - 1;
 
         /* Stop going past the min */
-        if( dirz[len] == '/' && dirz[len-1] == '/' && dirz[len-2] == ':' )
-        {
-			//return if ://
+        if( dirz[len] == '/' && dirz[len-1] == '/' && dirz[len-2] == ':' ) {
+            //return if ://
             return;
         }
 
-        if( dirz[len] == '/' )
-        {
+        if( dirz[len] == '/' ) {
             dirz[len] = 0;
             len--;
         }
 
-        while( dirz[len] != '/')
-        {
+        while( dirz[len] != '/') {
             dirz[len] = 0;
             len--;
         }
     }
-    else
-    {
+    else {
         /* Add to end */
         strcat( dirz, dirent );
         strcat( dirz, "/" );
@@ -379,19 +343,16 @@ void chdir( const char * const dirent )
 }
 
 
-int compare(const void * a, const void * b)
-{
+int compare(const void * a, const void * b) {
     direntry_t *first = (direntry_t *)a;
     direntry_t *second = (direntry_t *)b;
 
-    if(first->type == DT_DIR && second->type != DT_DIR)
-    {
+    if(first->type == DT_DIR && second->type != DT_DIR) {
         /* First should be first */
         return -1;
     }
 
-    if(first->type != DT_DIR && second->type == DT_DIR)
-    {
+    if(first->type != DT_DIR && second->type == DT_DIR) {
         /* First should be second */
         return 1;
     }
@@ -399,98 +360,45 @@ int compare(const void * a, const void * b)
     return strcmp(first->filename, second->filename);
 }
 
-int compare_int (const void *a, const void *b)
-{
-    const int *ia = (const int *)a; // casting pointer types 
+int compare_int (const void *a, const void *b) {
+    const int *ia = (const int *)a; // casting pointer types
     const int *ib = (const int *)b;
-    return *ia  - *ib; 
+    return *ia  - *ib;
 }
 
-int compare_int_reverse (const void *a, const void *b)
-{
-    const int *ia = (const int *)a; // casting pointer types 
+int compare_int_reverse (const void *a, const void *b) {
+    const int *ia = (const int *)a; // casting pointer types
     const int *ib = (const int *)b;
-    return *ib  - *ia; 
+    return *ib  - *ia;
 }
 
-/*
-direntry_t *populate_dir(int *count)
-{
-    //* Grab a slot 
-    direntry_t *list = malloc(sizeof(direntry_t));
-    *count = 1;
-
-    //* Grab first 
-    dir_t buf;
-    int ret = dir_findfirst(dirz, &buf); //replace
-
-    if( ret != 0 )
-    {
-        //* Free stuff 
-        free(list);
-        *count = 0;
-
-        //* Dir was bad! 
-        return 0;
-    }
-
-    //* Copy in loop 
-    while( ret == 0 )
-    {
-        list[(*count)-1].type = buf.d_type;
-        strcpy(list[(*count)-1].filename, buf.d_name);
-
-        // Grab next 
-        ret = dir_findnext(dirz,&buf); //replace
-
-        if( ret == 0 )
-        {
-            (*count)++;
-            list = realloc(list, sizeof(direntry_t) * (*count));
-        }
-    }
-
-    if(*count > 0)
-    {
-        /*Should sort! 
-        qsort(list, *count, sizeof(direntry_t), compare);
-    }
-
-    return list;
-}
-*/
-
-void free_dir(direntry_t *dirz)
-{
+void free_dir(direntry_t *dirz) {
     if(dirz) { free(dirz); }
 }
 
-void new_scroll_pos(int *cursor, int *page, int max, int count)
-{
+void new_scroll_pos(int *cursor, int *page, int max, int count) {
     /* Make sure windows too small can be calculated right */
-    if(max > count) { max = count; }
+    if(max > count) {
+        max = count;
+    }
 
     /* Bounds checking */
-    if(*cursor >= count)
-    {
+    if(*cursor >= count) {
         *cursor = count-1;
     }
 
-    if(*cursor < 0)
-    {
+    if(*cursor < 0) {
         *cursor = 0;
     }
 
     /* Scrolled up? */
-    if(*cursor < *page)
-    {
+    if(*cursor < *page) {
         *page = *cursor;
         return;
     }
 
     /* Scrolled down/ */
-    if(*cursor >= (*page + max))
-    {
+    if(*cursor >= (*page + max)) {
         *page = (*cursor - max) + 1;
         return;
     }
@@ -498,234 +406,184 @@ void new_scroll_pos(int *cursor, int *page, int max, int count)
     /* Nothing here, should be good! */
 }
 
-void display_dir(direntry_t *list, int cursor, int page, int max, int count, display_context_t disp)
-{
-	
-	//system color
-	uint32_t 	forecolor=0;
-	uint32_t 	forecolor_menu=0;   
-	uint32_t 	backcolor;    							
-	backcolor = graphics_make_color(0x00, 0x00, 0x00, 0xFF); //bg
-	forecolor_menu = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF); //fg
-				
-	graphics_set_color	(list_font_color, backcolor);		
-	
-	u8 c_pos[MAX_LIST+1];
-	int c_pos_counter=0;
-	
-	c_pos[c_pos_counter++]=0;
-	
-	u8 c_dirname[64];
+void display_dir(direntry_t *list, int cursor, int page, int max, int count, display_context_t disp) {
+    //system color
+    uint32_t     forecolor=0;
+    uint32_t     forecolor_menu=0;
+    uint32_t     backcolor;
+    backcolor = graphics_make_color(0x00, 0x00, 0x00, 0xFF); //bg
+    forecolor_menu = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF); //fg
 
-	if(page_display){
-	
-		u8 pi = page/20;
-		u8 ci=0;
-		
-		if(count%20==0)
-			ci = (count-1)/20;
-		else
-			ci = count/20;
-		sprintf(c_dirname, "%i/%i SD:/%s", pi+1, ci+1, pwd);
-	}
-	else{
-		sprintf(c_dirname, "SD:/%s", pwd);
-	}
-	char sel_str[128];
-	
-	
-	
-	//printText("Directory: ", 3, 4, disp);
-	printText(c_dirname, 3, 4, disp);
-	  
-	int firstrun=1;
+    graphics_set_color    (list_font_color, backcolor);
+
+    u8 c_pos[MAX_LIST+1];
+    int c_pos_counter=0;
+
+    c_pos[c_pos_counter++]=0;
+
+    u8 c_dirname[64];
+
+    if(page_display){
+
+        u8 pi = page/20;
+        u8 ci=0;
+
+        if(count%20==0)
+            ci = (count-1)/20;
+        else
+            ci = count/20;
+        sprintf(c_dirname, "%i/%i SD:/%s", pi+1, ci+1, pwd);
+    }
+    else{
+        sprintf(c_dirname, "SD:/%s", pwd);
+    }
+    char sel_str[128];
+
+    printText(c_dirname, 3, 4, disp);
+
+    int firstrun=1;
     /* Page bounds checking */
-    if(max > count) //cound = dir ectrys starting at 1
-    {
+    if(max > count) { //count = directories starting at 1
         max = count;
     }
 
     /* Cursor bounds checking */
-    if(cursor >= (page + max))
-    {
+    if(cursor >= (page + max)) {
         cursor = (page + max) - 1;
     }
 
-    if(cursor < page)
-    {
+    if(cursor < page) {
         cursor = page;
     }
 
-    if( max == 0 )
-    {
+    if( max == 0 ) {
         printText("dir empty...", 3, 6, disp);
         sprintf(sel_str, "dir empty...");
         empty=1;
-    }else{
-	empty=0;
-	}
+    }
+    else {
+        empty=0;
+    }
 
-	
-	
-	//strcpy(list[(*count)-1].filename, buf.d_name);
-	
-	//last page anti ghosting entries
-	if(page == (count/20)*20)
-	max=count%20;
+    //last page anti ghosting entries
+    if(page == (count/20)*20)
+    max=count%20;
 
-    for(int i = page; i < (page + max); i++) //from page to page + max
-    {
-
-        if(list[i].type == DT_DIR)
-        {
+    for(int i = page; i < (page + max); i++) {//from page to page + max
+        if(list[i].type == DT_DIR) {
             char tmpdir[(CONSOLE_WIDTH-5)+1];
             strncpy(tmpdir, list[i].filename, CONSOLE_WIDTH-5);
 
             tmpdir[CONSOLE_WIDTH-5] = 0;
 
-			
-
-			//char dir_str[128];
-			char *dir_str;
-			dir_str = malloc(slen(tmpdir)+3);
-			
+            char *dir_str;
+            dir_str = malloc(slen(tmpdir)+3);
 
             if(i == cursor){
-            sprintf(dir_str, " [%s]", tmpdir);
-            sprintf(sel_str, " [%s]", tmpdir);
-           // if(cd_behaviour==0)
-				if(scroll_behaviour)
-				drawSelection(disp,i);
-				
-				c_pos[c_pos_counter++]=1;
-			
-			}
+                sprintf(dir_str, " [%s]", tmpdir);
+                sprintf(sel_str, " [%s]", tmpdir);
+
+                if(scroll_behaviour)
+                    drawSelection(disp,i);
+
+                c_pos[c_pos_counter++]=1;
+            }
             else{
-            sprintf(dir_str, "[%s]", tmpdir);
-			c_pos[c_pos_counter++]=0;
-			}
-			graphics_set_color	(list_dir_font_color, backcolor);	
+                sprintf(dir_str, "[%s]", tmpdir);
+                c_pos[c_pos_counter++]=0;
+            }
+            graphics_set_color    (list_dir_font_color, backcolor);
             if(firstrun){
-
-				printText(dir_str, 3, 6, disp);
-				firstrun=0;
-			}
+                printText(dir_str, 3, 6, disp);
+                firstrun=0;
+            }
             else{
-
-				printText(dir_str, 3, -1, disp);
-			}
-			free(dir_str);
+                printText(dir_str, 3, -1, disp);
+            }
+            free(dir_str);
         }
-        else //if(list[i].type == DT_REG)
-        {
-			
-			int fcolor=list[i].color;
-		
-			if(fcolor!=0){
-			
-				switch(fcolor){
-					
-					case 1: forecolor = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF); //common (white)
-							break;
-					case 2: forecolor = graphics_make_color(0x00, 0xFF, 0x00, 0xCF); //uncommon (green)
-							break;
-					case 3: forecolor = graphics_make_color(0x1E, 0x90, 0xFF, 0xFF); //rare (blue)
-							break;
-					case 4: forecolor = graphics_make_color(0x9B, 0x30, 0xFF, 0xFF); //epic (purple)
-							break;
-					case 5: forecolor = graphics_make_color(0xFF, 0xA5, 0x00, 0xFF); //legendary (orange)
-							break;
-					default: break;
-				}
-			}
-			else
-			forecolor = list_font_color;
-			
-			
-			
+        else { //if(list[i].type == DT_REG)
+            int fcolor=list[i].color;
+
+            if(fcolor!=0){
+                switch(fcolor){
+                case 1: forecolor = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF); //common (white)
+                    break;
+                case 2: forecolor = graphics_make_color(0x00, 0xFF, 0x00, 0xCF); //uncommon (green)
+                    break;
+                case 3: forecolor = graphics_make_color(0x1E, 0x90, 0xFF, 0xFF); //rare (blue)
+                    break;
+                case 4: forecolor = graphics_make_color(0x9B, 0x30, 0xFF, 0xFF); //epic (purple)
+                    break;
+                case 5: forecolor = graphics_make_color(0xFF, 0xA5, 0x00, 0xFF); //legendary (orange)
+                    break;
+                default:
+                    break;
+                }
+            }
+            else
+                forecolor = list_font_color;
+
             char tmpdir[(CONSOLE_WIDTH-3)+1];
             strncpy(tmpdir, list[i].filename, CONSOLE_WIDTH-3);
             tmpdir[CONSOLE_WIDTH-3] = 0;
 
-
-
-            //char dir_str[128];
             char *dir_str;
-			dir_str = malloc(slen(tmpdir)+1);
+            dir_str = malloc(slen(tmpdir)+1);
 
             if(i == cursor){
-            sprintf(dir_str, " %s", tmpdir);
-            sprintf(sel_str, " %s", tmpdir);
-          //  if(cd_behaviour==0)
-					if(scroll_behaviour)
-					drawSelection(disp,i);
-					
-					c_pos[c_pos_counter++]=1;
-			}
-            else{
-            sprintf(dir_str, "%s", tmpdir);
-			c_pos[c_pos_counter++]=0;
-			}
-			graphics_set_color	(list_font_color, backcolor);	
-            if(firstrun){
-				/*
-				graphics_set_color	(forecolor, backcolor);
-				lprintText("#", 3, 6, disp); //3,6
-				graphics_set_color	(list_font_color, backcolor);
-				printText(dir_str, 4, -1, disp); //3,6
-				firstrun=0;
-				*/
-				if(enable_colored_list)
-					graphics_set_color	(forecolor, backcolor);
+                sprintf(dir_str, " %s", tmpdir);
+                sprintf(sel_str, " %s", tmpdir);
 
-					
-				printText(dir_str, 3, 6, disp); //3,6
-				firstrun=0;
-			}
+                if(scroll_behaviour)
+                    drawSelection(disp,i);
+
+                c_pos[c_pos_counter++]=1;
+            }
             else{
-				/*
-				graphics_set_color	(forecolor, backcolor);
-				lprintText("#", 3, -1, disp); //3,6
-				graphics_set_color	(list_font_color, backcolor);
-				printText(dir_str, 4, -1, disp); //3,1
-				*/
-				if(enable_colored_list)
-				graphics_set_color	(forecolor, backcolor);
-				
-				printText(dir_str, 3, -1, disp); //3,1
-			}
-			free(dir_str);
+                sprintf(dir_str, "%s", tmpdir);
+                c_pos[c_pos_counter++]=0;
+            }
+
+            graphics_set_color(list_font_color, backcolor);
+
+            if(firstrun){
+                if(enable_colored_list)
+                    graphics_set_color(forecolor, backcolor);
+
+                printText(dir_str, 3, 6, disp); //3,6
+                firstrun=0;
+            }
+            else{
+                if(enable_colored_list)
+                    graphics_set_color(forecolor, backcolor);
+
+                printText(dir_str, 3, -1, disp); //3,1
+            }
+            free(dir_str);
         }
     }
-    
-    
 
-    		
     //for page-wise scrolling
-	if(scroll_behaviour==0){
-		int c=0;
-			for(c=0;c<max+1;c++){
-				if(c_pos[c]==1){
-				drawSelection(disp,c-1);
-				//todo: set selection color
-				graphics_set_color	(selection_font_color, backcolor);	
-				printText(sel_str, 3, 6+c-1, disp);
-				graphics_set_color	(forecolor, backcolor);	
-				}
-			}
-	}
-    
-  graphics_set_color	(forecolor_menu, backcolor);	
-    
+    if(scroll_behaviour==0){
+        int c=0;
+        for(c=0;c<max+1;c++){
+            if(c_pos[c]==1){
+                drawSelection(disp,c-1);
+                //todo: set selection color
+                graphics_set_color(selection_font_color, backcolor);
+                printText(sel_str, 3, 6+c-1, disp);
+                graphics_set_color(forecolor, backcolor);
+            }
+        }
+    }
+    graphics_set_color(forecolor_menu, backcolor);
 }
 
 
+void printText(char *msg, int x, int y, display_context_t dcon) {
+    x=x+text_offset;
 
-void printText(char *msg, int x, int y, display_context_t dcon)
-{
-	
-	x=x+text_offset;
-	
     if (x != -1)
         gCursorX = x;
     if (y != -1)
@@ -735,18 +593,15 @@ void printText(char *msg, int x, int y, display_context_t dcon)
         graphics_draw_text(dcon, gCursorX*8, gCursorY*8, msg);
 
     gCursorY++;
-    if (gCursorY > 29)
-    {
+    if (gCursorY > 29) {
         gCursorY = 0;
         gCursorX ++;
     }
 }
 
-void lprintText(char *msg, int x, int y, display_context_t dcon)
-{
-	
-	x=x+text_offset;
-	
+void lprintText(char *msg, int x, int y, display_context_t dcon) {
+    x=x+text_offset;
+
     if (x != -1)
         gCursorX = x;
     if (y != -1)
@@ -755,212 +610,178 @@ void lprintText(char *msg, int x, int y, display_context_t dcon)
     if (dcon)
         graphics_draw_text(dcon, gCursorX*8, gCursorY*8, msg);
 
-
-    if (gCursorY > 29)
-    {
+    if (gCursorY > 29) {
         gCursorY = 0;
         gCursorX ++;
     }
 }
 
-
 //background sprite
 void drawBg(display_context_t disp){
-
     graphics_draw_sprite( disp, 0, 0, background );
 }
 
-
-
 void drawBox(short x, short y, short width, short height, display_context_t disp){
-	
-	x=x+(text_offset*8);
-	
-	/*
-	 *    |Y
-	 *    |  x0/y0
-	 *    |
-	 *    |
-	 *    |          x1/y1
-	 *    |_______________X
-	 * 
-	 */ 
+    x=x+(text_offset*8);
 
-//                               X0  Y0  X1   Y1
-			graphics_draw_line(disp, x, y, width+x, y, border_color_1);  //A top left tp bottom right ok
-			graphics_draw_line(disp, width+x, y, width+x, height+y, border_color_1);  //B top right to bottom right
-			graphics_draw_line(disp, x, y, x, height+y, border_color_2); //C  //152-20
-			graphics_draw_line(disp, x, height+y, width+x, height+y, border_color_2); //D
-			graphics_draw_box_trans(disp, x+1, y+1, width-1, height-1, box_color); //red light transparent
-				
-	
+    /*
+     *    |Y
+     *    |  x0/y0
+     *    |
+     *    |
+     *    |          x1/y1
+     *    |_______________X
+     *
+     */
+
+//                          X0 Y0  X1      Y1
+    graphics_draw_line(disp, x, y, width+x, y, border_color_1);  //A top left tp bottom right ok
+    graphics_draw_line(disp, width+x, y, width+x, height+y, border_color_1);  //B top right to bottom right
+    graphics_draw_line(disp, x, y, x, height+y, border_color_2); //C  //152-20
+    graphics_draw_line(disp, x, height+y, width+x, height+y, border_color_2); //D
+    graphics_draw_box_trans(disp, x+1, y+1, width-1, height-1, box_color); //red light transparent
 }
 
-
 void drawBoxNumber(display_context_t disp, int box){
-	int old_color = box_color;
-	//backup color
-	
-		switch(box){
-				case 1:	drawBox(20, 24, 277, 193, disp); break; //filebrowser
-				case 2:	drawBox(60, 64, 197, 114, disp); break; //info screen
-				case 3:	
-						box_color= graphics_make_color(0x00, 0x00, 0x60, 0xC9);
-						drawBox(79, 29, 161, 180, disp);
-						break; //cover
-				case 4:	
-						box_color= graphics_make_color(0x30, 0x00, 0x00, 0xA3);
-						drawBox(79, 29, 161, 180, disp);
-						break; //mempak content
-				case 5:
-						box_color= graphics_make_color(0x60, 0x00, 0x00, 0xD3);
-						drawBox(60, 64, 197, 114, disp);  //red confirm screen
-						break; //mempak content
-				case 6:
-						box_color= graphics_make_color(0x60, 0x60, 0x00, 0xC3);
-						drawBox(60, 64, 197, 125, disp);  //yellow screen
-						break; //rom config box
-				case 7:
-						box_color= graphics_make_color(0x00, 0x00, 0x60, 0xC3);
-						drawBox(60, 105, 197, 20, disp);  //blue info screen
-						break; //info screen
-				case 8:
-						box_color= graphics_make_color(0x60, 0x00, 0x00, 0xD3);
-						drawBox(60, 105, 197, 20, disp);  //red error screen
-						break; //info screen	
-				case 9:	
-						box_color= graphics_make_color(0x00, 0x00, 0x00, 0xB6);
-						drawBox(28, 49, 260, 150, disp);
-						break; //yellow toplist		
-				case 10:
-						box_color= graphics_make_color(0x00, 0x60, 0x00, 0xC3);
-						drawBox(60, 105, 197, 20, disp);  //green info screen
-						break; //info screen	
-				case 11:	
-						box_color= graphics_make_color(0x00, 0x60, 0x00, 0xC3);
-						drawBox(28, 105, 260, 30, disp);
-						break; //green full filename		
-								
-				default: break;
-		}
-		
-	//restore color	
-	box_color=old_color;
+    int old_color = box_color;
+    //backup color
+
+    switch(box){
+    case 1:    drawBox(20, 24, 277, 193, disp); break; //filebrowser
+    case 2:    drawBox(60, 64, 197, 114, disp); break; //info screen
+    case 3:
+        box_color= graphics_make_color(0x00, 0x00, 0x60, 0xC9);
+        drawBox(79, 29, 161, 180, disp);
+        break; //cover
+    case 4:
+        box_color= graphics_make_color(0x30, 0x00, 0x00, 0xA3);
+        drawBox(79, 29, 161, 180, disp);
+        break; //mempak content
+    case 5:
+        box_color= graphics_make_color(0x60, 0x00, 0x00, 0xD3);
+        drawBox(60, 64, 197, 114, disp);  //red confirm screen
+        break; //mempak content
+    case 6:
+        box_color= graphics_make_color(0x60, 0x60, 0x00, 0xC3);
+        drawBox(60, 64, 197, 125, disp);  //yellow screen
+        break; //rom config box
+    case 7:
+        box_color= graphics_make_color(0x00, 0x00, 0x60, 0xC3);
+        drawBox(60, 105, 197, 20, disp);  //blue info screen
+        break; //info screen
+    case 8:
+        box_color= graphics_make_color(0x60, 0x00, 0x00, 0xD3);
+        drawBox(60, 105, 197, 20, disp);  //red error screen
+        break; //info screen
+    case 9:
+        box_color= graphics_make_color(0x00, 0x00, 0x00, 0xB6);
+        drawBox(28, 49, 260, 150, disp);
+        break; //yellow toplist
+    case 10:
+        box_color= graphics_make_color(0x00, 0x60, 0x00, 0xC3);
+        drawBox(60, 105, 197, 20, disp);  //green info screen
+        break; //info screen
+    case 11:
+        box_color= graphics_make_color(0x00, 0x60, 0x00, 0xC3);
+        drawBox(28, 105, 260, 30, disp);
+        break; //green full filename
+
+    default:
+        break;
+    }
+
+    //restore color
+    box_color=old_color;
 }
 
 //is setting the config file vars into the pconfig-structure
-static int configHandler(void* user, const char* section, const char* name, const char* value)
-{
-
+static int configHandler(void* user, const char* section, const char* name, const char* value) {
     configuration* pconfig = (configuration*)user;
 
     #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-    
-    
+
     if (MATCH("ed64", "border_color_1")) {
         pconfig->border_color_1 = strdup(value);
     }
-    else     
-    if (MATCH("ed64", "border_color_2")) {
+    else if (MATCH("ed64", "border_color_2")) {
         pconfig->border_color_2 = strdup(value);
     }
-    else     
-    if (MATCH("ed64", "box_color")) {
+    else if (MATCH("ed64", "box_color")) {
         pconfig->box_color = strdup(value);
     }
-    else     
-    if (MATCH("ed64", "selection_color")) {
+    else if (MATCH("ed64", "selection_color")) {
         pconfig->selection_color = strdup(value);
     }
-    else     
-    if (MATCH("ed64", "list_font_color")) {
+    else if (MATCH("ed64", "list_font_color")) {
         pconfig->list_font_color = strdup(value);
     }
-    else     
-    if (MATCH("ed64", "list_dir_font_color")) {
+    else if (MATCH("ed64", "list_dir_font_color")) {
         pconfig->list_dir_font_color = strdup(value);
     }
-    else     
-    if (MATCH("ed64", "selection_font_color")) {
+    else if (MATCH("ed64", "selection_font_color")) {
         pconfig->selection_font_color = strdup(value);
     }
-    else     
-    if (MATCH("ed64", "mempak_path")) {
+    else if (MATCH("ed64", "mempak_path")) {
         pconfig->mempak_path = strdup(value);
     }
-    else     
-    if (MATCH("ed64", "save_path")) {
+    else if (MATCH("ed64", "save_path")) {
         pconfig->save_path = strdup(value);
     }
-	else     
-    if (MATCH("ed64", "sound_on")) {
+    else if (MATCH("ed64", "sound_on")) {
         pconfig->sound_on = atoi(value);
     }
-    else     
-    if (MATCH("ed64", "page_display")) {
+    else if (MATCH("ed64", "page_display")) {
         pconfig->page_display = atoi(value);
     }
-	else
-    if (MATCH("ed64", "tv_mode")) {
+    else if (MATCH("ed64", "tv_mode")) {
         pconfig->tv_mode = atoi(value);
     }
-    else
-    if (MATCH("ed64", "quick_boot")) {
+    else if (MATCH("ed64", "quick_boot")) {
         pconfig->quick_boot = atoi(value);
     }
-    else
-    if (MATCH("ed64", "enable_colored_list")) {
+    else if (MATCH("ed64", "enable_colored_list")) {
         pconfig->enable_colored_list = atoi(value);
     }
-    else
-    if (MATCH("ed64", "ext_type")) {
+    else if (MATCH("ed64", "ext_type")) {
         pconfig->ext_type = atoi(value);
     }
-    else
-    if (MATCH("ed64", "cd_behaviour")) {
+    else if (MATCH("ed64", "cd_behaviour")) {
         pconfig->cd_behaviour = atoi(value);
     }
-    else
-    if (MATCH("ed64", "scroll_behaviour")) {
+    else if (MATCH("ed64", "scroll_behaviour")) {
         pconfig->scroll_behaviour = atoi(value);
-    }    
-    else
-    if (MATCH("ed64", "text_offset")) {
+    }
+    else if (MATCH("ed64", "text_offset")) {
         pconfig->text_offset = atoi(value);
     }
-    else     
-    if (MATCH("ed64", "sd_speed")) {
+    else if (MATCH("ed64", "sd_speed")) {
         pconfig->sd_speed = atoi(value);
     }
-    else     
-    if (MATCH("ed64", "hide_sysfolder")) {
+    else if (MATCH("ed64", "hide_sysfolder")) {
         pconfig->hide_sysfolder = atoi(value);
     }
     else if (MATCH("ed64", "background_image")) {
         pconfig->background_image = strdup(value);
-    } 
-    
+    }
     else if (MATCH("user", "name")) {
         pconfig->name = strdup(value);
-    } 
-    
-    
+    }
+
     else {
         return 0;  /* unknown section/name, error */
     }
+
     return 1;
 }
 
 
 //everdrive init functions
 void configure() {
-
     u16 tv;
     u16 msg = 0;
     u16 sd_mode = 0;
     u8 buff[16];
     u16 firm;
-
 
     evd_init();
     //REG_MAX_MSG
@@ -974,7 +795,6 @@ void configure() {
     if (streql("ED64 SD boot", buff, 12) && firm >= 0x0116) {
         sd_mode = 1;
     }
-    //evd_writeReg(REG_MSG, 0);
 
     if (firm >= 0x0200) {
         sleep(1);
@@ -983,19 +803,11 @@ void configure() {
 
         msg = evd_readReg(REG_MAX_MSG);
 
-      //  tv = (msg >> 10) & 3;
-     //   if (tv == 3)tv = 2;
-       // *(u32 *) 0x80000300 = tv;
-
         if (!(msg & (1 << 14))) {
-
             msg |= 1 << 14;
             evd_writeReg(REG_MAX_MSG, msg);
-         //   loadFirmWare();
-         
 
-			bi_load_firmware(firmware);
-
+            bi_load_firmware(firmware);
 
             sleep(1);
             evd_init();
@@ -1003,8 +815,6 @@ void configure() {
         sleep(1);
 
         evd_setCfgBit(ED_CFG_SDRAM_ON, 1);
-    } else {
-       // evd_initSecurity();
     }
 
     if (sd_mode) {
@@ -1013,1649 +823,1337 @@ void configure() {
         diskSetInterface(DISK_IFACE_SPI);
     }
     memSpiSetDma(0);
-
 }
-
-
 
 //rewrites the background and the box to clear the screen
 void clearScreen(display_context_t disp){
-
-	drawBg(disp); //background
-	drawBoxNumber(disp,1); //filebrowser box
-
+    drawBg(disp); //background
+    drawBoxNumber(disp,1); //filebrowser box
 }
 
-
 void romInfoScreen(display_context_t disp, u8 *buff, int silent){
-
-
-	if(silent!=1)
+    if(silent!=1)
     sleep(10);
-     
-	u8 tmp[32];
-	u8 filename[64];
-	u8 ok=0;
 
-	sprintf(filename, "%s",buff);
-	int swapped=0;
-		
-	FatRecord rec_tmpf;
-	//not needed any longer :>
-	//file IS there, it's selected at this point
-	ok = fatFindRecord(filename, &rec_tmpf, 0); 
+    u8 tmp[32];
+    u8 filename[64];
+    u8 ok=0;
 
-	u8 resp = 0;
+    sprintf(filename, "%s",buff);
+    int swapped=0;
 
-	resp = fatOpenFileByeName(filename, 0); //err if not found ^^
-	
+    FatRecord rec_tmpf;
+    //not needed any longer :>
+    //file IS there, it's selected at this point
+    ok = fatFindRecord(filename, &rec_tmpf, 0);
 
-	int mb = file.sec_available/2048;
-	int block_offset = 0;
-	u32 cart_buff_offset = 0;
-	u32 begin_sector = file.sector;
+    u8 resp = 0;
 
+    resp = fatOpenFileByeName(filename, 0); //err if not found ^^
 
-	//filesize -> readfile / 512
-	int fsize=512; //rom-headersize 4096 but the bootcode is not needed
-	unsigned char headerdata[fsize]; //1*512
-	//headerdata = (unsigned char *) malloc(fsize);
-	
-	resp = fatReadFile(&headerdata, fsize / 512); //1 cluster
+    int mb = file.sec_available/2048;
+    int block_offset = 0;
+    u32 cart_buff_offset = 0;
+    u32 begin_sector = file.sector;
 
-	int sw_type=is_valid_rom(headerdata);
+    //filesize -> readfile / 512
+    int fsize=512; //rom-headersize 4096 but the bootcode is not needed
+    unsigned char headerdata[fsize]; //1*512
 
-	if(sw_type!=0){
-		// printText("byteswapped file", 9, -1, disp);
-		  
-		 swapped=1;
-		 swap_header(headerdata, 512);
-	}
+    resp = fatReadFile(&headerdata, fsize / 512); //1 cluster
 
-	//char 32-51 name
-	unsigned char rom_name[32];
-	
-	for(int u=0; u<19;u++){
-		//strcat(rom_name, headerdata[32+u]);
-		if(u!=0)
-			sprintf(rom_name, "%s%c", rom_name, headerdata[32+u]);
-		else
-			sprintf(rom_name, "%c", headerdata[32+u]);
-	}
-		//trim right spaces
-		//romname=trimmed rom name for filename
-	sprintf(rom_name, "%s", trim(rom_name)); 
+    int sw_type=is_valid_rom(headerdata);
 
-	if(silent!=1)
-	printText(rom_name, 11, 19, disp);
-	
-	sprintf(rom_name, "Size: %iMb", mb); 
-	
-	if(silent!=1)
-	printText(rom_name, 11, -1, disp);
-	//unique cart id for gametype
-	unsigned char cartID_str[12];
-	sprintf(cartID_str, "ID: %c%c%c%c", headerdata[0x3B], headerdata[0x3C], headerdata[0x3D], headerdata[0x3E]);
-	
-	if(silent!=1)
-	printText(cartID_str, 11, -1, disp);
-	int cic, save;
+    if(sw_type!=0){
+        swapped=1;
+        swap_header(headerdata, 512);
+    }
 
-	cic = get_cic(&headerdata[0x40]);
-		
+    //char 32-51 name
+    unsigned char rom_name[32];
+
+    for(int u=0; u<19;u++){
+        if(u!=0)
+            sprintf(rom_name, "%s%c", rom_name, headerdata[32+u]);
+        else
+            sprintf(rom_name, "%c", headerdata[32+u]);
+    }
+    //trim right spaces
+    //romname=trimmed rom name for filename
+    sprintf(rom_name, "%s", trim(rom_name));
+
+    if(silent!=1)
+        printText(rom_name, 11, 19, disp);
+
+    sprintf(rom_name, "Size: %iMb", mb);
+
+    if(silent!=1)
+        printText(rom_name, 11, -1, disp);
+
+    //unique cart id for gametype
+    unsigned char cartID_str[12];
+    sprintf(cartID_str, "ID: %c%c%c%c", headerdata[0x3B], headerdata[0x3C], headerdata[0x3D], headerdata[0x3E]);
+
+    if(silent!=1)
+        printText(cartID_str, 11, -1, disp);
+
+    int cic, save;
+
+    cic = get_cic(&headerdata[0x40]);
+
     unsigned char cartID_short[4];
-	sprintf(cartID_short, "%c%c\0", headerdata[0x3C], headerdata[0x3D]);
-	
-    if (get_cic_save(cartID_short, &cic, &save))
-    {
-		if(silent!=1)
-		printText("found in db", 11, -1, disp);
-		   unsigned char save_type_str[12];
-		   sprintf(save_type_str, "Save: %s",  saveTypeToExtension(save,ext_type));
-		   if(silent!=1)
-		   printText(save_type_str, 11, -1, disp);
-		   
-		   unsigned char cic_type_str[12];
-		   sprintf(cic_type_str, "CIC: CIC-610%i", cic);
-		   if(silent!=1)
-		   printText(cic_type_str, 11, -1, disp);
-		   
-		//thanks for the db :>
+    sprintf(cartID_short, "%c%c\0", headerdata[0x3C], headerdata[0x3D]);
+
+    if (get_cic_save(cartID_short, &cic, &save)) {
+        if(silent!=1)
+        printText("found in db", 11, -1, disp);
+           unsigned char save_type_str[12];
+           sprintf(save_type_str, "Save: %s",  saveTypeToExtension(save,ext_type));
+           if(silent!=1)
+           printText(save_type_str, 11, -1, disp);
+
+           unsigned char cic_type_str[12];
+           sprintf(cic_type_str, "CIC: CIC-610%i", cic);
+           if(silent!=1)
+           printText(cic_type_str, 11, -1, disp);
+
+        //thanks for the db :>
         //cart was found, use CIC and SaveRAM type
     }
-    
 
-	if(silent!=1){
+    if(silent!=1){
+        char box_path[32];
 
-		char box_path[32];
+        sprite_t *n64cover;
 
-		sprite_t *n64cover;
+        sprintf(box_path, "/ED64/boxart/lowres/%c%c.png",  headerdata[0x3C], headerdata[0x3D]);
 
-		sprintf(box_path, "/ED64/boxart/lowres/%c%c.png",  headerdata[0x3C], headerdata[0x3D]);
-		
-		int found;
+        int found;
 
-		found = fatFindRecord(box_path, &rec_tmpf, 0); 
-		
-		if(found!=0){
-			  //not found
-			  sprintf(box_path, "/ED64/boxart/lowres/00.png");
-		}
+        found = fatFindRecord(box_path, &rec_tmpf, 0);
 
-		n64cover = loadPng(box_path); 
-		graphics_draw_sprite( disp, 81, 32, n64cover );
-		display_show(disp);
-	}else{
-		
+        if(found!=0){
+            //not found
+            sprintf(box_path, "/ED64/boxart/lowres/00.png");
+        }
 
-		
-		rom_config[1]=cic-1;
-		rom_config[2]=save;
-		rom_config[3]=0; //tv force off
-		rom_config[4]=0; //cheat off
-		rom_config[5]=0; //chk_sum off
-		rom_config[6]=0; //rating
-		rom_config[7]=0; //country
-		rom_config[8]=0; //reserved
-		rom_config[9]=0; //reserved
-		
-	}
-
-
+        n64cover = loadPng(box_path);
+        graphics_draw_sprite( disp, 81, 32, n64cover );
+        display_show(disp);
+    }
+    else {
+        rom_config[1]=cic-1;
+        rom_config[2]=save;
+        rom_config[3]=0; //tv force off
+        rom_config[4]=0; //cheat off
+        rom_config[5]=0; //chk_sum off
+        rom_config[6]=0; //rating
+        rom_config[7]=0; //country
+        rom_config[8]=0; //reserved
+        rom_config[9]=0; //reserved
+    }
 }
 
 
 sprite_t *loadPng(u8 *png_filename){
+    u8 *filename;
+    u8 ok=0;
 
+    filename = (u8 *) malloc(slen(png_filename));
+    //config filename
 
-	u8 *filename;//[32];
-	u8 ok=0;
-	
-	filename = (u8 *) malloc(slen(png_filename));
-	//config filename
+    sprintf(filename, "%s",png_filename);
+    FatRecord rec_tmpf;
+    ok = fatFindRecord(filename, &rec_tmpf, 0);
 
-	sprintf(filename, "%s",png_filename);
-	FatRecord rec_tmpf;
-	ok = fatFindRecord(filename, &rec_tmpf, 0);
-		
+    u8 resp = 0;
+    resp = fatOpenFileByeName(filename, 0);
 
-	u8 resp = 0;
-	resp = fatOpenFileByeName(filename, 0);
-	
-	
-	
-	//filesize of the opend file -> is the readfile / 512
-	int fsize= file.sec_available*512;
-	
-	
-	u8 png_rawdata[fsize];
+    //filesize of the opend file -> is the readfile / 512
+    int fsize= file.sec_available*512;
 
-	resp = fatReadFile(&png_rawdata, fsize / 512); //1 cluster
+    u8 png_rawdata[fsize];
 
-	return loadImage32(png_rawdata, fsize);
+    resp = fatReadFile(&png_rawdata, fsize / 512); //1 cluster
 
-free(filename);
+    return loadImage32(png_rawdata, fsize);
+
+    free(filename);
 }
 
 void loadgbrom(display_context_t disp, u8 *buff){
+    FatRecord rec_tmpf;
 
-FatRecord rec_tmpf;
+    u8 exist=0;
+    exist = fatFindRecord("/ED64/gblite.z64", &rec_tmpf, 0); //filename already exists
 
-u8 exist=0;
-exist = fatFindRecord("/ED64/gblite.z64", &rec_tmpf, 0); //filename already exists
+    if (exist == 0) {
+        u8 gb_sram_file[64];
 
-if(exist==0){
+        u8 resp=0;
 
-	u8 gb_sram_file[64];
+        sprintf(gb_sram_file, "/ED64/%s/gblite.SRM",save_path);
 
-	u8 resp=0;
+        resp = fatFindRecord(gb_sram_file, &rec_tmpf, 0); //filename already exists
+        resp = fatCreateRecIfNotExist(gb_sram_file, 0);
+        resp = fatOpenFileByeName(gb_sram_file, 32768 / 512);
 
-	  
-	sprintf(gb_sram_file, "/ED64/%s/gblite.SRM",save_path);
-	
-	
-	
-	resp = fatFindRecord(gb_sram_file, &rec_tmpf, 0); //filename already exists
-	resp = fatCreateRecIfNotExist(gb_sram_file, 0);
-	resp = fatOpenFileByeName(gb_sram_file, 32768 / 512);
+        static uint8_t sram_buffer[36928];
 
+        for(int i=0;i<36928;i++)
+            sram_buffer[i]=0;
 
-	static uint8_t sram_buffer[36928];
-	//uint8_t *sram_buffer;
-	//sram_buffer = (uint8_t *)malloc(36928);
-	
+        sprintf(sram_buffer, buff);
 
-	for(int i=0;i<36928;i++)
-	sram_buffer[i]=0;
+        resp = fatWriteFile(&sram_buffer, 32768 / 512);
 
-	sprintf(sram_buffer, buff);
+        while( !(disp = display_lock()) );
 
-	resp = fatWriteFile(&sram_buffer, 32768 / 512);
-	
-	//free(sram_buffer);
+        sprintf(rom_filename, "gblite");
+        gbload=1;
 
-	while( !(disp = display_lock()) );
-	
-    sprintf(rom_filename, "gblite");
-	gbload=1;
-		
-	loadrom(disp, "/ED64/gblite.z64", 1);
-
-	
-	}
+        loadrom(disp, "/ED64/gblite.z64", 1);
+    }
 }
 
-
 void loadmsx2rom(display_context_t disp, u8 *rom_path){
-	
-	//max 128kb rom
-	int max_ok = fatOpenFileByeName(rom_path, 0);
-	int fsize =  file.sec_available*512; //fsize in bytes
-	
-	if(fsize>128*1024){
-	//error
+    //max 128kb rom
+    int max_ok = fatOpenFileByeName(rom_path, 0);
+    int fsize =  file.sec_available*512; //fsize in bytes
 
-	drawShortInfoBox(disp, "  error: rom > 128kB",1);
-	input_mapping=98;
-								
-	return;
-	}
-	else{
-	drawShortInfoBox(disp, " loading please wait",0);
-	input_mapping=100;//disable all
-	}	
-	
-	FatRecord rec_tmpf;
+    if(fsize>128*1024){
+        //error
 
-	u8 exist=0;
-	exist = fatFindRecord("/ED64/ultraMSX2.z64", &rec_tmpf, 0); //filename already exists
+        drawShortInfoBox(disp, "  error: rom > 128kB",1);
+        input_mapping=98;
 
-		if(exist==0){
-			
-			
-			u8 resp=0;
-			//load nes emulator
-			resp = fatOpenFileByeName("/ED64/ultraMSX2.z64", 0); //err if not found ^^
-			
-			int fsize=1024*1024;
-			u8 buffer[fsize];
-			
-			//injecting in buffer... slow but working :/
-			resp = fatReadFile(buffer, file.sec_available);
-			resp = fatOpenFileByeName(rom_path, 0); //err if not found ^^
-			resp = fatReadFile(buffer+0x2df48, file.sec_available);
-			dma_write_s(buffer, 0xb0000000, fsize);
+        return;
+    }
+    else{
+        drawShortInfoBox(disp, " loading please wait",0);
+        input_mapping=100;//disable all
+    }
 
-			boot_cic=2; //cic 6102
-			boot_save=0; //save off/cpak
-			force_tv=0; //no force
-			cheats_on=0; //cheats off
-			checksum_fix_on=0;
-			
-			//while( !(disp = display_lock()) );
-			checksum_sdram();
+    FatRecord rec_tmpf;
 
-			bootRom(disp, 1);
-			
-			}
+    u8 exist=0;
+    exist = fatFindRecord("/ED64/ultraMSX2.z64", &rec_tmpf, 0); //filename already exists
+
+    if (exist == 0) {
+        u8 resp=0;
+        //load nes emulator
+        resp = fatOpenFileByeName("/ED64/ultraMSX2.z64", 0); //err if not found ^^
+
+        int fsize=1024*1024;
+        u8 buffer[fsize];
+
+        //injecting in buffer... slow but working :/
+        resp = fatReadFile(buffer, file.sec_available);
+        resp = fatOpenFileByeName(rom_path, 0); //err if not found ^^
+        resp = fatReadFile(buffer+0x2df48, file.sec_available);
+        dma_write_s(buffer, 0xb0000000, fsize);
+
+        boot_cic=2; //cic 6102
+        boot_save=0; //save off/cpak
+        force_tv=0; //no force
+        cheats_on=0; //cheats off
+        checksum_fix_on=0;
+
+        checksum_sdram();
+
+        bootRom(disp, 1);
+    }
 }
 
 
 void loadggrom(display_context_t disp, u8 *rom_path){
-	
-	
-	//max 512kb rom
-	int max_ok = fatOpenFileByeName(rom_path, 0);
-	int fsize =  file.sec_available*512; //fsize in bytes
-	
-	if(fsize>512*1024){
-	//error
+    //max 512kb rom
+    int max_ok = fatOpenFileByeName(rom_path, 0);
+    int fsize =  file.sec_available*512; //fsize in bytes
 
-	drawShortInfoBox(disp, "  error: rom > 512kB",1);
-	input_mapping=98;
-								
-	return;
-	}
-	else{
-	drawShortInfoBox(disp, " loading please wait",0);
-	input_mapping=100;//disable all
-	}	
-	
-	FatRecord rec_tmpf;
+    if(fsize>512*1024){
+        //error
+        drawShortInfoBox(disp, "  error: rom > 512kB",1);
+        input_mapping=98;
 
-	u8 exist=0;
-	exist = fatFindRecord("/ED64/UltraSMS.z64", &rec_tmpf, 0); //filename already exists
+        return;
+    }
+    else{
+        drawShortInfoBox(disp, " loading please wait",0);
+        input_mapping=100;//disable all
+    }
 
-		if(exist==0){
-			
-			
-			u8 resp=0;
-			//load nes emulator
-			resp = fatOpenFileByeName("/ED64/UltraSMS.z64", 0); //err if not found ^^
-			
-			int fsize=1024*1024;
-			u8 buffer[fsize];
-			
-			//injecting in buffer... slow but working :/
-			resp = fatReadFile(buffer, file.sec_available);
-			resp = fatOpenFileByeName(rom_path, 0); //err if not found ^^
-			resp = fatReadFile(buffer+0x1b410, file.sec_available);
-			dma_write_s(buffer, 0xb0000000, fsize);
+    FatRecord rec_tmpf;
 
-			boot_cic=2; //cic 6102
-			boot_save=0; //save off/cpak
-			force_tv=0; //no force
-			cheats_on=0; //cheats off
-			checksum_fix_on=0;
-			
-			//while( !(disp = display_lock()) );
-			checksum_sdram();
+    u8 exist=0;
+    exist = fatFindRecord("/ED64/UltraSMS.z64", &rec_tmpf, 0); //filename already exists
 
-			bootRom(disp, 1);
-			
-			}
+    if (exist == 0) {
+        u8 resp=0;
+        //load nes emulator
+        resp = fatOpenFileByeName("/ED64/UltraSMS.z64", 0); //err if not found ^^
+
+        int fsize=1024*1024;
+        u8 buffer[fsize];
+
+        //injecting in buffer... slow but working :/
+        resp = fatReadFile(buffer, file.sec_available);
+        resp = fatOpenFileByeName(rom_path, 0); //err if not found ^^
+        resp = fatReadFile(buffer+0x1b410, file.sec_available);
+        dma_write_s(buffer, 0xb0000000, fsize);
+
+        boot_cic=2; //cic 6102
+        boot_save=0; //save off/cpak
+        force_tv=0; //no force
+        cheats_on=0; //cheats off
+        checksum_fix_on=0;
+
+        checksum_sdram();
+
+        bootRom(disp, 1);
+    }
 }
-
-
 
 void rom_load_y(void){
+    FatRecord rec_tmpf;
 
-	FatRecord rec_tmpf;
-
-
-	u8 gb_sram_file[64];
-	u8 gb_sram_file2[64];
+    u8 gb_sram_file[64];
+    u8 gb_sram_file2[64];
     sprintf(gb_sram_file, "%c%c%c%c%c%c%c",'O', 'S', '6', '4', 'P', '/', 'O');
     sprintf(gb_sram_file2, "%s%c%c%c%c%c%c%c%c", gb_sram_file, 'S', '6', '4', 'P', '.', 'v', '6', '4');
-	
-		
-		
-	u8 exist=0;
-	exist = fatFindRecord(gb_sram_file2, &rec_tmpf, 0); //filename already exists
-		if(exist==0){
-			gb_load_y=1;
-			}
+
+    u8 exist=0;
+    exist = fatFindRecord(gb_sram_file2, &rec_tmpf, 0); //filename already exists
+    if (exist == 0) {
+        gb_load_y=1;
+    }
 }
-
-
 
 void loadnesrom(display_context_t disp, u8 *rom_path){
+    FatRecord rec_tmpf;
 
-	FatRecord rec_tmpf;
+    u8 exist=0;
+    exist = fatFindRecord("/ED64/neon64bu.rom", &rec_tmpf, 0); //filename already exists
 
-	u8 exist=0;
-	exist = fatFindRecord("/ED64/neon64bu.rom", &rec_tmpf, 0); //filename already exists
+    if (exist == 0) {
+        u8 resp=0;
+        //load nes emulator
+        resp = fatOpenFileByeName("/ED64/neon64bu.rom", 0); //err if not found ^^
+        resp = diskRead(file.sector, (void *)0xb0000000, file.sec_available);
 
-		if(exist==0){
+        //load nes rom
+        resp = fatOpenFileByeName(rom_path, 0); //err if not found ^^
+        resp = diskRead(file.sector, (void *)0xb0200000, file.sec_available);
 
-			u8 resp=0;
-			//load nes emulator
-			resp = fatOpenFileByeName("/ED64/neon64bu.rom", 0); //err if not found ^^
-			resp = diskRead(file.sector, (void *)0xb0000000, file.sec_available);
-			
-			//load nes rom
-			resp = fatOpenFileByeName(rom_path, 0); //err if not found ^^
-			resp = diskRead(file.sector, (void *)0xb0200000, file.sec_available);
+        boot_cic=2; //cic 6102
+        boot_save=0; //save off/cpak
+        force_tv=0; //no force
+        cheats_on=0; //cheats off
+        checksum_fix_on=0;
 
-			boot_cic=2; //cic 6102
-			boot_save=0; //save off/cpak
-			force_tv=0; //no force
-			cheats_on=0; //cheats off
-			checksum_fix_on=0;
-			
-			//while( !(disp = display_lock()) );
-			//checksum_sdram();
-
-			bootRom(disp, 1);
-			
-			}
+        bootRom(disp, 1);
+    }
 }
-
-
 
 //load a z64/v64/n64 rom to the sdram
 void loadrom(display_context_t disp, u8 *buff, int fast){
+    clearScreen(disp);
 
+    display_show(disp);
 
-	clearScreen(disp);
+    if(!fast)
+        printText("Restoring:", 3, 4, disp);
 
-	display_show(disp);
-
-	if(!fast)
-	printText("Restoring:", 3, 4, disp);
-	
     sleep(10);
-    //evd_ulockRegs();
     sleep(1000); //needless waiting :>
-     
-    if(debug)
+
+    if (debug)
     printText("timing done", 3, -1, disp);
 
-	u8 tmp[32];
-	u8 filename[64];
-	u8 ok=0;
+    u8 tmp[32];
+    u8 filename[64];
+    u8 ok=0;
 
-	sprintf(filename, "%s",buff);
-	int swapped=0;
+    sprintf(filename, "%s",buff);
+    int swapped=0;
 
+    if (debug)
+        printText(buff, 3, -1, disp);
 
-	if(debug)
-	printText(buff, 3, -1, disp);
-		
-	FatRecord rec_tmpf;
-	//not needed any longer :>
-	//file IS there, it's selected at this point
-	ok = fatFindRecord(filename, &rec_tmpf, 0); 
-	if(debug)
-	printText("found", 3, -1, disp);
+    FatRecord rec_tmpf;
+    //not needed any longer :>
+    //file IS there, it's selected at this point
+    ok = fatFindRecord(filename, &rec_tmpf, 0);
+    if (debug)
+        printText("found", 3, -1, disp);
 
-	u8 resp = 0;
+    u8 resp = 0;
 
-	resp = fatOpenFileByeName(filename, 0); //err if not found ^^
-	
-	if(debug)
-	printText("opened", 3, -1, disp);
+    resp = fatOpenFileByeName(filename, 0); //err if not found ^^
 
-	int mb = file.sec_available/2048;
-	int file_sectors = file.sec_available;
-	int block_offset = 0;
-	u32 cart_buff_offset = 0;
-	u32 begin_sector = file.sector;
+    if (debug)
+        printText("opened", 3, -1, disp);
 
+    int mb = file.sec_available/2048;
+    int file_sectors = file.sec_available;
+    int block_offset = 0;
+    u32 cart_buff_offset = 0;
+    u32 begin_sector = file.sector;
 
-	//filesize -> readfile / 512
-	int fsize=512; //rom-headersize 4096 but the bootcode is not needed
-	unsigned char headerdata[fsize]; //1*512
+    //filesize -> readfile / 512
+    int fsize=512; //rom-headersize 4096 but the bootcode is not needed
+    unsigned char headerdata[fsize]; //1*512
 
-	resp = fatReadFile(&headerdata, fsize / 512); //1 cluster
+    resp = fatReadFile(&headerdata, fsize / 512); //1 cluster
 
-	int sw_type=is_valid_rom(headerdata);
+    int sw_type=is_valid_rom(headerdata);
 
-	if(sw_type!=0){
-		if(!fast)
-		 printText("byteswapped file", 3, -1, disp);
-		 swapped=1;
-		 swap_header(headerdata, 512);
-	}
+    if(sw_type!=0){
+        if(!fast)
+            printText("byteswapped file", 3, -1, disp);
 
-	//char 32-51 name
-	unsigned char rom_name[32];
-	
-	for(int u=0; u<19;u++){
-		//strcat(rom_name, headerdata[32+u]);
-		if(u!=0)
-			sprintf(rom_name, "%s%c", rom_name, headerdata[32+u]);
-		else
-			sprintf(rom_name, "%c", headerdata[32+u]);
-	}
-		//trim right spaces
-		//romname=trimmed rom name for filename
-	sprintf(rom_name, "%s", trim(rom_name)); 
+        swapped=1;
+        swap_header(headerdata, 512);
+    }
 
-	if(!fast)
-	printText(rom_name, 3, -1, disp);
+    //char 32-51 name
+    unsigned char rom_name[32];
 
-	//unique cart id for gametype
+    for(int u=0; u<19;u++){
+        if(u!=0)
+            sprintf(rom_name, "%s%c", rom_name, headerdata[32+u]);
+        else
+            sprintf(rom_name, "%c", headerdata[32+u]);
+    }
+    //trim right spaces
+    //romname=trimmed rom name for filename
+    sprintf(rom_name, "%s", trim(rom_name));
 
-	sprintf(cartID, "%c%c%c%c", headerdata[0x3B], headerdata[0x3C], headerdata[0x3D], headerdata[0x3E]);
-	//printText(cartID, 3, -1, disp);
+    if(!fast)
+        printText(rom_name, 3, -1, disp);
 
-	int cic, save;
+    //unique cart id for gametype
 
-	cic = get_cic(&headerdata[0x40]);
-		
-	//char cartid[4];
+    sprintf(cartID, "%c%c%c%c", headerdata[0x3B], headerdata[0x3C], headerdata[0x3D], headerdata[0x3E]);
+
+    int cic, save;
+
+    cic = get_cic(&headerdata[0x40]);
+
     unsigned char cartID_short[4];
-	sprintf(cartID_short, "%c%c\0", headerdata[0x3C], headerdata[0x3D]);
-	
-    if (get_cic_save(cartID_short, &cic, &save))
-    {
-		if(!fast)
-		printText("found in db", 3, -1, disp);
-		//thanks for the db :>
+    sprintf(cartID_short, "%c%c\0", headerdata[0x3C], headerdata[0x3D]);
+
+    if (get_cic_save(cartID_short, &cic, &save)) {
+        if(!fast)
+        printText("found in db", 3, -1, disp);
+        //thanks for the db :>
         // cart was found, use CIC and SaveRAM type
     }
-    
-
-	if(debug){	
-		sprintf(tmp, "Info: cic=%i save=%i",cic,save);
-		printText(tmp, 3, -1, disp);
-		
-	}
-	
-	//set final boot cic
-	/*
-	boot_cic=cic;
-	boot_save=save;
-	*/
-	//new rom_config
-	
-	boot_cic=rom_config[1]+1;
-	boot_save=rom_config[2];
-	force_tv=rom_config[3];
-	//cheats_on=1;
-	cheats_on=rom_config[4];
-	checksum_fix_on=rom_config[5];
-	boot_country=rom_config[7]; //boot_block
-		//checksum_sdram();
-	
-	
-	
-			if(gbload==1)
-			boot_save=1;
-		
-
-		else
-	
-	if(resp){
-		
-		sprintf(tmp, "resp: %i",resp);
-		printText(tmp, 3, -1, disp);
-	}
-
-	if(debug)
-	 printText("enalbe sd_mode", 3, -1, disp);
-	//evd_enableSDMode(); //fastload on
-	resp = evd_isSDMode();
-	
-	if(debug){
-		sprintf(tmp, "sdmode: %i",resp);
-		printText(tmp, 3, -1, disp);
-	}
-
-	if(debug){
-		sprintf(tmp, "Size: %i", file.sec_available);
-		printText(tmp, 3, -1, disp);
-	}
 
 
-	if(debug){
-	 	sprintf(tmp, "f_sector: %i", file.sector);
-		printText(tmp, 3, -1, disp);
-	}
-	if(debug)
-		printText("loading:", 3, -1, disp);
-	sleep(10);
+    if (debug) {
+        sprintf(tmp, "Info: cic=%i save=%i",cic,save);
+        printText(tmp, 3, -1, disp);
 
+    }
 
-	if(swapped==1){
-		while (evd_isDmaBusy());
-		sleep(400);
-		evd_mmcSetDmaSwap(1);
+    //new rom_config
+    boot_cic=rom_config[1]+1;
+    boot_save=rom_config[2];
+    force_tv=rom_config[3];
+    cheats_on=rom_config[4];
+    checksum_fix_on=rom_config[5];
+    boot_country=rom_config[7]; //boot_block
 
-		if(debug)
-			printText("swapping on", 3, -1, disp);
-		sleep(10);
-	}
-	
-	   
-	if(!fast)
-	printText("loading please wait...", 3, -1, disp);
-	else
-	printText("loading please wait...", 3, 4, disp);
-	
-	sleep(10);
+    if (gbload==1)
+        boot_save=1;
 
-		int lower_half=2048*32;
+    else if (resp) {
+        sprintf(tmp, "resp: %i",resp);
+        printText(tmp, 3, -1, disp);
+    }
 
-	if(mb<=32){
-		resp = diskRead(begin_sector, (void *)0xb0000000, file_sectors); //2048 cluster 1Mb
-	}else{
-		
-		resp = diskRead(begin_sector, (void *)0xb0000000, lower_half);
-		sleep(10);
-		resp = diskRead(begin_sector+lower_half, (void *)0xb2000000, file_sectors-lower_half);
-	}
-	
-	
-	
-	if(resp){
+    if (debug)
+        printText("enalbe sd_mode", 3, -1, disp);
 
-		if(debug){
-			sprintf(tmp, "mmcToCart: %i",resp);
-			printText(tmp, 3, -1, disp);
-		}
-	}
+    resp = evd_isSDMode();
 
+    if (debug) {
+        sprintf(tmp, "sdmode: %i",resp);
+        printText(tmp, 3, -1, disp);
 
-	if(debug)
-		for (int i = 0; i < 4; i++) {
+        sprintf(tmp, "Size: %i", file.sec_available);
+        printText(tmp, 3, -1, disp);
 
-		u8 buff[16];
-		dma_read_s(buff, 0xb0000000 + 0x00100000*i, 1);
-		sprintf(tmp, "probe: %hhx",buff[0]);
-		printText(tmp, 3, -1, disp);
+        sprintf(tmp, "f_sector: %i", file.sector);
+        printText(tmp, 3, -1, disp);
 
-		}
+        printText("loading:", 3, -1, disp);
+    }
+    sleep(10);
 
+    if(swapped==1){
+        while (evd_isDmaBusy());
+        sleep(400);
+        evd_mmcSetDmaSwap(1);
 
-		if(!fast){
-		sleep(200);
-		
-		
-			
-		printText(" ", 3, -1, disp);
-		//printText("done:", 3, -1, disp);
-		printText("(C-UP to activate cheats)", 3, -1, disp);
-		printText("(C-RIGHT to force menu tv mode)", 3, -1, disp);
-		printText("done: PRESS START", 3, -1, disp);
-		//timing(disp);
-		}
-		else{
-		bootRom(disp, 1);
-		}
+        if (debug)
+            printText("swapping on", 3, -1, disp);
+
+        sleep(10);
+    }
+
+    if(!fast)
+        printText("loading please wait...", 3, -1, disp);
+    else
+        printText("loading please wait...", 3, 4, disp);
+
+    sleep(10);
+
+    int lower_half=2048*32;
+
+    if(mb<=32){
+        resp = diskRead(begin_sector, (void *)0xb0000000, file_sectors); //2048 cluster 1Mb
+    }
+    else{
+        resp = diskRead(begin_sector, (void *)0xb0000000, lower_half);
+        sleep(10);
+        resp = diskRead(begin_sector+lower_half, (void *)0xb2000000, file_sectors-lower_half);
+    }
+
+    if(resp){
+        if (debug) {
+            sprintf(tmp, "mmcToCart: %i",resp);
+            printText(tmp, 3, -1, disp);
+        }
+    }
+
+    if (debug)
+        for (int i = 0; i < 4; i++) {
+            u8 buff[16];
+            dma_read_s(buff, 0xb0000000 + 0x00100000*i, 1);
+            sprintf(tmp, "probe: %hhx",buff[0]);
+            printText(tmp, 3, -1, disp);
+
+        }
+
+        if(!fast){
+            sleep(200);
+
+            printText(" ", 3, -1, disp);
+            printText("(C-UP to activate cheats)", 3, -1, disp);
+            printText("(C-RIGHT to force menu tv mode)", 3, -1, disp);
+            printText("done: PRESS START", 3, -1, disp);
+        }
+        else{
+            bootRom(disp, 1);
+        }
 }
 
 
 int backupSaveData(display_context_t disp){
-	
-		//backup cart-save on sd after reboot
-	
-		u8 fname[32];
-		u8 found=0;
-		int save_t;
+        //backup cart-save on sd after reboot
+        u8 fname[32];
+        u8 found=0;
+        int save_t;
 
-		sprintf(fname, "/ED64/%s/LAST.CRT",save_path);
-		uint8_t cfg_data[512];//[size];
+        sprintf(fname, "/ED64/%s/LAST.CRT",save_path);
+        uint8_t cfg_data[512];
 
-		FatRecord rec_tmpf;
-		found = fatFindRecord(fname, &rec_tmpf, 0);
-		
-		printText("Save System - please stand by", 3, 4, disp);
-		
-		
-		if(found==0){
-				//found
-				
-				//file to cfg_data buffer
-				u8 resp = 0;
-				resp = fatOpenFileByeName(fname, 0);
-				resp = fatReadFile(&cfg_data, 1);
-				
-				//split in save type and cart-id
-				save_t=cfg_data[0];
-				int last_cic=cfg_data[1];
-				scopy(cfg_data+2, rom_filename);
-				//cartID[0]=cfg_data[1];
-				//cartID[1]=cfg_data[2];
-				//cartID[2]=cfg_data[3];
-				//cartID[3]=cfg_data[4];
-				
-				
-				//set savetype to 0 disable for next boot
-					if(save_t!=0){
-						
-						//set savetype to off
-						cfg_data[0]=0;
-						
-						u8 tmp[32];
-						
-						resp = fatOpenFileByeName(fname, 1); //if sector is set filemode=WR writeable
-						
-						if(debug){
-							sprintf(tmp, "fatOpenFileByeName ret=%i",resp);	
-							printText(tmp, 3, -1, disp);
-							}
-						
-						resp = fatWriteFile(&cfg_data, 1); //filemode must be wr
+        FatRecord rec_tmpf;
+        found = fatFindRecord(fname, &rec_tmpf, 0);
 
-						if(debug){
-							sprintf(tmp, "fatWriteFile ret=%i",resp);	
-							printText(tmp, 3, -1, disp);	
-							}
-						
-						if(debug) printText("SaveType-tag has been disabled for next boot", 3, -1, disp);
-						
-						
-						volatile u8 save_cfg_stat=0;
-						volatile u8 val=0;
-						//regs_ptr[REG_SAV_CFG];
-						
-						val = evd_readReg(0);
-						save_cfg_stat = evd_readReg(REG_SAV_CFG);
-						
-						/*
-						u8 buffz[32];
-						sprintf(buffz, "save_cfg_stat=%i",save_cfg_stat);
-						printText(buffz, 3, -1, disp);
-						*/
-						
-						if(save_cfg_stat!=0)
-						save_reboot=1;
-				
-						
-						
-					}else {
-					if(debug) printText("no need to save to sd", 3, -1, disp);
-					else printText("...ready", 3, -1, disp);
-					sleep(200);
+        printText("Save System - please stand by", 3, 4, disp);
 
-					return 1;
-					}
-		}
-		else{
-			if(debug) printText("last.crt not found", 3, -1, disp);
-			else printText("...ready", 3, -1, disp);
-			
-			return 0;
-		}
+        if(found==0){
+            //found
 
-		if(debug){
-		//	u8 buffg[32];
-		//	sprintf(buffg, "save_t=%i cartID=%c%c%c%c",save_t,cartID[0],cartID[1],cartID[2],cartID[3]);
-		//	printText(buffg, 3, -1, disp);
-			sleep(5000);
-		}
+            //file to cfg_data buffer
+            u8 resp = 0;
+            resp = fatOpenFileByeName(fname, 0);
+            resp = fatReadFile(&cfg_data, 1);
 
+            //split in save type and cart-id
+            save_t=cfg_data[0];
+            int last_cic=cfg_data[1];
+            scopy(cfg_data+2, rom_filename);
 
-		//reset with save request
-		if(save_reboot){
-			
-				//if(save_t==1 ||save_t==2 ||save_t==3 ||save_t==4)
-				printText("saving...", 3, -1, disp);
-				if(  saveTypeToSd(disp, rom_filename, save_t) ){
-					
-					if(debug) printText("save upload done...", 3, -1, disp);
-					else printText("...ready", 3, -1, disp);
-				}
-				else{
-					
-					if(debug) printText("not saved...", 3, -1, disp);
-				}
-		
-		}else{
-				
-					if(debug) printText("no reset - save request", 3, -1, disp);
-					else printText("...ready", 3, -1, disp);
-					sleep(300);
-		}
-		
-	return 1;
+            //set savetype to 0 disable for next boot
+            if(save_t!=0){
+                //set savetype to off
+                cfg_data[0]=0;
+
+                u8 tmp[32];
+
+                resp = fatOpenFileByeName(fname, 1); //if sector is set filemode=WR writeable
+
+                if (debug) {
+                    sprintf(tmp, "fatOpenFileByeName ret=%i",resp);
+                    printText(tmp, 3, -1, disp);
+                }
+
+                resp = fatWriteFile(&cfg_data, 1); //filemode must be wr
+
+                if (debug) {
+                    sprintf(tmp, "fatWriteFile ret=%i",resp);
+                    printText(tmp, 3, -1, disp);
+
+                    printText("SaveType-tag has been disabled for next boot", 3, -1, disp);
+                }
+
+                volatile u8 save_cfg_stat=0;
+                volatile u8 val=0;
+                val = evd_readReg(0);
+                save_cfg_stat = evd_readReg(REG_SAV_CFG);
+
+                if(save_cfg_stat!=0)
+                    save_reboot=1;
+            }
+            else {
+                if (debug)
+                    printText("no need to save to sd", 3, -1, disp);
+                else
+                    printText("...ready", 3, -1, disp);
+
+                sleep(200);
+
+                return 1;
+            }
+        }
+        else{
+            if (debug)
+                printText("last.crt not found", 3, -1, disp);
+            else
+                printText("...ready", 3, -1, disp);
+
+            return 0;
+        }
+
+        if (debug) {
+            sleep(5000);
+        }
+
+        //reset with save request
+        if(save_reboot){
+            printText("saving...", 3, -1, disp);
+            if(  saveTypeToSd(disp, rom_filename, save_t) ){
+                if (debug)
+                    printText("save upload done...", 3, -1, disp);
+                else
+                    printText("...ready", 3, -1, disp);
+            }
+            else if (debug)
+                printText("not saved...", 3, -1, disp);
+        }
+        else {
+            if (debug)
+                printText("no reset - save request", 3, -1, disp);
+            else
+                printText("...ready", 3, -1, disp);
+
+            sleep(300);
+        }
+
+    return 1;
 }
-
-
 
 //old method to write a file to the mempak at controller 1
 void file_to_mpk(display_context_t disp, u8 *filename){
+    u8 tmp[32];
+    u8 buff[64];
+    u8 ok=0;
 
-	//printText("Restoring:", 3, 4, disp);
-	//printText("   ", 3, 4, disp);
-	u8 tmp[32];
-	//u8 filename[32];
-	u8 buff[64];
-	u8 ok=0;
+    printText(filename, 9, -1, disp);
+    FatRecord rec_tmpf;
+    ok = fatFindRecord(filename, &rec_tmpf, 0);
 
-	//sprintf(filename, "/MEMPAKS/%s",buff);
-	printText(filename, 9, -1, disp);
-	FatRecord rec_tmpf;
-	ok = fatFindRecord(filename, &rec_tmpf, 0);
+    u8 resp = 0;
+    resp = fatOpenFileByeName(filename, 0);
 
-	u8 resp = 0;
-	resp = fatOpenFileByeName(filename, 0);
-
-	u8 * pch;
+    u8 *pch;
     pch=strrchr(filename,'.');
     sprintf(buff, "%s",(pch+2));
 
-	if(strcmp(buff,"64")==0){
-	//	if(strcmp(buff,"64")==0){
-		 printText("Dexdrive format", 9, -1, disp);
-		 													
-		 printText("skip header", 9, -1, disp);
+    if(strcmp(buff,"64")==0){
+        printText("Dexdrive format", 9, -1, disp);
+        printText("skip header", 9, -1, disp);
 
-	static uint8_t mempak_data_buff[36928];
+        static uint8_t mempak_data_buff[36928];
+        resp = fatReadFile(&mempak_data_buff, 36928 / 512);
 
-	 resp = fatReadFile(&mempak_data_buff, 36928 / 512);
+        memcpy( &mempak_data, mempak_data_buff+4160, 32768);
+    }
+    else {
+        printText("Z64 format", 9, -1, disp);
+        resp = fatReadFile(&mempak_data, 32768 / 512);
+    }
 
-	 memcpy( &mempak_data, mempak_data_buff+4160, 32768);
-
-
-	}
-	else
-	{
-		printText("Z64 format", 9, -1, disp);
-		resp = fatReadFile(&mempak_data, 32768 / 512);
-	}
-
-	int err = 0;
-
-	for( int j = 0; j < 128; j++ )
-	{
-		err |= write_mempak_sector( 0, j, &mempak_data[j * MEMPAK_BLOCK_SIZE]  );
-	}
-	
-	//sleep(500);
-	//printText("done...", 9, -1, disp);
+    int err = 0;
+    for( int j = 0; j < 128; j++ ) {
+        err |= write_mempak_sector( 0, j, &mempak_data[j * MEMPAK_BLOCK_SIZE]  );
+    }
 }
 
-
-char TranslateNotes( char *bNote, char *Text )
-{
+char TranslateNotes( char *bNote, char *Text ) {
 #pragma warning( disable : 4305 4309 )
-	char cReturn = 0x00;
-	const char aSpecial[] =	{ 0x21, 0x22, 0x23, 0x60, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x3A, 0x3D, 0x3F, 0x40, 0x74, 0xA9, 0xAE };
-						//	{ '!' , '\"', '#' , '`' , '*' , '+' , ',' , '-' , '.' , '/' , ':' , '=' , '?' , '>' , 'tm', '(r)','(c)' };
+    char cReturn = 0x00;
+    const char aSpecial[] =    { 0x21, 0x22, 0x23, 0x60, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x3A, 0x3D, 0x3F, 0x40, 0x74, 0xA9, 0xAE };
+                        //    { '!' , '\"', '#' , '`' , '*' , '+' , ',' , '-' , '.' , '/' , ':' , '=' , '?' , '>' , 'tm', '(r)','(c)' };
 #pragma warning( default : 4305 4309 )
-	int i = 16;
-	do
-	{
-		char b = bNote[i];
-		if(( b > 0 ) && i < 32 )
-		{
-			if( b <= 0x0F ) // translate Icons as Spaces
-				*Text = 0x20;
-			else if( b <= 0x19 ) // Numbers
-				*Text = 0x20 + b;
-			else if( b <= 0x33 ) // Characters
-				*Text = 0x47 + b;
-			else if( b <= 0x44 ) // special Symbols
-				*Text = aSpecial[b - 0x34];
-			else if( b <= 0x94 ) // Japan
-				*Text = 0xC0 + ( b % 40 );
-			else // unknown
-				*Text = (char)0xA4;
-			++i;
-			++Text;
-		}
-		else
-		{
-			*Text = '\0';
-			if( b )
-			{
-				i = 12;
-				Text = &cReturn;
-			}
-			else
-				i = 13;
-		}
-		
-	}
-	while( i != 13 );
+    int i = 16;
+    do {
+        char b = bNote[i];
+        if(( b > 0 ) && i < 32 ) {
+            if( b <= 0x0F ) // translate Icons as Spaces
+                *Text = 0x20;
+            else if( b <= 0x19 ) // Numbers
+                *Text = 0x20 + b;
+            else if( b <= 0x33 ) // Characters
+                *Text = 0x47 + b;
+            else if( b <= 0x44 ) // special Symbols
+                *Text = aSpecial[b - 0x34];
+            else if( b <= 0x94 ) // Japan
+                *Text = 0xC0 + ( b % 40 );
+            else // unknown
+                *Text = (char)0xA4;
 
-	return cReturn;
+            ++i;
+            ++Text;
+        }
+        else {
+            *Text = '\0';
+            if( b ) {
+                i = 12;
+                Text = &cReturn;
+            }
+            else
+                i = 13;
+        }
+    } while( i != 13 );
+
+    return cReturn;
 }
 
+char CountBlocks( char *bMemPakBinary, char *aNoteSizes ) {
+    int wRemainingBlocks = 123;
+    char bNextIndex;
+    int i = 0;
+    while( i < 16 && wRemainingBlocks <= 123 ) {
+        aNoteSizes[i] = 0;
+        bNextIndex = bMemPakBinary[0x307 + (i*0x20)];
+        while(( bNextIndex >= 5 ) && ( aNoteSizes[i] < wRemainingBlocks)) {
+            aNoteSizes[i]++;
+            bNextIndex = bMemPakBinary[0x101 + (bNextIndex*2)];
+        }
 
+        if( aNoteSizes[i] > wRemainingBlocks )
+            wRemainingBlocks = 0xFF;
+        else
+            wRemainingBlocks -= aNoteSizes[i];
 
-char CountBlocks( char *bMemPakBinary, char *aNoteSizes )
-{
-	int wRemainingBlocks = 123;
-	char bNextIndex;
-	int i = 0;
-	while( i < 16 && wRemainingBlocks <= 123 )
-	{
-		aNoteSizes[i] = 0;
-		bNextIndex = bMemPakBinary[0x307 + (i*0x20)];
-		while(( bNextIndex >= 5 ) && ( aNoteSizes[i] < wRemainingBlocks))
-		{
-			aNoteSizes[i]++;
-			bNextIndex = bMemPakBinary[0x101 + (bNextIndex*2)];
-		}
-
-		if( aNoteSizes[i] > wRemainingBlocks )
-			wRemainingBlocks = 0xFF;
-		else
-			wRemainingBlocks -= aNoteSizes[i];
-	
-		i++;
-	}
-	return wRemainingBlocks;
+        i++;
+    }
+    return wRemainingBlocks;
 }
-
-
-
 
 void view_mpk_file(display_context_t disp, char *mpk_filename){
+    u8 tmp[32];
+    u8 buff[64];
+    u8 ok=0;
 
+    FatRecord rec_tmpf;
+    ok = fatFindRecord(mpk_filename, &rec_tmpf, 0);
 
+    u8 resp = 0;
+    resp = fatOpenFileByeName(mpk_filename, 0);
 
-
-	//printText("Restoring:", 3, 4, disp);
-	//printText("   ", 3, 4, disp);
-	u8 tmp[32];
-	//u8 filename[32];
-	u8 buff[64];
-	u8 ok=0;
-
-	//sprintf(filename, "%s",mpk_filename);
-	//printText(filename, 1, 4, disp);
-	
-	FatRecord rec_tmpf;
-	ok = fatFindRecord(mpk_filename, &rec_tmpf, 0);
-
-	u8 resp = 0;
-	resp = fatOpenFileByeName(mpk_filename, 0);
-
-	u8 * pch;
+    u8 * pch;
     pch=strrchr(mpk_filename,'.');
     sprintf(buff, "%s",(pch+2));
 
-	if(strcmp(buff,"64")==0){
-	//	if(strcmp(buff,"64")==0){
-	//	 printText("Dexdrive format", 9, -1, disp);
-		 													
-	//	 printText("skip header", 9, -1, disp);
+    if (strcmp(buff, "64") == 0) {
+        static uint8_t mempak_data_buff[36928];
+        resp = fatReadFile(&mempak_data_buff, 36928 / 512);
+        memcpy( &mempak_data, mempak_data_buff+4160, 32768);
+    }
+    else {
+        resp = fatReadFile(&mempak_data, 32768 / 512);
+    }
 
-	static uint8_t mempak_data_buff[36928];
+    printText("File content:", 11, 5, disp);
+    printText("   ", 11, -1, disp);
 
-	 resp = fatReadFile(&mempak_data_buff, 36928 / 512);
+    int notes_c=0;
 
-	 memcpy( &mempak_data, mempak_data_buff+4160, 32768);
+    char szBuffer[40],
+    cAppendix;
+    int bFirstChar;
 
+    int i = 0,
+    nNotes = 0,
+    iSum = 0,
+    iRemainingBlocks;
 
-	}
-	else
-	{
-		//printText("Z64 format", 9, -1, disp);
-		resp = fatReadFile(&mempak_data, 32768 / 512);
-	}
+    char aNoteSizes[16];
 
+    for( i = 0x10A; i < 0x200; i++ )
+        iSum += mempak_data[i];
 
+    if((( iSum % 256 ) == mempak_data[0x101] )) {
+        iRemainingBlocks = CountBlocks( mempak_data, aNoteSizes );
 
+        if( iRemainingBlocks <= 123 ) {
+            for( notes_c = 0; notes_c < 16; notes_c++ ){
+                if( mempak_data[0x300 + (notes_c*32)] ||
+                    mempak_data[0x301 + (notes_c*32)] ||
+                    mempak_data[0x302 + (notes_c*32)] )
+                {
+                    cAppendix = TranslateNotes( &mempak_data[0x300 + (notes_c*32)], szBuffer );
 
+                    if( cAppendix != '\0' )
+                        sprintf( szBuffer, "%s. %c", szBuffer, cAppendix );
 
-printText("File content:", 11, 5, disp);
-printText("   ", 11, -1, disp);
-
-
-int notes_c=0;
-
-	char szBuffer[40],
-	cAppendix;
-	//char aNoteSizes[16];
-	int bFirstChar;
-
-
-	int i = 0,
-		nNotes = 0,
-		iSum = 0,
-		iRemainingBlocks;
-
-	char aNoteSizes[16];
-
-for( i = 0x10A; i < 0x200; i++ )
-		iSum += mempak_data[i];
-
-
-	if((( iSum % 256 ) == mempak_data[0x101] ))
-	{
-				iRemainingBlocks = CountBlocks( mempak_data, aNoteSizes );
-				//printf("\nRemainingBlocks: %i\n", iRemainingBlocks);
-				
-						if( iRemainingBlocks <= 123 )
-						{
-							for( notes_c = 0; notes_c < 16; notes_c++ ){
-
-				
-				if( mempak_data[0x300 + (notes_c*32)] ||
-					mempak_data[0x301 + (notes_c*32)] ||
-					mempak_data[0x302 + (notes_c*32)] )
-				{
-					cAppendix = TranslateNotes( &mempak_data[0x300 + (notes_c*32)], szBuffer );
-
-					if( cAppendix != '\0' )
-						sprintf( szBuffer, "%s. %c", szBuffer, cAppendix );
-
-					bFirstChar = 1;
-					for( i = 0; i < (int)strlen(szBuffer); i++ )
-					{
-						if( szBuffer[i] == ' ' )
-							bFirstChar = 1;
-						else
-						{
-							if( bFirstChar && ( szBuffer[i] >= 'a') && ( szBuffer[i] <= 'z'))
-							{
-								bFirstChar = 0;
-								szBuffer[i] -= 0x20;
-							}
-						}
-
-					}
-	
-				//	i = ListView_InsertItem( hListWindow, &lvItem );
-					//printf("\nitem: %s");
-					//printf("\nitem0: %s",szBuffer );
-					printText(szBuffer, 11, -1, disp);
-
-					switch( mempak_data[0x303 + (notes_c*32)] )
-					{
-					case 0x00:
-						sprintf( szBuffer, "None" );
-						break;
-					case 0x37:
-						sprintf( szBuffer, "Beta" );
-						break;
-					case 0x41:
-						sprintf( szBuffer, "NTSC" );
-						break;
-					case 0x44:
-						sprintf( szBuffer, "Germany" );
-						break;
-					case 0x45:
-						sprintf( szBuffer, "USA" );
-						break;
-					case 0x46:
-						sprintf( szBuffer, "France" );
-						break;
-					case 0x49:
-						sprintf( szBuffer, "Italy" );
-						break;
-					case 0x4A:
-						sprintf( szBuffer, "Japan" );
-						break;
-					case 0x50:
-						sprintf( szBuffer, "Europe" );
-						break;
-					case 0x53:
-						sprintf( szBuffer, "Spain" );
-						break;
-					case 0x55:
-						sprintf( szBuffer, "Australia" );
-						break;
-					case 0x58:
-					case 0x59:
-						sprintf( szBuffer, "PAL" );
-						break;
-					default:
-						sprintf( szBuffer, "Unknown(%02X)", mempak_data[0x303 + (notes_c*32)] );
-					}
-
-					//ListView_SetItemText( hListWindow, i, 1, szBuffer );
-				//	printf("\nitem1: %s",szBuffer ); //country
-					
-					sprintf( szBuffer, "%i", aNoteSizes[notes_c] );
-					
-					//ListView_SetItemText( hListWindow, i, 2, szBuffer );
-				//	printf("\nitem2: %s",szBuffer ); //blocks used for item
-					
-					nNotes++;
-				
-
-							}//for
-							
-						}
-				}
-				
-				int free_c=0;
-				for(free_c=nNotes;free_c<16;free_c++)
-				 printText("[free]", 11, -1, disp);
-				
-				char buff[512];
-				printText("   ", 11, -1, disp);
-				printText("Free space:", 11, -1, disp);
-				sprintf(buff, "%i blocks", iRemainingBlocks );
-				printText(buff, 11, -1, disp);
-	}else{
-					
-		printText("empty", 11, -1, disp);
-	}
-
-}
-
-
-void view_mpk(display_context_t disp){
-
-int free=0;
-
-		printText("Mempak content:", 11, 5, disp);
-	//	printText(" ", 11, -1, disp);
-
-
-                    get_accessories_present();
-
-                    /* Make sure they don't have a rumble pak inserted instead */
-                    switch( identify_accessory( 0 ) )
-                    {
-                        case ACCESSORY_NONE:
-                            
-							printText(" ", 11, -1, disp);
-                            printText("no Mempak", 11, -1, disp);
-                            break;
-                        case ACCESSORY_MEMPAK:
-                        {
-                            int err;
-                            if( (err = validate_mempak( 0 )) )
-                            {
-                                if( err == -3 )
-                                {
-									printText(" ", 11, -1, disp);
-                                  
-                                      printText("not formatted", 11, -1, disp);
-                                }
-                                else
-                                {
-                                   printText(" ", 11, -1, disp);
-                                      printText("read error" , 11, -1, disp);
-                                }
+                    bFirstChar = 1;
+                    for( i = 0; i < (int)strlen(szBuffer); i++ ) {
+                        if( szBuffer[i] == ' ' )
+                            bFirstChar = 1;
+                        else {
+                            if( bFirstChar && ( szBuffer[i] >= 'a') && ( szBuffer[i] <= 'z')) {
+                                bFirstChar = 0;
+                                szBuffer[i] -= 0x20;
                             }
-                            else
-                            {	
-									//clearScreen(disp);
-									//printText("Mempak Content", 9, -1, disp);
-								printText("   ", 11, -1, disp);
-                                for( int j = 0; j < 16; j++ )
-                                {
-                                    entry_structure_t entry;
-
-                                    get_mempak_entry( 0, j, &entry );
-								
-                                    if( entry.valid )
-                                    {
-										char tmp[512];
-										//sprintf(tmp, "%s - %d", entry.name, entry.blocks );
-										sprintf(tmp, "%s", entry.name );
-                                	    printText(tmp, 11, -1, disp);
-										
-                                       
-                                    }
-                                    else
-                                    {
-                                       // printf( "(EMPTY)\n" );
-                                         printText("[free]", 11, -1, disp);
-                                     //   free++;
-                                    }
-                                }
-							
-								char buff[512];
-								printText("   ", 11, -1, disp);
-								printText("Free space:", 11, -1, disp);
-                                sprintf(buff, "%d blocks", get_mempak_free_space( 0 ) );
-                                	 printText(buff, 11, -1, disp);
-                            }
-
-                            break;
                         }
-                        case ACCESSORY_RUMBLEPAK:
-                          
-                             printText("rumblepak inserted", 11, -1, disp);
-                            break;
+                    }
+                    printText(szBuffer, 11, -1, disp);
+
+                    switch( mempak_data[0x303 + (notes_c*32)] )
+                    {
+                    case 0x00:
+                        sprintf( szBuffer, "None" );
+                        break;
+                    case 0x37:
+                        sprintf( szBuffer, "Beta" );
+                        break;
+                    case 0x41:
+                        sprintf( szBuffer, "NTSC" );
+                        break;
+                    case 0x44:
+                        sprintf( szBuffer, "Germany" );
+                        break;
+                    case 0x45:
+                        sprintf( szBuffer, "USA" );
+                        break;
+                    case 0x46:
+                        sprintf( szBuffer, "France" );
+                        break;
+                    case 0x49:
+                        sprintf( szBuffer, "Italy" );
+                        break;
+                    case 0x4A:
+                        sprintf( szBuffer, "Japan" );
+                        break;
+                    case 0x50:
+                        sprintf( szBuffer, "Europe" );
+                        break;
+                    case 0x53:
+                        sprintf( szBuffer, "Spain" );
+                        break;
+                    case 0x55:
+                        sprintf( szBuffer, "Australia" );
+                        break;
+                    case 0x58:
+                    case 0x59:
+                        sprintf( szBuffer, "PAL" );
+                        break;
+                    default:
+                        sprintf( szBuffer, "Unknown(%02X)", mempak_data[0x303 + (notes_c*32)] );
                     }
 
-}              
-                    //break;
+                    sprintf( szBuffer, "%i", aNoteSizes[notes_c] );
+                    nNotes++;
+                }
+            }
+        }
+
+        int free_c=0;
+        for(free_c=nNotes;free_c<16;free_c++)
+            printText("[free]", 11, -1, disp);
+
+        char buff[512];
+        printText("   ", 11, -1, disp);
+        printText("Free space:", 11, -1, disp);
+        sprintf(buff, "%i blocks", iRemainingBlocks );
+        printText(buff, 11, -1, disp);
+    }
+    else {
+        printText("empty", 11, -1, disp);
+    }
+}
+
+void view_mpk(display_context_t disp){
+    int err;
+
+    printText("Mempak content:", 11, 5, disp);
+    get_accessories_present();
+
+    /* Make sure they don't have a rumble pak inserted instead */
+    switch( identify_accessory( 0 ) )
+    {
+    case ACCESSORY_NONE:
+
+        printText(" ", 11, -1, disp);
+        printText("no Mempak", 11, -1, disp);
+        break;
+
+    case ACCESSORY_MEMPAK:
+        if( (err = validate_mempak( 0 )) ) {
+            if( err == -3 ) {
+                printText(" ", 11, -1, disp);
+
+                printText("not formatted", 11, -1, disp);
+            }
+            else {
+                printText(" ", 11, -1, disp);
+                printText("read error" , 11, -1, disp);
+            }
+        }
+        else {
+            printText("   ", 11, -1, disp);
+            for( int j = 0; j < 16; j++ ) {
+                entry_structure_t entry;
+
+                get_mempak_entry( 0, j, &entry );
+
+                if( entry.valid ) {
+                    char tmp[512];
+                    sprintf(tmp, "%s", entry.name );
+                    printText(tmp, 11, -1, disp);
+                }
+                else {
+                    printText("[free]", 11, -1, disp);
+                }
+            }
+
+            char buff[512];
+            printText("   ", 11, -1, disp);
+            printText("Free space:", 11, -1, disp);
+            sprintf(buff, "%d blocks", get_mempak_free_space( 0 ) );
+            printText(buff, 11, -1, disp);
+        }
+        break;
+
+    case ACCESSORY_RUMBLEPAK:
+        printText("rumblepak inserted", 11, -1, disp);
+        break;
+    }
+}
 
 
 //old function to dump a mempak to a file
-void mpk_to_file(display_context_t disp, char *mpk_filename, int quick)
-{
-
+void mpk_to_file(display_context_t disp, char *mpk_filename, int quick) {
     u8 buff[64];
-     u8 v=0;
-     u8 ok=0;
+    u8 v=0;
+    u8 ok=0;
 
-		if(quick)
-		sprintf(buff, "%s%s",mempak_path, mpk_filename);
-		else
-		sprintf(buff, "%s%s.MPK",mempak_path,mpk_filename);
-		
-		
-		FatRecord rec_tmpf;
-		
-		if(!fatFindRecord(buff, &rec_tmpf, 0)){ //filename already exists
-			printText("File exists", 9, -1, disp);
-			if(quick)
-			printText("override", 9, -1, disp);
-			else
-			while(ok==0){
+    if(quick)
+        sprintf(buff, "%s%s",mempak_path, mpk_filename);
+    else
+        sprintf(buff, "%s%s.MPK",mempak_path,mpk_filename);
 
-				
-				sprintf(buff, "%s%s%i.MPK",mempak_path, mpk_filename,v);
+    FatRecord rec_tmpf;
 
+    if(!fatFindRecord(buff, &rec_tmpf, 0)){ //filename already exists
+        printText("File exists", 9, -1, disp);
+        if(quick)
+            printText("override", 9, -1, disp);
+        else
+            while(ok==0){
+                sprintf(buff, "%s%s%i.MPK",mempak_path, mpk_filename,v);
 
-				
-				ok = fatFindRecord(buff, &rec_tmpf, 0);
+                ok = fatFindRecord(buff, &rec_tmpf, 0);
+                if (ok==0)
+                    v++;
+                else
+                    break;
+            }
+    }
 
-				if(ok==0)
-				v++;
-				else break;
+    u8 resp=0;
+    resp = fatCreateRecIfNotExist(buff, 0);
+    resp = fatOpenFileByeName(buff, 32768 / 512);
 
-			}
-		}
-		
-     
+    controller_init();
 
-
-     u8 resp=0;
-
-     resp = fatCreateRecIfNotExist(buff, 0);
-
-        resp = fatOpenFileByeName(buff, 32768 / 512);
-
-
-        controller_init();
-
-         int err = 0;
-
-          for( int j = 0; j < 128; j++ )
-           {
-            err |= read_mempak_sector( 0, j, &mempak_data[j * 256]  );
-          }
+    int err = 0;
+    for( int j = 0; j < 128; j++ ) {
+        err |= read_mempak_sector( 0, j, &mempak_data[j * 256]  );
+    }
 
     fatWriteFile(&mempak_data, 32768 / 512);
 
+    sleep(500);
 
-		sleep(500);
+    sprintf(buff, "File: %s%i.MPK",mpk_filename,v);
 
-	sprintf(buff, "File: %s%i.MPK",mpk_filename,v);
-	
-	printText(buff, 9, -1, disp);
-	printText("backup done...", 9, -1, disp);
-
-	
-
+    printText(buff, 9, -1, disp);
+    printText("backup done...", 9, -1, disp);
 }
-
 
 //before boot_simulation
 //writes a cart-save from a file to the fpga/cart
-int saveTypeFromSd(display_context_t disp, char* rom_name, int stype)
-{
+int saveTypeFromSd(display_context_t disp, char* rom_name, int stype) {
+    rom_load_y();
 
-		rom_load_y();
+    u8 tmp[32];
+    u8 fname[128];
+    u8 found=0;
 
-		u8 tmp[32];
-		u8 fname[128];
-		u8 found=0;
+    int size;
+    size = saveTypeToSize(stype); // int byte
 
-		int size;
-		size = saveTypeToSize(stype); // int byte
+    sprintf(fname, "/ED64/%s/%s.%s",save_path,rom_name, saveTypeToExtension(stype,ext_type));
 
+    uint8_t cartsave_data[size];
 
-		sprintf(fname, "/ED64/%s/%s.%s",save_path,rom_name, saveTypeToExtension(stype,ext_type));
-		
-		uint8_t cartsave_data[size];
-		
-		if(debug){
-		printText(fname, 3, -1, disp);
-		sleep(2000);
-		}
-		
-		FatRecord rec_tmpf;
-		found = fatFindRecord(fname, &rec_tmpf, 0);
+    if (debug) {
+        printText(fname, 3, -1, disp);
+        sleep(2000);
+    }
 
-		if(debug){
-			sprintf(tmp, "fatFindRecord ret=%i",found);	
-			printText(tmp, 3, -1, disp);
-		}
+    FatRecord rec_tmpf;
+    found = fatFindRecord(fname, &rec_tmpf, 0);
 
-		if(found==0){
+    if (debug) {
+        sprintf(tmp, "fatFindRecord ret=%i",found);
+        printText(tmp, 3, -1, disp);
+    }
 
-			//found
-			u8 resp = 0;
-			resp = fatOpenFileByeName(fname, 0);
-				
-			if(debug){			
-				sprintf(tmp, "fatOpenFileByeName ret=%i",resp);	
-				printText(tmp, 3, -1, disp);			
-			}
+    if(found==0){
+        u8 resp = 0;
+        resp = fatOpenFileByeName(fname, 0);
 
+        if (debug) {
+            sprintf(tmp, "fatOpenFileByeName ret=%i",resp);
+            printText(tmp, 3, -1, disp);
+        }
 
-				 resp = fatReadFile(cartsave_data, size / 512);
-				 
-			if(debug){				 
-				sprintf(tmp, "fatReadFile ret=%i",resp);	
-				printText(tmp, 3, -1, disp);	
-			} 
-			
-		}
-		else{
-			printText("no savegame found", 3, -1, disp);
-			//todo clear memory arena 
+        resp = fatReadFile(cartsave_data, size / 512);
 
-			return 0;
-		}
+        if (debug) {
+            sprintf(tmp, "fatReadFile ret=%i",resp);
+            printText(tmp, 3, -1, disp);
+        }
+    }
+    else{
+        printText("no savegame found", 3, -1, disp);
+        //todo clear memory arena
 
-		if(gb_load_y!=1)
-		if(  pushSaveToCart(stype, cartsave_data)  ){
-			
-			printText("save upload done...", 3, -1, disp);
-		}
-		else{
-			
-			printText("pushSaveToCart error", 3, -1, disp);
-		}
-		
-	return 1;
+        return 0;
+    }
+
+    if(gb_load_y!=1) {
+        if( pushSaveToCart(stype, cartsave_data) ){
+
+            printText("save upload done...", 3, -1, disp);
+        }
+        else{
+
+            printText("pushSaveToCart error", 3, -1, disp);
+        }
+    }
+
+    return 1;
 }
 
 
-int saveTypeToSd(display_context_t disp, char* rom_name ,int stype)
-{
+int saveTypeToSd(display_context_t disp, char* rom_name ,int stype) {
+    rom_load_y();
 
-		rom_load_y();
-		
-		//after reset create new savefile
-		u8 tmp[32];
-		u8 fname[128]; //filename buffer to small :D
-		u8 found=0;
-		
-		int size;
-		size = saveTypeToSize(stype); // int byte
+    //after reset create new savefile
+    u8 tmp[32];
+    u8 fname[128]; //filename buffer to small :D
+    u8 found=0;
 
-		if(debug){
-			sprintf(tmp, "size for save=%i",size);	
-			printText(tmp, 3, -1, disp);	
-		}
+    int size;
+    size = saveTypeToSize(stype); // int byte
+
+    if (debug) {
+        sprintf(tmp, "size for save=%i",size);
+        printText(tmp, 3, -1, disp);
+    }
 
 
-		sprintf(fname, "/ED64/%s/%s.%s",save_path,rom_name,saveTypeToExtension(stype,ext_type));
+    sprintf(fname, "/ED64/%s/%s.%s",save_path,rom_name,saveTypeToExtension(stype,ext_type));
 
-		//if(debug)
-		//	printText(rom_name, 3, -1, disp);
-		//	sleep(3000);
+    FatRecord rec_tmpf;
+    found = fatFindRecord(fname, &rec_tmpf, 0);
 
-		FatRecord rec_tmpf;
-		found = fatFindRecord(fname, &rec_tmpf, 0);
+    if (debug) {
+        sprintf(tmp, "found=%i",found);
+        printText(tmp, 3, -1, disp);
+    }
 
-		if(debug){		
-			sprintf(tmp, "found=%i",found);	
-			printText(tmp, 3, -1, disp);	
-		}
-		
-		u8 resp=0;
-		
-		//FAT_ERR_NOT_EXIST 100
-		if(found!=0){
-			//create before save
-			printText("try fatCreateRecIfNotExist", 3, -1, disp);
-			resp = fatCreateRecIfNotExist(fname, 0);
+    u8 resp=0;
 
-			if(debug){				
-				sprintf(tmp, "fatCreateRecIfNotExist ret=%i",resp);	//0 means try to create
-				printText(tmp, 3, -1, disp);	
-			}
-		}
-		
-		//open file with stype size
-		resp = fatOpenFileByeName(fname, size / 512);
-		
-		if(debug){			
-			sprintf(tmp, "fatOpenFileByeName ret=%i",resp);	//100 not exist
-			printText(tmp, 3, -1, disp);
-		}
-		
-		//for savegame
-		uint8_t cartsave_data[size];
-		
-		for(int zero=0; zero<size;zero++)
-		cartsave_data[zero]=0;
+    //FAT_ERR_NOT_EXIST 100
+    if(found!=0){
+        //create before save
+        printText("try fatCreateRecIfNotExist", 3, -1, disp);
+        resp = fatCreateRecIfNotExist(fname, 0);
 
-		if(debug){	
-			sprintf(tmp, "cartsave_data=%p",&cartsave_data);
-			printText(tmp, 3, -1, disp);
-		}
-			//pdbg1(disp,cartsave_data);
+        if (debug) {
+            sprintf(tmp, "fatCreateRecIfNotExist ret=%i",resp);    //0 means try to create
+            printText(tmp, 3, -1, disp);
+        }
+    }
 
+    //open file with stype size
+    resp = fatOpenFileByeName(fname, size / 512);
 
+    if (debug) {
+        sprintf(tmp, "fatOpenFileByeName ret=%i",resp);    //100 not exist
+        printText(tmp, 3, -1, disp);
+    }
 
-		//universal dumpfunction
-		//returns data from fpga/cart to save on sd
-		
-		if(getSaveFromCart(stype, cartsave_data)){
-			printText("got save from fpga", 3, -1, disp);
-				//write to file
-			
-			if(gb_load_y!=1)
-			fatWriteFile(&cartsave_data, size / 512);
-			
-			printText("reset-save done...", 3, -1, disp);
-			sleep(3000);
-			return 1;
-		}
-		else{
-			
-			
-			printText("getSaveFromCart error", 3, -1, disp);
-			sleep(3000);
-			return 0;
-		}
+    //for savegame
+    uint8_t cartsave_data[size];
+
+    for(int zero=0; zero<size;zero++)
+        cartsave_data[zero]=0;
+
+    if (debug) {
+        sprintf(tmp, "cartsave_data=%p",&cartsave_data);
+        printText(tmp, 3, -1, disp);
+    }
+
+    //universal dumpfunction
+    //returns data from fpga/cart to save on sd
+
+    if(getSaveFromCart(stype, cartsave_data)) {
+        printText("got save from fpga", 3, -1, disp);
+        //write to file
+
+        if(gb_load_y!=1)
+            fatWriteFile(&cartsave_data, size / 512);
+
+        printText("reset-save done...", 3, -1, disp);
+        sleep(3000);
+        return 1;
+    }
+    else {
+        printText("getSaveFromCart error", 3, -1, disp);
+        sleep(3000);
+        return 0;
+    }
 }
 
 
 //check out the userfriendly ini file for config-information
 
 int readConfigFile(void){
-	//var file readin
-	u8 tmp[32];
-	u8 filename[32];
-	u8 ok=0;
+    //var file readin
+    u8 tmp[32];
+    u8 filename[32];
+    u8 ok=0;
 
-	//config filename
-	sprintf(filename, "/ED64/ALT64.INI");
-	FatRecord rec_tmpf;
-	ok = fatFindRecord(filename, &rec_tmpf, 0);
-	
-	u8 resp = 0;
-	resp = fatOpenFileByeName(filename, 0);
-	
-	//filesize of the opend file -> is the readfile / 512
-	int fsize= file.sec_available*512;
-	char config_rawdata[fsize];
+    //config filename
+    sprintf(filename, "/ED64/ALT64.INI");
+    FatRecord rec_tmpf;
+    ok = fatFindRecord(filename, &rec_tmpf, 0);
 
-	resp = fatReadFile(&config_rawdata, fsize / 512); //1 cluster
+    u8 resp = 0;
+    resp = fatOpenFileByeName(filename, 0);
+
+    //filesize of the opend file -> is the readfile / 512
+    int fsize= file.sec_available*512;
+    char config_rawdata[fsize];
+
+    resp = fatReadFile(&config_rawdata, fsize / 512); //1 cluster
     configuration config;
 
     if (ini_parse_str(config_rawdata, configHandler, &config) < 0) {
-      //  printText("Can't load 'alt64.ini'\n", 3, -1, disp);
-      return 0;
+        return 0;
     }
-    else
-    {
-		
-		border_color_1_s=config.border_color_1;
-		border_color_2_s=config.border_color_2;
-		box_color_s=config.box_color;
-		selection_color_s=config.selection_color;
-		selection_font_color_s=config.selection_font_color;
-		list_font_color_s=config.list_font_color;
-		list_dir_font_color_s=config.list_dir_font_color;
-		
-		mempak_path=config.mempak_path;
-		save_path=config.save_path;
-		sound_on=config.sound_on;
-		page_display=config.page_display;
-		tv_mode=config.tv_mode;
-		quick_boot=config.quick_boot;
-		enable_colored_list=config.enable_colored_list;
-		ext_type=config.ext_type;
-		cd_behaviour=config.cd_behaviour;
-		scroll_behaviour=config.scroll_behaviour;
-		text_offset=config.text_offset;
-		hide_sysfolder=config.hide_sysfolder;
-		sd_speed=config.sd_speed;
-		background_image=config.background_image;
+    else {
+        border_color_1_s=config.border_color_1;
+        border_color_2_s=config.border_color_2;
+        box_color_s=config.box_color;
+        selection_color_s=config.selection_color;
+        selection_font_color_s=config.selection_font_color;
+        list_font_color_s=config.list_font_color;
+        list_dir_font_color_s=config.list_dir_font_color;
 
-		return 1;
+        mempak_path=config.mempak_path;
+        save_path=config.save_path;
+        sound_on=config.sound_on;
+        page_display=config.page_display;
+        tv_mode=config.tv_mode;
+        quick_boot=config.quick_boot;
+        enable_colored_list=config.enable_colored_list;
+        ext_type=config.ext_type;
+        cd_behaviour=config.cd_behaviour;
+        scroll_behaviour=config.scroll_behaviour;
+        text_offset=config.text_offset;
+        hide_sysfolder=config.hide_sysfolder;
+        sd_speed=config.sd_speed;
+        background_image=config.background_image;
+
+        return 1;
     }
 }
-
 
 int str2int(char data){
-  data -= '0';
-  if (data>9) data-= 7;
-  return data;
+    data -= '0';
+    if (data>9)
+        data-= 7;
+
+    return data;
 }
 
-
 uint32_t translate_color(char *hexstring){
-	
-int 	r = str2int(hexstring[0])*16 + str2int(hexstring[1]);
-int 	g = str2int(hexstring[2])*16 + str2int(hexstring[3]);
-int 	b = str2int(hexstring[4])*16 + str2int(hexstring[5]);
-int 	a = str2int(hexstring[6])*16 + str2int(hexstring[7]);
+    int r = str2int(hexstring[0])*16 + str2int(hexstring[1]);
+    int g = str2int(hexstring[2])*16 + str2int(hexstring[3]);
+    int b = str2int(hexstring[4])*16 + str2int(hexstring[5]);
+    int a = str2int(hexstring[6])*16 + str2int(hexstring[7]);
 
-
-return graphics_make_color	(r,g,b,a);
-}		
-
+    return graphics_make_color(r,g,b,a);
+}
 
 //init fat filesystem after everdrive init and before sdcard access
 void initFilesystem(void){
+    sleep(1000);
+    evd_ulockRegs();
+    sleep(1000);
 
-	sleep(1000);
-	evd_ulockRegs(); 
-	sleep(1000);
-
-	fatInitRam();
-	fatInit();
-	fat_initialized=1;
+    fatInitRam();
+    fatInit();
+    fat_initialized=1;
 }
-
 
 //prints the sdcard-filesystem content
 void readSDcard(display_context_t disp, char *directory){
+    //todo: check out the minimal sleeping needs
+    //color test
 
-//todo: check out the minimal sleeping needs
-//color test
+    FatRecord *frec;
+    u8 cresp = 0;
+    count = 1;
 
+    //load the directory-entry
+    cresp = fatLoadDirByName("/ED64/CFG");
 
+    int dsize=dir->size;
+    char colorlist[dsize][256];
 
-	
-	FatRecord *frec;
-	u8 cresp = 0;
-				
-	count = 1;
-	//dir_t buf;
+    if(enable_colored_list){
+        for (int i = 0; i < dir->size; i++){
+            frec = dir->rec[i];
+            u8 rom_cfg_file[128];
 
-	//load the directory-entry
-	cresp = fatLoadDirByName("/ED64/CFG");
+            //set rom_cfg
+            sprintf(rom_cfg_file, "/ED64/CFG/%s",frec->name );
 
-	int dsize=dir->size;
+            static uint8_t cfg_file_data[512] = { 0 };
+            cresp = fatOpenFileByeName(rom_cfg_file, 0); //512 bytes fix one cluster
+            cresp = fatReadFile(&cfg_file_data, 1);
 
-	char colorlist[dsize][256];
-	
-if(enable_colored_list){
-	
-	for (int i = 0; i < dir->size; i++){
-		
-		frec = dir->rec[i];
-			
-			
-		u8 rom_cfg_file[128];
-		
-		//set rom_cfg 
-		sprintf(rom_cfg_file, "/ED64/CFG/%s",frec->name );
-		
-		static uint8_t cfg_file_data[512] = { 0 }; 
-		
-		cresp = fatOpenFileByeName(rom_cfg_file, 0); //512 bytes fix one cluster
-		cresp = fatReadFile(&cfg_file_data, 1);
-		
-		
-		colorlist[i][0]=(char)cfg_file_data[5]; //color
-		strcpy(colorlist[i]+1, cfg_file_data+32);	//fullpath
-	}
-}
-	//qsort(toplist, dsize, 256, compare_int_reverse);
-
-
-
-
-
-//#############################################
-//#############################################
-//#############################################
-	
-		clearScreen(disp);
-		printText("SD-Card loading...", 3, 4, disp); //very short display time maybe comment out
-
-		u8 buff[32];
-   
-		//some trash buffer
-		FatRecord *rec;
-		u8 resp = 0;
-					
-		count = 1;
-		dir_t buf;
-	
-		//load the directory-entry
-		resp = fatLoadDirByName(directory);
-				
-		if (resp!=0){
-			char error_msg[32];
-			sprintf(error_msg,"CHDIR ERROR: %i", resp); 
-			printText(error_msg, 3, -1, disp);
-			sleep(3000);
-		}
-		
-
-		//clear screen and print the directory name
-		clearScreen(disp);
-
-		//creates string list of files and directorys
-		 for (int i = 0; i < dir->size; i++) {
-        	char name_tmpl[32];
-        	rec = dir->rec[i];
-        	
-        	
-        	if(strcmp(rec->name,"ED64")==0 && hide_sysfolder==1){ 
-			//don't add
-			}else{
-        	
-        	
-        	if(rec->is_dir){
-			list[count-1].type = DT_DIR; //2 is dir +1
-			}
-			else{
-			list[count-1].type = DT_REG; //1 is file +1
-			}
-			
-        strcpy(list[count-1].filename, rec->name); //+1
-        
-        
-        //new color test
-        list[count-1].color = 0; 
-
-		if(enable_colored_list){
-        for(int c=0; c<dsize; c++){
-			
-			u8 short_name[256];
-			
-			sprintf(short_name, "%s", colorlist[c]+1);
-			
-			u8 * pch_s; // point-offset
-			pch_s=strrchr(short_name,'/');	
-			
-			if(strcmp(list[count-1].filename, pch_s+1)==0){
-			
-			 list[count-1].color = colorlist[c][0]; 
-			
-			}
-		}
-		//new color test end
-		}
-        
-		count++;
-		list = realloc(list, sizeof(direntry_t) * count);
-		}
-		
+            colorlist[i][0]=(char)cfg_file_data[5]; //color
+            strcpy(colorlist[i]+1, cfg_file_data+32);    //fullpath
         }
-		count--;
-					
-		page = 0;
-        cursor = 0;
-        select_mode=1;	
-		
-		
-		if(count > 0)
-		{
-			/* Should sort! */
-			qsort(list, count, sizeof(direntry_t), compare);
-		}
-		
-		
-		//print directory
-		display_dir(list, cursor, page, MAX_LIST, count, disp);
-}
+    }
 
+
+    clearScreen(disp);
+    printText("SD-Card loading...", 3, 4, disp); //very short display time maybe comment out
+
+    u8 buff[32];
+
+    //some trash buffer
+    FatRecord *rec;
+    u8 resp = 0;
+
+    count = 1;
+    dir_t buf;
+
+    //load the directory-entry
+    resp = fatLoadDirByName(directory);
+
+    if (resp!=0){
+        char error_msg[32];
+        sprintf(error_msg,"CHDIR ERROR: %i", resp);
+        printText(error_msg, 3, -1, disp);
+        sleep(3000);
+    }
+
+
+    //clear screen and print the directory name
+    clearScreen(disp);
+
+    //creates string list of files and directorys
+    for (int i = 0; i < dir->size; i++) {
+        char name_tmpl[32];
+        rec = dir->rec[i];
+
+        if(strcmp(rec->name,"ED64")==0 && hide_sysfolder==1){
+            //don't add
+        }
+        else{
+            if(rec->is_dir){
+                list[count-1].type = DT_DIR; //2 is dir +1
+            }
+            else{
+                list[count-1].type = DT_REG; //1 is file +1
+            }
+
+            strcpy(list[count-1].filename, rec->name); //+1
+
+            //new color test
+            list[count-1].color = 0;
+
+            if(enable_colored_list){
+                for(int c=0; c<dsize; c++){
+
+                    u8 short_name[256];
+
+                    sprintf(short_name, "%s", colorlist[c]+1);
+
+                    u8 * pch_s; // point-offset
+                    pch_s=strrchr(short_name,'/');
+
+                    if(strcmp(list[count-1].filename, pch_s+1)==0){
+
+                     list[count-1].color = colorlist[c][0];
+
+                    }
+                }
+                //new color test end
+            }
+
+            count++;
+            list = realloc(list, sizeof(direntry_t) * count);
+        }
+    }
+    count--;
+
+    page = 0;
+    cursor = 0;
+    select_mode=1;
+
+    if(count > 0) {
+        /* Should sort! */
+        qsort(list, count, sizeof(direntry_t), compare);
+    }
+
+    //print directory
+    display_dir(list, cursor, page, MAX_LIST, count, disp);
+}
 
 //void readCheatFile(char *filename, display_context_t disp){
 int readCheatFile(char *filename){
-	
-		//var file readin
-	u8 tmp[32];
-	u8 ok=0;
-	u8 firstr=1;
+    //var file readin
+    u8 tmp[32];
+    u8 ok=0;
+    u8 firstr=1;
 
     char *cp, *vp, *dp;
     char buffer[512];
@@ -2663,1165 +2161,1025 @@ int readCheatFile(char *filename){
     char buff[512];
 
     int i = 0, j, type, offset = 0;
-    
+
     int curr_cheat = -1;
-    
-	FatRecord rec_tmpf;
-	ok = fatFindRecord(filename, &rec_tmpf, 0);
-	
-	if(ok!=0){
-	return -1; //err file not found
-	}
-	else{
-				u8 resp = 0;
-				resp = fatOpenFileByeName(filename, 0);
-				
-				//filesize of the opend file -> is the readfile / 512
-				int fsize= file.sec_available*512;
-				char cheatfile_rawdata[fsize];
 
-				resp = fatReadFile(&cheatfile_rawdata, fsize / 512); //1 cluster
-				
+    FatRecord rec_tmpf;
+    ok = fatFindRecord(filename, &rec_tmpf, 0);
 
-				int line_chr=0;
-				long c=0;
-				
-				for(c=0;c<fsize;c++){
+    if(ok!=0){
+        return -1; //err file not found
+    }
+    else{
+        u8 resp = 0;
+        resp = fatOpenFileByeName(filename, 0);
 
-						buff[line_chr++]=cheatfile_rawdata[c];
+        //filesize of the opend file -> is the readfile / 512
+        int fsize= file.sec_available*512;
+        char cheatfile_rawdata[fsize];
 
-					if(cheatfile_rawdata[c]=='\n'){
-						i = 0;
+        resp = fatReadFile(&cheatfile_rawdata, fsize / 512); //1 cluster
 
-									// process GameShark Code line
-									cp = vp = dp = NULL;
-									
-				
-									while ((buff[i] == ' ') || (buff[i] == '\t')) i++; // skip initial whitespace
-		
+        int line_chr=0;
+        long c=0;
 
-									// check for blank line
-									if ((buff[i] == '\n') || (buff[i] == '\r')) //carriage return
-									{
+        for(c=0;c<fsize;c++){
+            buff[line_chr++]=cheatfile_rawdata[c];
 
-										line_chr=0; 
-										continue; // skip
-									}
+            if(cheatfile_rawdata[c]=='\n'){
+                i = 0;
 
-									if ((buff[i] == '#') || (buff[i] == ';'))
-									{
-										line_chr=0; 
-										continue; // skip
-									}
-								
-									cp = &buff[i];
-				
-									
-									while ((buff[i] != ' ') && (buff[i] != '\t') && (buff[i] != '\n') && (buff[i] != '\r')) i++; 
-									
-									buff[i] =0;
-									i++;
-							
-									while ((buff[i] == ' ') || (buff[i] == '\t')) i++; // skip whitespace
-									vp = &buff[i];
-									while ((buff[i] != ' ') && (buff[i] != '\t') && (buff[i] != '\n') && (buff[i] != '\r')) i++; // find end of GameShark code value
-									if ((buff[i] == ' ') || (buff[i] == '\t'))
-									{
+                // process GameShark Code line
+                cp = vp = dp = NULL;
 
-										buff[i] =0;
-										i++;
-										while ((buff[i] == ' ') || (buff[i] == '\t')) i++; // skip whitespace
-										if ((buff[i] != '\n') && (buff[i] != '\r') && (buff[i] != '#') && (buff[i] != ';'))
-										{
-											dp = &buff[i];
-											while ((buff[i] != '\n') && (buff[i] != '\r')) i++; // find end of GameShark code description
+                while ((buff[i] == ' ') || (buff[i] == '\t'))
+                    i++; // skip initial whitespace
 
-											buff[i] =0;
-										}
-									}
-									else
-									{
+                // check for blank line
+                if ((buff[i] == '\n') || (buff[i] == '\r')) //carriage return
+                {
+                    line_chr=0;
+                    continue; // skip
+                }
 
-										buff[i] =0;
-									}
+                if ((buff[i] == '#') || (buff[i] == ';')) {
+                    line_chr=0;
+                    continue; // skip
+                }
 
-									if (dp)
-									{
+                cp = &buff[i];
 
-										// starting new cheat
-										curr_cheat++;
-										gGSCodes[curr_cheat].description= strdup(dp);
-										gGSCodes[curr_cheat].gscodes = NULL;
-										gGSCodes[curr_cheat].count = 0;
-										gGSCodes[curr_cheat].state = 1;//(gCheats == 2) ? 1 : 0;
-										gGSCodes[curr_cheat].mask = 0;
-										if (!ishexchar(vp[3]))
-											gGSCodes[curr_cheat].mask |= 0x000F;
-										if (!ishexchar(vp[2]))
-											gGSCodes[curr_cheat].mask |= 0x00F0;
-										if (!ishexchar(vp[1]))
-											gGSCodes[curr_cheat].mask |= 0x0F00;
-										if (!ishexchar(vp[0]))
-											gGSCodes[curr_cheat].mask |= 0xF000;
-										gGSCodes[curr_cheat].value = 0;
-										offset = 0;
-									}
+                while ((buff[i] != ' ') && (buff[i] != '\t') && (buff[i] != '\n') && (buff[i] != '\r'))
+                    i++;
 
-									if (curr_cheat < 0)
-										continue; // safety check
+                buff[i] = 0;
+                i++;
 
-									temp[0] = cp[0];
-									temp[1] = cp[1];
-									temp[2] = 0;
-									type = strtol(temp, (char **)NULL, 16);
+                while ((buff[i] == ' ') || (buff[i] == '\t'))
+                    i++; // skip whitespace
 
-									
-							
-									switch(type)
-									{
-										case 0x50:
-											// patch codes - unimplemented, also skips next line
-											// 5000XXYY 00ZZ
-											// TTTTTTTT VVVV
-											//f_gets(buffer, 512, &lSDFile);
-													//skip next line missing
-											break;
-										case 0x80:
-											// write 8-bit value to (cached) ram continuously
-											// 80XXYYYY 00ZZ
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-										
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-										case 0x81:
-											// write 16-bit value to (cached) ram continuously
-											// 81XXYYYY ZZZZ
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-										
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-										case 0x88:
-											// write 8-bit value to (cached) ram on GS button pressed - unimplemented
-											// 88XXYYYY 00ZZ
-											break;
-										case 0x89:
-											// write 16-bit value to (cached) ram on GS button pressed - unimplemented
-											// 89XXYYYY ZZZZ
-											break;
-										case 0xA0:
-											// write 8-bit value to (uncached) ram continuously
-											// A0XXYYYY 00ZZ => 3C1A A0XX 375A YYYY 241B 00ZZ A35B 0000
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-										case 0xA1:
-											// write 16-bit value to (uncached) ram continuously
-											// A1XXYYYY ZZZZ => 3C1A A0XX 375A YYYY 241B ZZZZ A75B 0000
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-										case 0xCC:
-											// deactivate expansion ram using 3rd method
-											// CC000000 0000
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-										case 0xD0:
-											// do next gs code if ram location is equal to 8-bit value
-											// D0XXYYYY 00ZZ
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-										case 0xD1:
-											// do next gs code if ram location is equal to 16-bit value
-											// D1XXYYYY ZZZZ
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-										case 0xD2:
-											// do next gs code if ram location is not equal to 8-bit value
-											// D2XXYYYY 00ZZ
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-										case 0xD3:
-											// do next gs code if ram location is not equal to 16-bit value
-											// D1XXYYYY ZZZZ
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-										case 0xDD:
-											// deactivate expansion ram using 2nd method
-											// DD000000 0000
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-										case 0xDE:
-											// set game boot address
-											// DEXXXXXX 0000
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-										case 0xEE:
-											// deactivate expansion ram using 1st method
-											// EE000000 0000
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-										case 0xF0:
-											// write 8-bit value to (cached) ram before boot
-											// F0XXXXXX 00YY
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-										case 0xF1:
-											// write 16-bit value to (cached) ram before boot
-											// F1XXXXXX YYYY
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-										case 0xFF:
-											// set code base
-											// FFXXXXXX 0000
-											if (gGSCodes[curr_cheat].gscodes)
-												gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-											else
-												gGSCodes[curr_cheat].gscodes = malloc(16);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-											memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-											gGSCodes[curr_cheat].count++;
-											offset += 16;
-											break;
-									}
-									
-									line_chr=0; 
-								
-										
-								}
-							
+                vp = &buff[i];
+                while ((buff[i] != ' ') && (buff[i] != '\t') && (buff[i] != '\n') && (buff[i] != '\r'))
+                    i++; // find end of GameShark code value
 
-						}
-							curr_cheat++;
-								gGSCodes[curr_cheat].count = 0xFFFF; // end of table
-								gGSCodes[curr_cheat].gscodes = NULL;
-								gGSCodes[curr_cheat].state = 0;
-			}
-			return 0; //ok
-	}
-	
+                if ((buff[i] == ' ') || (buff[i] == '\t')) {
+                    buff[i] =0;
+                    i++;
 
+                    while ((buff[i] == ' ') || (buff[i] == '\t'))
+                        i++; // skip whitespace
 
+                    if ((buff[i] != '\n') && (buff[i] != '\r') && (buff[i] != '#') && (buff[i] != ';')) {
+                        dp = &buff[i];
 
+                        while ((buff[i] != '\n') && (buff[i] != '\r'))
+                            i++; // find end of GameShark code description
 
-void timing(display_context_t disp){
+                        buff[i] =0;
+                    }
+                }
+                else {
+                    buff[i] =0;
+                }
 
-	unsigned char tmp[32];
+                if (dp) {
+                    // starting new cheat
+                    curr_cheat++;
 
-	IO_WRITE(PI_STATUS_REG, 0x02);
+                    gGSCodes[curr_cheat].description= strdup(dp);
+                    gGSCodes[curr_cheat].gscodes = NULL;
+                    gGSCodes[curr_cheat].count = 0;
+                    gGSCodes[curr_cheat].state = 1;
+                    gGSCodes[curr_cheat].mask = 0;
 
-	u32 pi0 =  IO_READ(PI_BSD_DOM1_LAT_REG);
-	u32 pi1 =  IO_READ(PI_BSD_DOM1_PWD_REG);
-	u32 pi2 =  IO_READ(PI_BSD_DOM1_PGS_REG);
-	u32 pi3 =  IO_READ(PI_BSD_DOM1_RLS_REG);
+                    if (!ishexchar(vp[3]))
+                        gGSCodes[curr_cheat].mask |= 0x000F;
 
-	printText("timing dom1:", 3, -1, disp);
-	sprintf(tmp, "lat=%x pwd=%x\npgs=%x rls=%x",pi0,pi1,pi2,pi3);
-	printText(tmp, 3, -1, disp);
+                    if (!ishexchar(vp[2]))
+                        gGSCodes[curr_cheat].mask |= 0x00F0;
+
+                    if (!ishexchar(vp[1]))
+                        gGSCodes[curr_cheat].mask |= 0x0F00;
+
+                    if (!ishexchar(vp[0]))
+                        gGSCodes[curr_cheat].mask |= 0xF000;
+
+                    gGSCodes[curr_cheat].value = 0;
+                    offset = 0;
+                }
+
+                if (curr_cheat < 0)
+                    continue; // safety check
+
+                temp[0] = cp[0];
+                temp[1] = cp[1];
+                temp[2] = 0;
+                type = strtol(temp, (char **)NULL, 16);
+
+                switch (type) {
+                case 0x50:
+                    // patch codes - unimplemented, also skips next line
+                    // 5000XXYY 00ZZ
+                    // TTTTTTTT VVVV
+                    //skip next line missing
+                    break;
+
+                case 0x80:
+                    // write 8-bit value to (cached) ram continuously
+                    // 80XXYYYY 00ZZ
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+
+                case 0x81:
+                    // write 16-bit value to (cached) ram continuously
+                    // 81XXYYYY ZZZZ
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+
+                case 0x88:
+                    // write 8-bit value to (cached) ram on GS button pressed - unimplemented
+                    // 88XXYYYY 00ZZ
+                    break;
+
+                case 0x89:
+                    // write 16-bit value to (cached) ram on GS button pressed - unimplemented
+                    // 89XXYYYY ZZZZ
+                    break;
+
+                case 0xA0:
+                    // write 8-bit value to (uncached) ram continuously
+                    // A0XXYYYY 00ZZ => 3C1A A0XX 375A YYYY 241B 00ZZ A35B 0000
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+
+                case 0xA1:
+                    // write 16-bit value to (uncached) ram continuously
+                    // A1XXYYYY ZZZZ => 3C1A A0XX 375A YYYY 241B ZZZZ A75B 0000
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+
+                case 0xCC:
+                    // deactivate expansion ram using 3rd method
+                    // CC000000 0000
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+
+                case 0xD0:
+                    // do next gs code if ram location is equal to 8-bit value
+                    // D0XXYYYY 00ZZ
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+
+                case 0xD1:
+                    // do next gs code if ram location is equal to 16-bit value
+                    // D1XXYYYY ZZZZ
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+
+                case 0xD2:
+                    // do next gs code if ram location is not equal to 8-bit value
+                    // D2XXYYYY 00ZZ
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+
+                case 0xD3:
+                    // do next gs code if ram location is not equal to 16-bit value
+                    // D1XXYYYY ZZZZ
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+
+                case 0xDD:
+                    // deactivate expansion ram using 2nd method
+                    // DD000000 0000
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+
+                case 0xDE:
+                    // set game boot address
+                    // DEXXXXXX 0000
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+
+                case 0xEE:
+                    // deactivate expansion ram using 1st method
+                    // EE000000 0000
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+
+                case 0xF0:
+                    // write 8-bit value to (cached) ram before boot
+                    // F0XXXXXX 00YY
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+
+                case 0xF1:
+                    // write 16-bit value to (cached) ram before boot
+                    // F1XXXXXX YYYY
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+
+                case 0xFF:
+                    // set code base
+                    // FFXXXXXX 0000
+                    if (gGSCodes[curr_cheat].gscodes)
+                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
+                    else
+                        gGSCodes[curr_cheat].gscodes = malloc(16);
+
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
+                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
+                    gGSCodes[curr_cheat].count++;
+                    offset += 16;
+                    break;
+                }
+
+                line_chr=0;
+            }
+        }
+
+        curr_cheat++;
+        gGSCodes[curr_cheat].count = 0xFFFF; // end of table
+        gGSCodes[curr_cheat].gscodes = NULL;
+        gGSCodes[curr_cheat].state = 0;
+    }
+
+    return 0; //ok
 }
 
+void timing(display_context_t disp){
+    unsigned char tmp[32];
 
+    IO_WRITE(PI_STATUS_REG, 0x02);
+
+    u32 pi0 =  IO_READ(PI_BSD_DOM1_LAT_REG);
+    u32 pi1 =  IO_READ(PI_BSD_DOM1_PWD_REG);
+    u32 pi2 =  IO_READ(PI_BSD_DOM1_PGS_REG);
+    u32 pi3 =  IO_READ(PI_BSD_DOM1_RLS_REG);
+
+    printText("timing dom1:", 3, -1, disp);
+    sprintf(tmp, "lat=%x pwd=%x\npgs=%x rls=%x",pi0,pi1,pi2,pi3);
+    printText(tmp, 3, -1, disp);
+}
 
 void bootRom(display_context_t disp, int silent){
+    if(boot_cic!=0){
+        if(boot_save!=0){
+            u8 cfg_file[32];
+            u8 found=0;
+            u8 resp=0;
+            u8 tmp[32];
 
+            //set cfg file with last loaded cart info and save-type
+            sprintf(cfg_file, "/ED64/%s/LAST.CRT",save_path);
 
+            resp = fatCreateRecIfNotExist(cfg_file, 0);
+            resp = fatOpenFileByeName(cfg_file, 1); //512 bytes fix one cluster
 
+            static uint8_t cfg_file_data[512] = { 0 };
+            cfg_file_data[0]=boot_save;
+            cfg_file_data[1]=boot_cic;
+            scopy(rom_filename, cfg_file_data+2);
 
-	if(boot_cic!=0){
-		
-		if(boot_save!=0){
-			
-			u8 cfg_file[32];
-			u8 found=0;
-			u8 resp=0;
-			u8 tmp[32];
-			
-			
+            fatWriteFile(&cfg_file_data, 1);
 
+            sleep(500);
+            //set the fpga cart-save tpye
 
-			//set cfg file with last loaded cart info and save-type
-			sprintf(cfg_file, "/ED64/%s/LAST.CRT",save_path);
+            evd_setSaveType(boot_save);
 
-			resp = fatCreateRecIfNotExist(cfg_file, 0);
-			resp = fatOpenFileByeName(cfg_file, 1); //512 bytes fix one cluster
+            if (debug)  printText("try to restore save from sd", 3, -1, disp);
+            resp = saveTypeFromSd(disp, rom_filename, boot_save);
 
-			//rom_filename[strlen(rom_filename)-4]='\0'; //cut extension
-						
-			static uint8_t cfg_file_data[512] = { 0 }; 
-			cfg_file_data[0]=boot_save;
-			cfg_file_data[1]=boot_cic;
-			scopy(rom_filename, cfg_file_data+2);
-			//cfg_file_data[1]=cartID[0];
-			//cfg_file_data[2]=cartID[1];
-			//cfg_file_data[3]=cartID[2];
-			//cfg_file_data[4]=cartID[3];
-		
-			fatWriteFile(&cfg_file_data, 1);
+            if (debug) {
+                sprintf(tmp, "saveTypeFromSd ret=%i",resp);
+                printText(tmp, 3, -1, disp);
+            }
+        }
 
+        if (debug) {
+            printText("Cartridge-Savetype set", 3, -1, disp);
+            printText("information stored for reboot-save...", 3, -1, disp);
+        }
 
-			sleep(500);
-			//set the fpga cart-save tpye
+        sleep(50);
 
-		//	if(boot_save!=5)
-			evd_setSaveType(boot_save);
-			
-			
-			if(debug) printText("try to restore save from sd", 3, -1, disp);
-			resp = saveTypeFromSd(disp, rom_filename, boot_save);
-			
-			if(debug){
-				sprintf(tmp, "saveTypeFromSd ret=%i",resp);	
-				printText(tmp, 3, -1, disp);
-			}
-		
-		
+        u32 cart, country;
+        u32 info = *(vu32 *)0xB000003C;
+        cart = info >> 16;
+        country = (info >> 8) & 0xFF;
 
+        if(cheats_on){
+            gCheats=1;
+            printText("try to load cheat-file...", 3, -1, disp);
 
-			
-			
-		}
-		
-		if(debug)	 
-		printText("Cartridge-Savetype set", 3, -1, disp);
-		
-		if(debug)
-		printText("information stored for reboot-save...", 3, -1, disp);
-		sleep(50);
+            char cheat_filename[64];
+            sprintf(cheat_filename,"/ED64/CHEATS/%s.cht",rom_filename);
 
-		u32 cart, country;
-		u32 info = *(vu32 *)0xB000003C;
-		cart = info >> 16;
-		country = (info >> 8) & 0xFF;
+            int ok = readCheatFile(cheat_filename);
+            if(ok==0) {
+                if(!silent)
+                    printText("cheats found...", 3, -1, disp);
 
-			
+                sleep(600);
+            }
+            else {
+                if(!silent)
+                    printText("cheats not found...", 3, -1, disp);
 
-		if(cheats_on){
-			
-			gCheats=1;
-			printText("try to load cheat-file...", 3, -1, disp);
-			
-			char cheat_filename[64];
-			//rom_filename[strlen(rom_filename)-4]='\0'; // cut extension - already cut
-			sprintf(cheat_filename,"/ED64/CHEATS/%s.cht",rom_filename);
-			
-			int ok = readCheatFile(cheat_filename);
-			
-			if(ok==0)
-			{
-				if(!silent)
-				printText("cheats found...", 3, -1, disp);
-				sleep(600);
-			}else{
-					if(!silent)
-					printText("cheats not found...", 3, -1, disp);
-					gCheats=0;
-					sleep(2000);
-			}
-		   
-		   }else{
-				   gCheats=0;
-						
-		   }
-		   
-		   		disable_interrupts();
-		   		if(!silent){
-					if(gCheats)
-					printText("cheat boot", 3, -1, disp);
-					else
-					printText("normal boot", 3, -1, disp);
-				}
-		   		int bios_cic=getCicType(1);
-		
-		if(checksum_fix_on)
-		checksum_sdram();
-		
-		   		
-		evd_lockRegs();
-		sleep(1000);
-		   
-		while( !(disp = display_lock()) );
-		//blank screen to avoid glitches
-		graphics_fill_screen(disp, 0x000000FF);	 
-		display_show(disp);
-		   
-		   
-		simulate_boot(boot_cic, bios_cic); // boot_cic
-		
-		}
+                gCheats=0;
+                sleep(2000);
+            }
+        }
+        else {
+            gCheats=0;
+        }
+
+        disable_interrupts();
+        if(!silent){
+            if(gCheats)
+                printText("cheat boot", 3, -1, disp);
+            else
+                printText("normal boot", 3, -1, disp);
+        }
+        int bios_cic=getCicType(1);
+
+        if(checksum_fix_on)
+            checksum_sdram();
+
+        evd_lockRegs();
+        sleep(1000);
+
+        while( !(disp = display_lock()) );
+        //blank screen to avoid glitches
+
+        graphics_fill_screen(disp, 0x000000FF);
+        display_show(disp);
+
+        simulate_boot(boot_cic, bios_cic); // boot_cic
+    }
 }
 
 void playSound(int snd){
+    //no thread support in libdragon yet, sounds pause the menu for a time :/
 
-//no thread support in libdragon yet, sounds pause the menu for a time :/
+    //maybe global
+    int v1;
 
-	//maybe global
-	int v1;
-		
-	static SAMPLE *add_sfx = NULL;
-	if(snd==1)
-	add_sfx = Sample_Load("rom://ed64_mono.wav");
-	
-	if(snd==2)
-	add_sfx = Sample_Load("rom://bamboo.wav");
+    static SAMPLE *add_sfx = NULL;
+    if(snd==1)
+        add_sfx = Sample_Load("rom://ed64_mono.wav");
 
-	if(snd==3)
-	add_sfx = Sample_Load("rom://warning.wav");
-	
-	if(snd==4)
-	add_sfx = Sample_Load("rom://done.wav");
-			
-	MikMod_SetNumVoices(-1, 2);
+    if(snd==2)
+        add_sfx = Sample_Load("rom://bamboo.wav");
 
+    if(snd==3)
+        add_sfx = Sample_Load("rom://warning.wav");
 
-	if (!add_sfx) {
-		MikMod_Exit();
-		//return;
-	}else{
-	
-		MikMod_EnableOutput();
+    if(snd==4)
+        add_sfx = Sample_Load("rom://done.wav");
 
-		audio_write_silence();
-		audio_write_silence();
+    MikMod_SetNumVoices(-1, 2);
 
-		v1 = Sample_Play(add_sfx, 0, 0);
-		Voice_SetVolume(v1, 100);
+    if (!add_sfx) {
+        MikMod_Exit();
+    }
+    else{
+        MikMod_EnableOutput();
 
+        audio_write_silence();
+        audio_write_silence();
 
-		//maybe put update function into a int/vblank callback
-		for(int s=0;s<50;s++){
+        v1 = Sample_Play(add_sfx, 0, 0);
+        Voice_SetVolume(v1, 100);
 
-			MikMod_Update();
-			sleep(10);
-		}//for
+        //maybe put update function into a int/vblank callback
+        for(int s=0;s<50;s++){
+            MikMod_Update();
+            sleep(10);
+        }
 
-		MikMod_DisableOutput();
-		Sample_Free(add_sfx);
-			}
+        MikMod_DisableOutput();
+        Sample_Free(add_sfx);
+    }
 }
 
 //draws the next char at the text input screen
 void drawInputAdd(display_context_t disp, char *msg){
-
-	graphics_draw_box_trans(disp, 23, 5, 272, 18, 0x00000090);
-	position++;
-	sprintf(input_text, "%s%s",input_text, msg);
-	drawTextInput(disp,input_text);
-
+    graphics_draw_box_trans(disp, 23, 5, 272, 18, 0x00000090);
+    position++;
+    sprintf(input_text, "%s%s",input_text, msg);
+    drawTextInput(disp,input_text);
 }
 
 //del the last char at the text input screen
 void drawInputDel(display_context_t disp){
-	
-	graphics_draw_box_trans(disp, 23, 5, 272, 18, 0x00000090);
-	if(position){
-		input_text[position-1]='\0';
-		drawTextInput(disp,input_text);
-		
-		position--;
-	}
-	
+    graphics_draw_box_trans(disp, 23, 5, 272, 18, 0x00000090);
+    if(position){
+        input_text[position-1]='\0';
+        drawTextInput(disp,input_text);
+
+        position--;
+    }
 }
 
 void drawTextInput(display_context_t disp,char *msg){
-		graphics_draw_text( disp, 40, 15, msg );
+    graphics_draw_text( disp, 40, 15, msg );
 }
 
-
 void drawConfirmBox(display_context_t disp){
-	
-	
-	 drawBoxNumber(disp,5);
-	
-	display_show(disp);
+    drawBoxNumber(disp,5);
 
-		printText(" ", 9, 9, disp);
-		printText("Confirmation required:", 9, -1, disp);
-		printText(" ", 9, -1, disp);
-		printText(" ", 9, -1, disp);
-		printText("    Are you sure?", 9, -1, disp);
-		printText(" ", 9, -1, disp);
-		printText("    C-UP Continue ", 9, -1, disp); //set mapping 3
-		printText(" ", 9, -1, disp);
-		printText("      B Cancel", 9, -1, disp);
+    display_show(disp);
 
-		if(sound_on) playSound(3);
-	sleep(500);
-	
+    printText(" ", 9, 9, disp);
+    printText("Confirmation required:", 9, -1, disp);
+    printText(" ", 9, -1, disp);
+    printText(" ", 9, -1, disp);
+    printText("    Are you sure?", 9, -1, disp);
+    printText(" ", 9, -1, disp);
+    printText("    C-UP Continue ", 9, -1, disp); //set mapping 3
+    printText(" ", 9, -1, disp);
+    printText("      B Cancel", 9, -1, disp);
+
+    if(sound_on)
+        playSound(3);
+
+    sleep(500);
 }
 
 void drawShortInfoBox(display_context_t disp, char* text, u8 mode){
-	
-	if(mode==0)
-	drawBoxNumber(disp,7);
-	else if(mode==1)
-	drawBoxNumber(disp,8);
-	else if(mode==2)
-	drawBoxNumber(disp,10);
-	
-		printText(text, 9, 14, disp);
-	
-	display_show(disp);
-	
-	if(sound_on){
-		if(mode==0)
-		playSound(4);
-		else if(mode==1)
-		playSound(3);
-		else if(mode==2)
-		playSound(4);
-				
-		}
-	sleep(300);
-	
+    if(mode==0)
+        drawBoxNumber(disp,7);
+    else if(mode==1)
+        drawBoxNumber(disp,8);
+    else if(mode==2)
+        drawBoxNumber(disp,10);
+
+    printText(text, 9, 14, disp);
+
+    display_show(disp);
+
+    if(sound_on){
+        if(mode==0)
+            playSound(4);
+        else if(mode==1)
+            playSound(3);
+        else if(mode==2)
+            playSound(4);
+    }
+    sleep(300);
 }
 
-
 void readRomConfig(display_context_t disp, char* short_filename, char* full_filename){
+    u8 found=0;
+    char cfg_filename[128];
+    sprintf(rom_filename,"%s", short_filename);
+    rom_filename[strlen(rom_filename)-4]='\0'; // cut extension
+    sprintf(cfg_filename,"/ED64/CFG/%s.CFG",rom_filename);
 
-	u8 found=0;
-	char cfg_filename[128];
-	sprintf(rom_filename,"%s", short_filename);
-	rom_filename[strlen(rom_filename)-4]='\0'; // cut extension
-	sprintf(cfg_filename,"/ED64/CFG/%s.CFG",rom_filename);
+    uint8_t rom_cfg_data[512];
 
-	uint8_t rom_cfg_data[512];//[size];
+    FatRecord rec_tmpf;
+    found = fatFindRecord(cfg_filename, &rec_tmpf, 0);
 
-	FatRecord rec_tmpf;
-	found = fatFindRecord(cfg_filename, &rec_tmpf, 0);
-	
-	
-	if(found==0){
-	//read rom-config
-	
-		u8 resp = 0;
-		resp = fatOpenFileByeName(cfg_filename, 0);
-		resp = fatReadFile(&rom_cfg_data, 1);
-		
+    if(found==0){
+        //read rom-config
+        u8 resp = 0;
+        resp = fatOpenFileByeName(cfg_filename, 0);
+        resp = fatReadFile(&rom_cfg_data, 1);
 
-		rom_config[1]=rom_cfg_data[0];
-		rom_config[2]=rom_cfg_data[1];
-		rom_config[3]=rom_cfg_data[2];
-		rom_config[4]=rom_cfg_data[3];
-		rom_config[5]=rom_cfg_data[4];
-		rom_config[6]=rom_cfg_data[5];
-		rom_config[7]=rom_cfg_data[6];
-		rom_config[8]=rom_cfg_data[7];
-		rom_config[9]=rom_cfg_data[8];
-	
-												
+        rom_config[1]=rom_cfg_data[0];
+        rom_config[2]=rom_cfg_data[1];
+        rom_config[3]=rom_cfg_data[2];
+        rom_config[4]=rom_cfg_data[3];
+        rom_config[5]=rom_cfg_data[4];
+        rom_config[6]=rom_cfg_data[5];
+        rom_config[7]=rom_cfg_data[6];
+        rom_config[8]=rom_cfg_data[7];
+        rom_config[9]=rom_cfg_data[8];
+    }
+    else{
+        //preload with header data
 
-	
-	}else{
-		//preload with header data
-	
-		romInfoScreen(disp, full_filename, 1); //silent info screen with readout	
-		
-	}
-	
-	
-	//preload cursor position 1 cic				
-	rom_config[0]=1;
+        romInfoScreen(disp, full_filename, 1); //silent info screen with readout
+    }
 
-							
-	
+    //preload cursor position 1 cic
+    rom_config[0]=1;
 }
 
 void alterRomConfig(int type, int mode){
-	
-	
-	//mode 1 = increae mode 2 = decrease
-	
-	//cic
-	u8  min_cic=0;
-	u8  max_cic=5;
-	
-	//save
-	u8  min_save=0;
-	u8  max_save=5;
-	
-	//tv-type
-	u8	min_tv=0;
-	u8	max_tv=3;
-	
-	//cheat
-	u8 min_cheat=0;
-	u8 max_cheat=1;
-	
-	//chk fix
-	u8 min_chk_sum=0;
-	u8 max_chk_sum=1;
-	
-	//quality
-	u8 min_quality=0;
-	u8 max_quality=5;
-	
-	//country
-	u8 min_country=0;
-	u8 max_country=2;
-	
-	if(type==1){//start cic
-		
-		 if(mode==1){
-			//down
-			if(rom_config[1]<max_cic)
-			rom_config[1]++;
-				if(rom_config[1]==3) rom_config[1]++;
-			
-		}
-		else
-		 if(mode==2){ 
-			//up
-			if(rom_config[1]>min_cic)
-			rom_config[1]--;
-					if(rom_config[1]==3) rom_config[1]--;
-		}
-	}//end cic
-	else
-		if(type==2){//start save
-		
-		 if(mode==1){
-			//down
-			if(rom_config[2]<max_save)
-			rom_config[2]++;
-		}
-		else
-		 if(mode==2){ 
-			//up
-			if(rom_config[2]>min_save)
-			rom_config[2]--;
-		}
-	}//end save
-	else
-		if(type==3){//start tv
-		
-		 if(mode==1){
-			//down
-			if(rom_config[3]<max_tv)
-			rom_config[3]++;
-		}
-		else
-		 if(mode==2){ 
-			//up
-			if(rom_config[3]>min_tv)
-			rom_config[3]--;
-		}
-	}//end tv
-	else
-		if(type==4){//start cheat
-		
-		 if(mode==1){
-			//down
-			if(rom_config[4]<max_cheat)
-			rom_config[4]++;
-		}
-		else
-		 if(mode==2){ 
-			//up
-			if(rom_config[4]>min_cheat)
-			rom_config[4]--;
-		}
-	}//end cheat
-	else
-		if(type==5){//start chk sum
-		
-		 if(mode==1){
-			//down
-			if(rom_config[5]<max_chk_sum)
-			rom_config[5]++;
-		}
-		else
-		 if(mode==2){ 
-			//up
-			if(rom_config[5]>min_chk_sum)
-			rom_config[5]--;
-		}
-	}//end chk sum
-	else
-		if(type==6){ //start quality
-		
-		 if(mode==1){
-			//down
-			if(rom_config[6]<max_quality)
-			rom_config[6]++;
-		}
-		else
-		 if(mode==2){ 
-			//up
-			if(rom_config[6]>min_quality)
-			rom_config[6]--;
-		}
-	}
-	else
-		if(type==7){ //start country
-		
-		 if(mode==1){
-			//down
-			if(rom_config[7]<max_country)
-			rom_config[7]++;
-		}
-		else
-		 if(mode==2){ 
-			//up
-			if(rom_config[7]>min_country)
-			rom_config[7]--;
-		}
-	}	
-	
+    //mode 1 = increae mode 2 = decrease
+
+    //cic
+    u8  min_cic=0;
+    u8  max_cic=5;
+
+    //save
+    u8  min_save=0;
+    u8  max_save=5;
+
+    //tv-type
+    u8    min_tv=0;
+    u8    max_tv=3;
+
+    //cheat
+    u8 min_cheat=0;
+    u8 max_cheat=1;
+
+    //chk fix
+    u8 min_chk_sum=0;
+    u8 max_chk_sum=1;
+
+    //quality
+    u8 min_quality=0;
+    u8 max_quality=5;
+
+    //country
+    u8 min_country=0;
+    u8 max_country=2;
+
+    if(type==1){//start cic
+        if(mode==1){
+            //down
+            if(rom_config[1]<max_cic)
+                rom_config[1]++;
+            if(rom_config[1]==3)
+                rom_config[1]++;
+        }
+        else if(mode==2){
+            //up
+            if(rom_config[1]>min_cic)
+                rom_config[1]--;
+            if(rom_config[1]==3)
+                rom_config[1]--;
+        }
+    }//end cic
+    else if(type==2){//start save
+        if(mode==1){
+            //down
+            if(rom_config[2]<max_save)
+                rom_config[2]++;
+        }
+        else if(mode==2){
+            //up
+            if(rom_config[2]>min_save)
+                rom_config[2]--;
+        }
+    }//end save
+    else if(type==3){//start tv
+        if(mode==1){
+            //down
+            if(rom_config[3]<max_tv)
+                rom_config[3]++;
+        }
+        else if(mode==2){
+            //up
+            if(rom_config[3]>min_tv)
+                rom_config[3]--;
+        }
+    }//end tv
+    else if(type==4){//start cheat
+        if(mode==1){
+            //down
+            if(rom_config[4]<max_cheat)
+            rom_config[4]++;
+        }
+        else if(mode==2){
+            //up
+            if(rom_config[4]>min_cheat)
+                rom_config[4]--;
+        }
+    }//end cheat
+    else if(type==5){//start chk sum
+        if(mode==1){
+            //down
+            if(rom_config[5]<max_chk_sum)
+                rom_config[5]++;
+        }
+        else if(mode==2){
+            //up
+            if(rom_config[5]>min_chk_sum)
+                rom_config[5]--;
+        }
+    }//end chk sum
+    else if(type==6){ //start quality
+        if(mode==1){
+            //down
+            if(rom_config[6]<max_quality)
+                rom_config[6]++;
+        }
+        else if(mode==2){
+            //up
+            if(rom_config[6]>min_quality)
+                rom_config[6]--;
+        }
+    }
+    else if(type==7){ //start country
+        if(mode==1){
+            //down
+            if(rom_config[7]<max_country)
+                rom_config[7]++;
+        }
+        else if(mode==2){
+            //up
+            if(rom_config[7]>min_country)
+                rom_config[7]--;
+        }
+    }
+
 }
 
 void drawToplistBox(display_context_t disp,int line){
+    list_pos_backup[0]=cursor;
+    list_pos_backup[1]=page;
 
-list_pos_backup[0]=cursor;
-list_pos_backup[1]=page;
+    u8 list_size=0;
 
-u8 list_size=0;
+    if(line==0){
+        FatRecord *rec;
+        u8 resp = 0;
 
-if(line==0){
-//if(toplist_reload){
-	
-	FatRecord *rec;
-	u8 resp = 0;
-				
-	count = 1;
-	dir_t buf;
+        count = 1;
+        dir_t buf;
 
-	//load the directory-entry
-	resp = fatLoadDirByName("/ED64/CFG");
+        //load the directory-entry
+        resp = fatLoadDirByName("/ED64/CFG");
 
-	int dsize=dir->size;
+        int dsize=dir->size;
 
-	char toplist[dsize][256];
+        char toplist[dsize][256];
 
-	for (int i = 0; i < dir->size; i++){
-		
-		rec = dir->rec[i];
-			
-			
-		u8 rom_cfg_file[128];
-		
-		//set rom_cfg 
-		sprintf(rom_cfg_file, "/ED64/CFG/%s",rec->name );
-		
-		static uint8_t cfg_file_data[512] = { 0 }; 
-		
-		resp = fatOpenFileByeName(rom_cfg_file, 0); //512 bytes fix one cluster
-		resp = fatReadFile(&cfg_file_data, 1);
-		
-		
-		toplist[i][0]=(char)cfg_file_data[5]; //quality
-		strcpy(toplist[i]+1, cfg_file_data+32);	//fullpath
+        for (int i = 0; i < dir->size; i++){
+            rec = dir->rec[i];
+            u8 rom_cfg_file[128];
 
+            //set rom_cfg
+            sprintf(rom_cfg_file, "/ED64/CFG/%s",rec->name );
 
-	}
-	
-	qsort(toplist, dsize, 256, compare_int_reverse);
+            static uint8_t cfg_file_data[512] = { 0 };
 
+            resp = fatOpenFileByeName(rom_cfg_file, 0); //512 bytes fix one cluster
+            resp = fatReadFile(&cfg_file_data, 1);
 
-	if(dsize>15)
-		list_size=15;
-	else
-		list_size=dsize;
+            toplist[i][0]=(char)cfg_file_data[5]; //quality
+            strcpy(toplist[i]+1, cfg_file_data+32);    //fullpath
+        }
 
-	for(int c = 0; c < list_size; c++)
-	strcpy(toplist15[c], toplist[c]);
+        qsort(toplist, dsize, 256, compare_int_reverse);
 
-	list_pos_backup[2]=list_size;
-//toplist_reload=0;
-}
+        if(dsize>15)
+            list_size=15;
+        else
+            list_size=dsize;
 
-	list_size=list_pos_backup[2];
+        for(int c = 0; c < list_size; c++)
+            strcpy(toplist15[c], toplist[c]);
 
+        list_pos_backup[2]=list_size;
+    }
 
+    list_size=list_pos_backup[2];
 
-	u8 min=1;
-	u8 max=15;
-	u8 real_max=0;
-	
-	for(int c = 0; c < list_size; c++)
-	if(toplist15[c][0]!=0)
-	real_max++;
-	
-	max=real_max;
+    u8 min=1;
+    u8 max=15;
+    u8 real_max=0;
 
-	//cursor line
-	if(line!=0){
+    for(int c = 0; c < list_size; c++)
+    if(toplist15[c][0]!=0)
+    real_max++;
 
-		 if(line==1){
-			//down
-			if(toplist_cursor<max)
-			toplist_cursor++;
-		}
-		else if(line==2){ 
-			//up
-			if(toplist_cursor>min)
-			toplist_cursor--;
-		}
-	}
+    max=real_max;
 
+    //cursor line
+    if(line!=0){
+        if(line==1){
+            //down
+            if(toplist_cursor<max)
+                toplist_cursor++;
+        }
+        else if(line==2){
+            //up
+            if(toplist_cursor>min)
+                toplist_cursor--;
+        }
+    }
 
+    drawBoxNumber(disp,9); //toplist
 
-	
-	
-	drawBoxNumber(disp,9); //toplist
-//drawToplistSelection(disp, toplist_cursor);	
-	
-	printText("          -Toplist 15-", 4, 7, disp);
-	printText(" ", 4, -1, disp);
+    printText("          -Toplist 15-", 4, 7, disp);
+    printText(" ", 4, -1, disp);
 
-		uint32_t 	forecolor;  
-		uint32_t 	backcolor;    							
-		backcolor = graphics_make_color(0x00, 0x00, 0x00, 0xFF); //bg
-		forecolor = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF); //fg
-				
-		
-		
-		for(int t = 0; t < 15; t++){
-		
-		int quality_level=toplist15[t][0]; //quality
-		
-			if(quality_level!=0){
-			
-			switch(quality_level){
-				
-				case 1: forecolor = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF); //common (white)
-						break;
-				case 2: forecolor = graphics_make_color(0x00, 0xFF, 0x00, 0xCF); //uncommon (green)
-						break;
-				case 3: forecolor = graphics_make_color(0x1E, 0x90, 0xFF, 0xFF); //rare (blue)
-						break;
-				case 4: forecolor = graphics_make_color(0x9B, 0x30, 0xFF, 0xFF); //epic (purple)
-						break;
-				case 5: forecolor = graphics_make_color(0xFF, 0xA5, 0x00, 0xFF); //legendary (orange)
-						break;
-				default: break;
-			}
-			
-			graphics_set_color	(forecolor, backcolor);	
-			//max 32 chr
-			
-			u8 short_name[256];
-			
-			sprintf(short_name, "%s", toplist15[t]+1);
-			
-			u8 * pch_s; // point-offset
-			pch_s=strrchr(short_name,'/');	
-			
-			/*
-			u8 * pch; // point-offset
-			pch=strrchr(short_name,'.');				
-			short_name[31]='\0';
-			short_name[pch-short_name]='\0';
-			*/
-			u8 * pch; // point-offset
-			pch=strrchr(pch_s,'.');				
-			pch_s[30]='\0'; //was 31
-			pch_s[pch-pch_s]='\0';
-			
-			//printText(short_name, 4, -1, disp);
-			if(t+1==toplist_cursor)
-			printText(pch_s+1, 5, -1, disp);
-			else
-			printText(pch_s+1, 4, -1, disp);
-			
-			//restore color
-			graphics_set_color(graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF), graphics_make_color(0x00, 0x00, 0x00, 0x00));
-		}	
+    uint32_t     forecolor;
+    uint32_t     backcolor;
+    backcolor = graphics_make_color(0x00, 0x00, 0x00, 0xFF); //bg
+    forecolor = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF); //fg
 
-	}//for15
+    for(int t = 0; t < 15; t++){
+        int quality_level=toplist15[t][0]; //quality
+        if(quality_level!=0){
+            switch(quality_level){
+            case 1: forecolor = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF); //common (white)
+                break;
+            case 2: forecolor = graphics_make_color(0x00, 0xFF, 0x00, 0xCF); //uncommon (green)
+                break;
+            case 3: forecolor = graphics_make_color(0x1E, 0x90, 0xFF, 0xFF); //rare (blue)
+                break;
+            case 4: forecolor = graphics_make_color(0x9B, 0x30, 0xFF, 0xFF); //epic (purple)
+                break;
+            case 5: forecolor = graphics_make_color(0xFF, 0xA5, 0x00, 0xFF); //legendary (orange)
+                break;
+            default: break;
+            }
 
-/*	
-if(line==0){
-	if(sound_on) playSound(4);
-	sleep(500);
-}
-*/
+            graphics_set_color    (forecolor, backcolor);
+            //max 32 chr
 
+            u8 short_name[256];
 
+            sprintf(short_name, "%s", toplist15[t]+1);
+
+            u8 *pch_s; // point-offset
+            pch_s=strrchr(short_name,'/');
+
+            u8 *pch; // point-offset
+            pch=strrchr(pch_s,'.');
+            pch_s[30]='\0'; //was 31
+            pch_s[pch-pch_s]='\0';
+
+            if(t+1==toplist_cursor)
+                printText(pch_s+1, 5, -1, disp);
+            else
+                printText(pch_s+1, 4, -1, disp);
+
+            //restore color
+            graphics_set_color(graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF), graphics_make_color(0x00, 0x00, 0x00, 0x00));
+        }
+    }
 }
 
 
 
 void drawRomConfigBox(display_context_t disp,int line){
-	
-	u8 min=1;
-	u8 max=7;
-	
-	//cursor line
-	if(line!=0){
+    u8 min=1;
+    u8 max=7;
 
-		 if(line==1){
-			//down
-			if(rom_config[0]<max)
-			rom_config[0]++;
-		}
-		else if(line==2){ 
-			//up
-			if(rom_config[0]>min)
-			rom_config[0]--;
-		}
-	}
-	
-	 drawBoxNumber(disp,6);
-	
-	drawConfigSelection(disp, rom_config[0]);
-	//display_show(disp);
+    //cursor line
+    if(line!=0){
+        if(line==1){
+            //down
+            if(rom_config[0]<max)
+                rom_config[0]++;
+        }
+        else if(line==2){
+            //up
+            if(rom_config[0]>min)
+                rom_config[0]--;
+        }
+    }
 
-		printText(" ", 9, 9, disp);
-		printText("Rom configuration:", 9, -1, disp);
-		printText(" ", 9, -1, disp);
-		
-		
-		
-	switch(rom_config[1]){
-		case 0: 		printText("     CIC: 6101", 9, -1, disp); break;
-		case 1: 		printText("     CIC: 6102", 9, -1, disp); break;
-		case 2: 		printText("     CIC: 6103", 9, -1, disp); break;
-		case 3: 		printText("     CIC: 6104", 9, -1, disp); break; //do i really need 6104 in that list? :D	
-		case 4: 		printText("     CIC: 6105", 9, -1, disp); break;
-		case 5: 		printText("     CIC: 6106", 9, -1, disp); break;
-		 default: break;
-		
-	}	
-	
-	switch(rom_config[2]){
-		case 0: 		printText("    Save: Off/Mempak", 9, -1, disp); break;
-		case 1: 		printText("    Save: Sram 32", 9, -1, disp); break;
-		case 2: 		printText("    Save: Sram 128", 9, -1, disp); break;
-		case 3: 		printText("    Save: Eeprom 4k", 9, -1, disp); break;
-		case 4: 		printText("    Save: Eeprom 16k", 9, -1, disp); break;
-		case 5: 		printText("    Save: Flashram", 9, -1, disp); break;
-		 default: break;
-		
-	}
-	
-	switch(rom_config[3]){
-		case 0: 		printText("      Tv: Force off", 9, -1, disp); break;
-		case 1: 		printText("      Tv: NTSC", 9, -1, disp); break;
-		case 2: 		printText("      Tv: PAL", 9, -1, disp); break;
-		case 3: 		printText("      Tv: M-PAL", 9, -1, disp); break;
-					
-		 default: break;
+    drawBoxNumber(disp,6);
 
-		
-	}	
-	
-	switch(rom_config[4]){
-	case 0: 		printText("   Cheat: off", 9, -1, disp); break;
-	case 1: 		printText("   Cheat: on", 9, -1, disp); break;
-	 default: break;
+    drawConfigSelection(disp, rom_config[0]);
 
-	
-}	
+    printText(" ", 9, 9, disp);
+    printText("Rom configuration:", 9, -1, disp);
+    printText(" ", 9, -1, disp);
 
-	switch(rom_config[5]){
-	case 0: 		printText("Checksum: disable fix", 9, -1, disp); break;
-	case 1: 		printText("Checksum: enable fix", 9, -1, disp); break;
-	 default: break;
+    switch(rom_config[1]){
+        case 0:    printText("     CIC: 6101", 9, -1, disp); break;
+        case 1:    printText("     CIC: 6102", 9, -1, disp); break;
+        case 2:    printText("     CIC: 6103", 9, -1, disp); break;
+        case 3:    printText("     CIC: 6104", 9, -1, disp); break; //do i really need 6104 in that list? :D
+        case 4:    printText("     CIC: 6105", 9, -1, disp); break;
+        case 5:    printText("     CIC: 6106", 9, -1, disp); break;
+        default: break;
+    }
 
-	
-}		
+    switch(rom_config[2]){
+        case 0:    printText("    Save: Off/Mempak", 9, -1, disp); break;
+        case 1:    printText("    Save: Sram 32", 9, -1, disp); break;
+        case 2:    printText("    Save: Sram 128", 9, -1, disp); break;
+        case 3:    printText("    Save: Eeprom 4k", 9, -1, disp); break;
+        case 4:    printText("    Save: Eeprom 16k", 9, -1, disp); break;
+        case 5:    printText("    Save: Flashram", 9, -1, disp); break;
+        default: break;
+    }
 
-	switch(rom_config[6]){
-	case 0: 		printText("  Rating: off", 9, -1, disp); break;
-	case 1: 		printText("  Rating: common", 9, -1, disp); break;
-	case 2: 		printText("  Rating: uncommon", 9, -1, disp); break;
-	case 3: 		printText("  Rating: rare", 9, -1, disp); break;
-	case 4: 		printText("  Rating: epic", 9, -1, disp); break;	
-	case 5: 		printText("  Rating: legendary", 9, -1, disp); break;		
-		
-	 default: break;
+    switch(rom_config[3]){
+        case 0:    printText("      Tv: Force off", 9, -1, disp); break;
+        case 1:    printText("      Tv: NTSC", 9, -1, disp); break;
+        case 2:    printText("      Tv: PAL", 9, -1, disp); break;
+        case 3:    printText("      Tv: M-PAL", 9, -1, disp); break;
+        default: break;
+    }
 
-	
+    switch(rom_config[4]){
+        case 0:    printText("   Cheat: off", 9, -1, disp); break;
+        case 1:    printText("   Cheat: on", 9, -1, disp); break;
+        default: break;
+    }
+
+    switch(rom_config[5]){
+        case 0:    printText("Checksum: disable fix", 9, -1, disp); break;
+        case 1:    printText("Checksum: enable fix", 9, -1, disp); break;
+        default: break;
+    }
+
+    switch(rom_config[6]){
+        case 0:    printText("  Rating: off", 9, -1, disp); break;
+        case 1:    printText("  Rating: common", 9, -1, disp); break;
+        case 2:    printText("  Rating: uncommon", 9, -1, disp); break;
+        case 3:    printText("  Rating: rare", 9, -1, disp); break;
+        case 4:    printText("  Rating: epic", 9, -1, disp); break;
+        case 5:    printText("  Rating: legendary", 9, -1, disp); break;
+
+        default: break;
+    }
+
+    switch(rom_config[7]){
+        case 0:    printText(" Country: default", 9, -1, disp); break;
+        case 1:    printText(" Country: NTSC", 9, -1, disp); break;
+        case 2:    printText(" Country: PAL", 9, -1, disp); break;
+        default: break;
+    }
+
+    printText(" ", 9, -1, disp);
+    printText("B Cancel", 9, -1, disp);
+    printText("A Save config", 9, -1, disp);
 }
-
-	switch(rom_config[7]){
-	case 0: 		printText(" Country: default", 9, -1, disp); break;
-	case 1: 		printText(" Country: NTSC", 9, -1, disp); break;
-	case 2: 		printText(" Country: PAL", 9, -1, disp); break;
-	 default: break;
-
-	
-}			
-	
-	
-		printText(" ", 9, -1, disp);
-		printText("B Cancel", 9, -1, disp);
-		printText("A Save config", 9, -1, disp);
-
-
-		
-
-		//cursor position
-	//	if(line=0)
-	//	rom_config[0]=1;
-	
-}
-
-
 
 //draws the charset for the textinputscreen
 void drawSet1(display_context_t disp){
-	
-				set=1;
-				uint32_t 	forecolor;  
-				uint32_t 	backcolor;    							
-				backcolor = graphics_make_color(0x00, 0x00, 0x00, 0xFF);
-				
-				forecolor = graphics_make_color(0xFF, 0xFF, 0x00, 0xFF); //yellow
-				
-				          	  
-				graphics_draw_text( disp, 80, 40, "<" ); //L 
-				graphics_set_color	(forecolor, backcolor);
-				graphics_draw_text( disp, 233, 40, "A" ); //R 
-				graphics_draw_text( disp, 223, 62, "B" ); //G up
-				graphics_draw_text( disp, 210, 74, "C" ); //G left						
-				graphics_draw_text( disp, 235, 74, "D" ); //G right
-				graphics_draw_text( disp, 193, 86, "E" ); //B
-				graphics_draw_text( disp, 223, 86, "F" ); //G down
-				graphics_draw_text( disp, 209, 100, "G" ); //A
-				
+    set=1;
+    uint32_t     forecolor;
+    uint32_t     backcolor;
+    backcolor = graphics_make_color(0x00, 0x00, 0x00, 0xFF);
+    forecolor = graphics_make_color(0xFF, 0xFF, 0x00, 0xFF); //yellow
+
+    graphics_draw_text( disp, 80, 40, "<" ); //L
+    graphics_set_color(forecolor, backcolor);
+    graphics_draw_text( disp, 233, 40, "A" ); //R
+    graphics_draw_text( disp, 223, 62, "B" ); //G up
+    graphics_draw_text( disp, 210, 74, "C" ); //G left
+    graphics_draw_text( disp, 235, 74, "D" ); //G right
+    graphics_draw_text( disp, 193, 86, "E" ); //B
+    graphics_draw_text( disp, 223, 86, "F" ); //G down
+    graphics_draw_text( disp, 209, 100, "G" ); //A
 }
 
 
 void drawSet2(display_context_t disp){
-	
-				set=2;
-				uint32_t 	forecolor;  
-				uint32_t 	backcolor;    							
-				backcolor = graphics_make_color(0x00, 0x00, 0x00, 0xFF);
-				
-				forecolor = graphics_make_color(0xFF, 0xFF, 0x00, 0xFF); 
-			
-				          	  
-				graphics_draw_text( disp, 80, 40, "<" ); 
-				graphics_set_color	(forecolor, backcolor);
-				graphics_draw_text( disp, 233, 40, "H" ); 
-				graphics_draw_text( disp, 223, 62, "I" ); 
-				graphics_draw_text( disp, 210, 74, "J" );							
-				graphics_draw_text( disp, 235, 74, "K" ); 
-				graphics_draw_text( disp, 193, 86, "L" ); 
-				graphics_draw_text( disp, 223, 86, "M" );
-				graphics_draw_text( disp, 209, 100, "N" ); 
-				
+    set=2;
+    uint32_t     forecolor;
+    uint32_t     backcolor;
+    backcolor = graphics_make_color(0x00, 0x00, 0x00, 0xFF);
+    forecolor = graphics_make_color(0xFF, 0xFF, 0x00, 0xFF);
+
+    graphics_draw_text( disp, 80, 40, "<" );
+    graphics_set_color(forecolor, backcolor);
+    graphics_draw_text( disp, 233, 40, "H" );
+    graphics_draw_text( disp, 223, 62, "I" );
+    graphics_draw_text( disp, 210, 74, "J" );
+    graphics_draw_text( disp, 235, 74, "K" );
+    graphics_draw_text( disp, 193, 86, "L" );
+    graphics_draw_text( disp, 223, 86, "M" );
+    graphics_draw_text( disp, 209, 100, "N" );
 }
 
 void drawSet3(display_context_t disp){
-	
-				set=3;
-				uint32_t 	forecolor;  
-				uint32_t 	backcolor;    							
-				backcolor = graphics_make_color(0x00, 0x00, 0x00, 0xFF);
-				
-				forecolor = graphics_make_color(0xFF, 0xFF, 0x00, 0xFF); 
-				
-				          	  
-				graphics_draw_text( disp, 80, 40, "<" ); 
-				graphics_set_color	(forecolor, backcolor);
-				graphics_draw_text( disp, 233, 40, "O" ); 
-				graphics_draw_text( disp, 223, 62, "P" );
-				graphics_draw_text( disp, 210, 74, "Q" );				
-				graphics_draw_text( disp, 235, 74, "R" );
-				graphics_draw_text( disp, 193, 86, "S" ); 
-				graphics_draw_text( disp, 223, 86, "T" ); 
-				graphics_draw_text( disp, 209, 100, "U" );
-				
+    set=3;
+    uint32_t     forecolor;
+    uint32_t     backcolor;
+    backcolor = graphics_make_color(0x00, 0x00, 0x00, 0xFF);
+    forecolor = graphics_make_color(0xFF, 0xFF, 0x00, 0xFF);
+
+    graphics_draw_text( disp, 80, 40, "<" );
+    graphics_set_color(forecolor, backcolor);
+    graphics_draw_text( disp, 233, 40, "O" );
+    graphics_draw_text( disp, 223, 62, "P" );
+    graphics_draw_text( disp, 210, 74, "Q" );
+    graphics_draw_text( disp, 235, 74, "R" );
+    graphics_draw_text( disp, 193, 86, "S" );
+    graphics_draw_text( disp, 223, 86, "T" );
+    graphics_draw_text( disp, 209, 100, "U" );
 }
 
-display_context_t lockVideo(int wait)
-{
+display_context_t lockVideo(int wait) {
     display_context_t dc;
 
     if (wait)
@@ -3833,1952 +3191,1468 @@ display_context_t lockVideo(int wait)
 
 
 void drawSet4(display_context_t disp){
-				
-				set=4;
-				uint32_t 	forecolor;  
-				uint32_t 	backcolor;    							
-				backcolor = graphics_make_color(0x00, 0x00, 0x00, 0xFF);
-				
-				forecolor = graphics_make_color(0xFF, 0xFF, 0x00, 0xFF); 
-				
-				          	  
-				graphics_draw_text( disp, 80, 40, "<" ); 
-				graphics_set_color	(forecolor, backcolor);
-				graphics_draw_text( disp, 233, 40, "V" );
-				graphics_draw_text( disp, 223, 62, "W" ); 
-				graphics_draw_text( disp, 210, 74, "X" );					
-				graphics_draw_text( disp, 235, 74, "Y" ); 
-				graphics_draw_text( disp, 193, 86, "Z" ); 
-				graphics_draw_text( disp, 223, 86, "-" ); 
-				graphics_draw_text( disp, 209, 100, "_" );
-				
+    set=4;
+    uint32_t     forecolor;
+    uint32_t     backcolor;
+    backcolor = graphics_make_color(0x00, 0x00, 0x00, 0xFF);
+    forecolor = graphics_make_color(0xFF, 0xFF, 0x00, 0xFF);
+
+    graphics_draw_text( disp, 80, 40, "<" );
+    graphics_set_color(forecolor, backcolor);
+    graphics_draw_text( disp, 233, 40, "V" );
+    graphics_draw_text( disp, 223, 62, "W" );
+    graphics_draw_text( disp, 210, 74, "X" );
+    graphics_draw_text( disp, 235, 74, "Y" );
+    graphics_draw_text( disp, 193, 86, "Z" );
+    graphics_draw_text( disp, 223, 86, "-" );
+    graphics_draw_text( disp, 209, 100, "_" );
 }
 
 
 //entry point
-int main(void)
-{
-	
-	int fast_boot=0;
-
+int main(void) {
+    int fast_boot=0;
 
     //reserve memory
-	list = malloc(sizeof(direntry_t));
-	//list = malloc(sizeof(direntry_t));
+    list = malloc(sizeof(direntry_t));
 
-
-	//dfs init for the rom-attached virtual filesystem
-    if(dfs_init( DFS_DEFAULT_LOCATION ) != DFS_ESUCCESS)
-    {
+    //dfs init for the rom-attached virtual filesystem
+    if(dfs_init( DFS_DEFAULT_LOCATION ) != DFS_ESUCCESS) {
         printf("Filesystem failed to start!\n");
     }
-    else
-    {
-	
-		int fpf = dfs_open("/firmware.bin");
-		firmware = malloc( dfs_size( fpf ) );
-		dfs_read( firmware, 1, dfs_size( fpf ), fpf );
-		dfs_close( fpf );
-         
-		
-    //everdirve initial function
-    configure();
-    
-    
-    //fast boot for backup-save data
-	int sj = evd_readReg(0);
-	int save_job = evd_readReg(REG_SAV_CFG);
-	
-	if(save_job!=0)
-	fast_boot=1;
+    else {
+        int fpf = dfs_open("/firmware.bin");
+        firmware = malloc( dfs_size( fpf ) );
+        dfs_read( firmware, 1, dfs_size( fpf ), fpf );
+        dfs_close( fpf );
 
+        // everdrive initial function
+        configure();
 
-	//not gamepads more or less the n64 hardware-controllers
-	controller_init();
-	
-	//filesystem on
-	initFilesystem();
-	sleep(200);
-	
+        //fast boot for backup-save data
+        int sj = evd_readReg(0);
+        int save_job = evd_readReg(REG_SAV_CFG);
 
-	readConfigFile();
-	//n64 initialization	
+        if(save_job!=0)
+        fast_boot=1;
 
-	
-	if(tv_mode!=0){
-	 *(u32 *) 0x80000300 = tv_mode; 
-	}
-	
-	
+        //not gamepads more or less the n64 hardware-controllers
+        controller_init();
 
-    init_interrupts();
-	
-	
-	//background
-    display_init( res, DEPTH_32_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE );
-    
+        //filesystem on
+        initFilesystem();
+        sleep(200);
 
-	//bg buffer
-	static display_context_t disp;
-	
-	//Grab a render buffer
-    while( !(disp = display_lock()) );
-	//backgrounds from ramfs/libdragonfs
-	
-	if(!fast_boot){
-		background0 = read_sprite( "rom://sprites/splash.sprite" );
-		graphics_draw_sprite( disp, 0, 0, background0 ); //start-picture
-		display_show(disp);
-	}
-	
-	char background_path[64];
-	sprintf(background_path, "/ED64/wallpaper/%s", background_image);
-	int found;
-	FatRecord rec_tmpf;
-	found = fatFindRecord(background_path, &rec_tmpf, 0); 
-	if(found==0){
-		
-		background = loadPng(background_path);
-	}else{
-	background = read_sprite( "rom://sprites/background.sprite" );
-	}
-	sleep(200);
+        readConfigFile();
+        //n64 initialization
 
-	//mp3
-	int buf_size;
-	char *buf_ptr;
+        if(tv_mode!=0){
+            *(u32 *) 0x80000300 = tv_mode;
+        }
 
-	if(sound_on){
-		
-		audio_init(44100,2);
-		//load soundsystem
-		timer_init();
+        init_interrupts();
 
+        //background
+        display_init( res, DEPTH_32_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE );
 
-		MikMod_RegisterAllDrivers();
-		MikMod_RegisterAllLoaders();
+        //bg buffer
+        static display_context_t disp;
 
-		md_mode = 0;
-		md_mode |= DMODE_16BITS;
-		md_mode |= DMODE_SOFT_MUSIC;
-		md_mode |= DMODE_SOFT_SNDFX;
+        //Grab a render buffer
+        while( !(disp = display_lock()) );
+        //backgrounds from ramfs/libdragonfs
 
-		//md_mode |= DMODE_STEREO;
-												
-		md_mixfreq = audio_get_frequency();
+        if(!fast_boot){
+            background0 = read_sprite( "rom://sprites/splash.sprite" );
+            graphics_draw_sprite( disp, 0, 0, background0 ); //start-picture
+            display_show(disp);
+        }
 
-		MikMod_Init("");
-	}
-	
-	
-	
-	if(!fast_boot){
-		if(sound_on) playSound(1);
-	
-		sleep(2000); //splash screen duration
-	}
-	
-		
-	border_color_1 = translate_color(border_color_1_s);
-	border_color_2= translate_color(border_color_2_s);
-	box_color= translate_color(box_color_s);
-	selection_color= translate_color(selection_color_s);
-	selection_font_color= translate_color(selection_font_color_s);
-	list_font_color= translate_color(list_font_color_s);
-	list_dir_font_color= translate_color(list_dir_font_color_s);
-	
-	
-	
-	while( !(disp = display_lock()) );
-	
-	drawBg(disp); //new
-	drawBoxNumber(disp,1); //new
+        char background_path[64];
+        sprintf(background_path, "/ED64/wallpaper/%s", background_image);
+        int found;
+        FatRecord rec_tmpf;
+        found = fatFindRecord(background_path, &rec_tmpf, 0);
+        if(found==0){
+            background = loadPng(background_path);
+        }
+        else{
+            background = read_sprite( "rom://sprites/background.sprite" );
+        }
+        sleep(200);
 
-	uint32_t *buffer = (uint32_t *)__get_buffer( disp ); //fg disp = 2
+        //mp3
+        int buf_size;
+        char *buf_ptr;
 
-	display_show(disp); //new
+        if(sound_on){
+            audio_init(44100,2);
+            //load soundsystem
+            timer_init();
 
-	backupSaveData(disp);
-	
-	
-	
-	while( !(disp = display_lock()) );
-											
-								
-	sprintf(pwd,"%s", "/");
-	readSDcard(disp,"/");
-	
-	display_show(disp);
-	//chr input coord
-	x=30;
-	y=30;
+            MikMod_RegisterAllDrivers();
+            MikMod_RegisterAllLoaders();
 
-    position=0;
-	set=1;
-    sprintf(input_text, "");
-    
-	//sprite for chr input
-    int fp = dfs_open("/n64controller.sprite");
-    sprite_t *contr = malloc( dfs_size( fp ) );
-    dfs_read( contr, 1, dfs_size( fp ), fp );
-    dfs_close( fp );
-    
-	
+            md_mode = 0;
+            md_mode |= DMODE_16BITS;
+            md_mode |= DMODE_SOFT_MUSIC;
+            md_mode |= DMODE_SOFT_SNDFX;
 
-	//wip font support
-	//init_fonts();
+            md_mixfreq = audio_get_frequency();
 
-	//sd card speed settings from config
-	if(sd_speed==2){
-		bi_speed50();
-	}
-	else{
-		bi_speed25();
-	}
+            MikMod_Init("");
+        }
 
+        if(!fast_boot){
+            if(sound_on)
+                playSound(1);
 
-		//system main-loop with controller inputs-scan
-        while(1)
-        {
-			
-		if (playing==1)
-		playing = update_mp3(buf_ptr, buf_size);
-	
-			
-			
-			 
-			if(input_mapping==1)
-			 sleep(60);
+            sleep(2000); //splash screen duration
+        }
 
-			if(input_mapping==3){	
-				
-				while( !(disp = display_lock()) );
-				
-				graphics_draw_sprite( disp, 0, 0, contr );
-				/* Set the text output color */
-				graphics_set_color( 0x0, 0xFFFFFFFF );
+        border_color_1 = translate_color(border_color_1_s);
+        border_color_2= translate_color(border_color_2_s);
+        box_color= translate_color(box_color_s);
+        selection_color= translate_color(selection_color_s);
+        selection_font_color= translate_color(selection_font_color_s);
+        list_font_color= translate_color(list_font_color_s);
+        list_dir_font_color= translate_color(list_dir_font_color_s);
 
-				chr_forecolor = graphics_make_color(0xFF, 0x14, 0x94, 0xFF); //pink
-				graphics_set_color	(chr_forecolor, chr_backcolor);
-				
-				graphics_draw_text( disp, 85,  55, "SETS" ); 
-				graphics_draw_text( disp, 94,  70, "1" ); //u
-				graphics_draw_text( disp, 104, 82, "2" ); //r
-				graphics_draw_text( disp, 94,  93, "3" ); //d
-				graphics_draw_text( disp, 82,  82, "4" ); //l
-				
-				graphics_draw_text( disp, 208,  206, "press START" ); 
+        while( !(disp = display_lock()) );
 
-				 if(set==1)
-				drawSet1(disp);
-				 if(set==2)
-				drawSet2(disp);
-				 if(set==3)
-				drawSet3(disp);
-				 if(set==4)
-				drawSet4(disp);
-				
-				 drawTextInput(disp, input_text);
-				 
-				/* Force backbuffer flip */
-				display_show(disp);
-				 
-				 
-			} //mapping 2 chr input drawings
+        drawBg(disp); //new
+        drawBoxNumber(disp,1); //new
 
-			
+        uint32_t *buffer = (uint32_t *)__get_buffer( disp ); //fg disp = 2
 
-			//request controller
+        display_show(disp); //new
+
+        backupSaveData(disp);
+
+        while( !(disp = display_lock()) );
+
+        sprintf(pwd,"%s", "/");
+        readSDcard(disp,"/");
+
+        display_show(disp);
+        //chr input coord
+        x=30;
+        y=30;
+
+        position=0;
+        set=1;
+        sprintf(input_text, "");
+
+        //sprite for chr input
+        int fp = dfs_open("/n64controller.sprite");
+        sprite_t *contr = malloc( dfs_size( fp ) );
+        dfs_read( contr, 1, dfs_size( fp ), fp );
+        dfs_close( fp );
+
+        //sd card speed settings from config
+        if(sd_speed==2){
+            bi_speed50();
+        }
+        else{
+            bi_speed25();
+        }
+
+        //system main-loop with controller inputs-scan
+        while(1) {
+            if (playing==1)
+                playing = update_mp3(buf_ptr, buf_size);
+
+            if(input_mapping==1)
+                sleep(60);
+
+            if(input_mapping==3){
+                while( !(disp = display_lock()) );
+
+                graphics_draw_sprite( disp, 0, 0, contr );
+                /* Set the text output color */
+                graphics_set_color( 0x0, 0xFFFFFFFF );
+
+                chr_forecolor = graphics_make_color(0xFF, 0x14, 0x94, 0xFF); //pink
+                graphics_set_color(chr_forecolor, chr_backcolor);
+
+                graphics_draw_text( disp, 85,  55, "SETS" );
+                graphics_draw_text( disp, 94,  70, "1" ); //u
+                graphics_draw_text( disp, 104, 82, "2" ); //r
+                graphics_draw_text( disp, 94,  93, "3" ); //d
+                graphics_draw_text( disp, 82,  82, "4" ); //l
+
+                graphics_draw_text( disp, 208,  206, "press START" );
+
+                if(set==1)
+                    drawSet1(disp);
+                if(set==2)
+                    drawSet2(disp);
+                if(set==3)
+                    drawSet3(disp);
+                if(set==4)
+                    drawSet4(disp);
+
+                drawTextInput(disp, input_text);
+
+                /* Force backbuffer flip */
+                display_show(disp);
+            } //mapping 2 chr input drawings
+
+            //request controller
             controller_scan();
             struct controller_data keys = get_keys_down();
             struct controller_data keys_held = get_keys_held();
 
-            if(keys.c[0].up || keys_held.c[0].up || keys_held.c[0].y > +25)
-            {
-				if(input_mapping==1){
-					if(select_mode){
-						
-						if(count!=0){
-						
-						if(scroll_behaviour==1)	
-							cursor--;
-							else
-								 if(cursor!=0)
-								  if((cursor+0)%20==0){
-									  
-									cursor--;
-									page-=20;
-									}
-									else{
-										
-									cursor--;
-								  }
-							
-							//end
-							 while( !(disp = display_lock()) );
-							
-							new_scroll_pos(&cursor, &page, MAX_LIST, count);
-							
-							clearScreen(disp); //part clear?
-							display_dir(list, cursor, page, MAX_LIST, count, disp);
-							
-							display_show(disp);
-						}
-					}
-				}
-				else
-				if(input_mapping==2){	
+            if(keys.c[0].up || keys_held.c[0].up || keys_held.c[0].y > +25) {
+                if(input_mapping==1){
+                    if(select_mode){
+                        if(count!=0){
+                            if(scroll_behaviour==1)
+                                cursor--;
+                            else if(cursor!=0) {
+                                if((cursor+0)%20==0){
+                                    cursor--;
+                                    page-=20;
+                                }
+                                else{
+                                    cursor--;
+                                }
+                            }
 
-				}
-				else
-				if(input_mapping==3){	
-				//chr input screen	
-				 set=1;
-				}
-				else
-				if(input_mapping==7){
-					
-					    while( !(disp = display_lock()) );
-					    
-						new_scroll_pos(&cursor, &page, MAX_LIST, count);
-						clearScreen(disp); //part clear?
-						//display_show(disp_bg);
-						display_dir(list, cursor, page, MAX_LIST, count, disp);
-						
-				drawRomConfigBox(disp,2);
-				display_show(disp);
-				input_mapping=7;
-				sleep(80);
-				
-				}
-				else
-				if(input_mapping==8){
+                            //end
+                            while( !(disp = display_lock()) );
 
+                            new_scroll_pos(&cursor, &page, MAX_LIST, count);
 
+                            clearScreen(disp); //part clear?
+                            display_dir(list, cursor, page, MAX_LIST, count, disp);
 
-						while( !(disp = display_lock()) );
-						
-						/*
-						readSDcard(disp,list_pwd_backup);
-						
-						if(scroll_behaviour==0){
-							cursor=list_pos_backup[0];
-							page=list_pos_backup[1];
-						}
-						else{
-							cursor_line=0;
-						}
-						*/
-						//clearScreen(disp); //part clear?
-						drawBg(disp); //background
-						//display_dir(list, cursor, page, MAX_LIST, count, disp);
-						
-					//	display_show(disp);
+                            display_show(disp);
+                        }
+                    }
+                }
+                else if(input_mapping==2){
+                }
+                else if(input_mapping==3){
+                    //chr input screen
+                    set=1;
+                }
+                else if(input_mapping==7){
+                    while( !(disp = display_lock()) );
 
-						
-						
-						drawToplistBox(disp,2);
-						
-						display_show(disp);
-						input_mapping=8;
-						sleep(80);
-						
-				}				
-				
-				
+                    new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                    clearScreen(disp); //part clear?
+                    display_dir(list, cursor, page, MAX_LIST, count, disp);
+
+                    drawRomConfigBox(disp,2);
+                    display_show(disp);
+                    input_mapping=7;
+                    sleep(80);
+                }
+                else if(input_mapping==8){
+                    while( !(disp = display_lock()) );
+
+                    drawBg(disp); //background
+                    drawToplistBox(disp,2);
+
+                    display_show(disp);
+                    input_mapping=8;
+                    sleep(80);
+                }
             }
 
-            if(keys.c[0].down || keys_held.c[0].down || keys_held.c[0].y < -25)
-            {
+            if(keys.c[0].down || keys_held.c[0].down || keys_held.c[0].y < -25) {
+                if(input_mapping==1){
+                    if(select_mode){
+                        if(count!=0){
+                            if(scroll_behaviour==1)
+                                cursor++;
+                            else if(cursor+1!=count) {
+                                if((cursor+1)%20==0){
+                                    cursor++;
+                                    page+=20;
+                                }
+                                else{
+                                    cursor++;
+                                }
+                            }
 
-				if(input_mapping==1){
-					if(select_mode){
-					  
-					 if(count!=0){
-						if(scroll_behaviour==1)	
-							cursor++;
-							else   
-								if(cursor+1!=count)
-								  if((cursor+1)%20==0){
-									  
-									cursor++;
-									page+=20;
-									}
-									else{
-										
-									cursor++;
-								  }
-			
-					    
-					    
-					    while( !(disp = display_lock()) );
-					    
-						new_scroll_pos(&cursor, &page, MAX_LIST, count);
-						clearScreen(disp); //part clear?
-						//display_show(disp_bg);
-						display_dir(list, cursor, page, MAX_LIST, count, disp);
-						
-						 
-						display_show(disp);
-					}
-					}
-				}
-				else
-				if(input_mapping==2){	
+                            while( !(disp = display_lock()) );
 
-				}
-				else
-				if(input_mapping==3){	
-				//chr input screen	
-				set=3;
-				}
-				else
-				if(input_mapping==7){
-				
-					    while( !(disp = display_lock()) );
-					    
-						new_scroll_pos(&cursor, &page, MAX_LIST, count);
-						clearScreen(disp); //part clear?
-						
-						//display_show(disp_bg);
-						display_dir(list, cursor, page, MAX_LIST, count, disp);
-						
-						 
-						
-						
-				drawRomConfigBox(disp,1);
-				
-				display_show(disp);
-				input_mapping=7;
-				sleep(80);
-				
-				}
-				else
-				if(input_mapping==8){
+                            new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                            clearScreen(disp); //part clear?
+                            display_dir(list, cursor, page, MAX_LIST, count, disp);
 
+                            display_show(disp);
+                        }
+                    }
+                }
+                else if(input_mapping==2){
+                }
+                else if(input_mapping==3){
+                    //chr input screen
+                    set=3;
+                }
+                else if(input_mapping==7){
+                    while( !(disp = display_lock()) );
 
+                    new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                    clearScreen(disp); //part clear?
 
-						while( !(disp = display_lock()) );
-						
-/*
-						readSDcard(disp,list_pwd_backup);
-						
-						if(scroll_behaviour==0){
-							cursor=list_pos_backup[0];
-							page=list_pos_backup[1];
-						}
-						else{
-							cursor_line=0;
-						}
-	*/					
-						//clearScreen(disp); //part clear?
-						drawBg(disp);
-						//display_dir(list, cursor, page, MAX_LIST, count, disp);
-						
-					//	display_show(disp);
+                    display_dir(list, cursor, page, MAX_LIST, count, disp);
 
-						
-						
-						drawToplistBox(disp,1);
-						
-						display_show(disp);
-						input_mapping=8;
-						sleep(80);
-						
-				}
-				
+                    drawRomConfigBox(disp,1);
+
+                    display_show(disp);
+                    input_mapping=7;
+                    sleep(80);
+                }
+                else if(input_mapping==8){
+                    while( !(disp = display_lock()) );
+
+                    drawBg(disp);
+                    drawToplistBox(disp,1);
+
+                    display_show(disp);
+                    input_mapping=8;
+                    sleep(80);
+                }
             }
-            else
-            if(keys.c[0].left || keys_held.c[0].left || keys_held.c[0].x < -25)
-            {
-					if(input_mapping==1){
-							if(select_mode){
+            else if(keys.c[0].left || keys_held.c[0].left || keys_held.c[0].x < -25) {
+                if(input_mapping==1){
+                    if(select_mode){
+                        if(count!=0 && scroll_behaviour==0 && cursor-20>=0){
+                            page-=20;
+                            cursor=page;
+                        }
 
-								if(count!=0){
-									if(scroll_behaviour==0)
-									if(cursor-20>=0){
-									page-=20;
-									cursor=page;
-									}
-								}
-								
-								while( !(disp = display_lock()) );
-								
-								new_scroll_pos(&cursor, &page, MAX_LIST, count);
-								clearScreen(disp); //part clear?
-								//display_show(disp_bg);
-								display_dir(list, cursor, page, MAX_LIST, count, disp);
-								
-								 
-								display_show(disp);
-							}
-					
-					
-					}
-					else
-					if(input_mapping==2){	
-			
-					}
-					else
-					if(input_mapping==3){	
-					//chr input screen	
-					set=4;					
-					}
-					else
-					if(input_mapping==7){
-						
-							while( !(disp = display_lock()) );
-							
-							new_scroll_pos(&cursor, &page, MAX_LIST, count);
-							clearScreen(disp); //part clear?
-							//display_show(disp_bg);
-							display_dir(list, cursor, page, MAX_LIST, count, disp);
-					
-					
-					alterRomConfig(rom_config[0], 2);
-					
-							
-					drawRomConfigBox(disp,0);
-					display_show(disp);
-					input_mapping=7;
-					sleep(80);
-					
-					}							
+                        while( !(disp = display_lock()) );
 
-			}
-            else
-            if(keys.c[0].right || keys_held.c[0].right || keys_held.c[0].x > +25)
-            {
-					if(input_mapping==1){
-						 if(select_mode){
-							 
-								if(count!=0){
-									if(scroll_behaviour==0){
-										if(page+20!=count)
-										if(cursor+20 <= ( (count/20)*20 +19 ) ){
-											page+=20;
-											cursor=page;
-											}
-									}
-								}
-								
-								while( !(disp = display_lock()) );
-								
-								new_scroll_pos(&cursor, &page, MAX_LIST, count);
-								clearScreen(disp); //part clear?
-								//display_show(disp_bg);
-								display_dir(list, cursor, page, MAX_LIST, count, disp);
-								
-								 
-								display_show(disp);
-							}
-						
-							
-					}
-					else
-					if(input_mapping==2){	
+                        new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                        clearScreen(disp); //part clear?
+                        display_dir(list, cursor, page, MAX_LIST, count, disp);
 
-					}
-					else
-					if(input_mapping==3){	
-					//chr input screen	
-					 set=2;
-					}
-					else
-					if(input_mapping==7){
-						
-							while( !(disp = display_lock()) );
-							
-							new_scroll_pos(&cursor, &page, MAX_LIST, count);
-							clearScreen(disp); //part clear?
-							//display_show(disp_bg);
-							display_dir(list, cursor, page, MAX_LIST, count, disp);
-							
-							
-					alterRomConfig(rom_config[0], 1);
-							
-					drawRomConfigBox(disp,0);
-					display_show(disp);
-					input_mapping=7;
-					sleep(80);
-					
-					}								
+                        display_show(disp);
+                    }
+                }
+                else if(input_mapping==2){
+                }
+                else if(input_mapping==3){
+                    //chr input screen
+                    set=4;
+                }
+                else if(input_mapping==7){
+                    while( !(disp = display_lock()) );
 
-			}			
+                    new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                    clearScreen(disp); //part clear?
+                    display_dir(list, cursor, page, MAX_LIST, count, disp);
+
+                    alterRomConfig(rom_config[0], 2);
+
+                    drawRomConfigBox(disp,0);
+                    display_show(disp);
+                    input_mapping=7;
+                    sleep(80);
+                }
+            }
+            else if(keys.c[0].right || keys_held.c[0].right || keys_held.c[0].x > +25) {
+                if(input_mapping==1){
+                    if(select_mode){
+                        if ((count != 0) &&
+                            (scroll_behaviour == 0) &&
+                            (page + 20 != count) &&
+                            (cursor+20 <= ((count / 20) * 20 + 19)))
+                        {
+                            page+=20;
+                            cursor=page;
+                        }
+
+                        while( !(disp = display_lock()) );
+
+                        new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                        clearScreen(disp); //part clear?
+                        display_dir(list, cursor, page, MAX_LIST, count, disp);
+
+                        display_show(disp);
+                    }
+                }
+                else if(input_mapping==2){
+                }
+                else if(input_mapping==3){
+                    //chr input screen
+                    set=2;
+                }
+                else if(input_mapping==7){
+                    while( !(disp = display_lock()) );
+
+                    new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                    clearScreen(disp); //part clear?
+                    display_dir(list, cursor, page, MAX_LIST, count, disp);
+
+                    alterRomConfig(rom_config[0], 1);
+
+                    drawRomConfigBox(disp,0);
+                    display_show(disp);
+                    input_mapping=7;
+                    sleep(80);
+                }
+            }
             else if( keys.c[0].start ){
-				
+                if(input_mapping==1){
+                    //quick boot
+                    if(quick_boot){
+                        FatRecord rec_last;
+                        uint8_t lastrom_cfg_data[512];
 
-					if(input_mapping==1){
-					//quick boot
-						
-							if(quick_boot){
+                        if(fatFindRecord("/ED64/LASTROM.CFG", &rec_last, 0)==0){
+                            u8 resp = 0;
+                            resp = fatOpenFileByeName("/ED64/LASTROM.CFG", 0);
+                            resp = fatReadFile(&lastrom_cfg_data, 1);
 
-									FatRecord rec_last;
-									uint8_t lastrom_cfg_data[512];//[size];
-									
-								
-									if(fatFindRecord("/ED64/LASTROM.CFG", &rec_last, 0)==0){
-									
-									//drawShortInfoBox(disp, "    quick boot",0);
-									
-									u8 resp = 0;
-									resp = fatOpenFileByeName("/ED64/LASTROM.CFG", 0);
-									resp = fatReadFile(&lastrom_cfg_data, 1);
-									
-							
-							
-									u8 * short_s;
-									short_s=strrchr(lastrom_cfg_data,'/');	
-							
-									while( !(disp = display_lock()) );
-									clearScreen(disp);
-									
-									sleep(100);
-									evd_ulockRegs();
-									sleep(100);
-									
-									select_mode=9;
-														//short		  fullpath
-									readRomConfig(disp, short_s+1, lastrom_cfg_data);
-									
-									loadrom(disp, lastrom_cfg_data, 1);	
-									display_show(disp);
-								
-									}
-									//nothing else :>
-									
-									drawShortInfoBox(disp, "    rom not found",0);
-									
-							
-							}
-							else
-							if(list[cursor].type != DT_DIR  && empty==0){
+                            u8 * short_s;
+                            short_s=strrchr(lastrom_cfg_data,'/');
 
-					
-										char name_file[64];
-							 
-										if(strcmp(pwd,"/")==0 )
-											sprintf(name_file,"/%s", list[cursor].filename);
-											else
-												sprintf(name_file,"%s/%s", pwd, list[cursor].filename);
-								
-										/*filetype
-										 * 1 rom
-										 * 2 mempak
-										 * 3 background
-										 * 4 mp3
-										 */
-										 
-											int ft=0;
-											char _upper_name_file[64];
-											
-											strcpy(_upper_name_file, name_file);
-											
-											strhicase(_upper_name_file,  strlen (_upper_name_file));
-											sprintf(_upper_name_file, "%s", _upper_name_file );
-											
-											u8 extension[4];
-										 	u8 * pch;
-											pch=strrchr(_upper_name_file,'.');   	  //asd.n64
-											
-											
-											sprintf(extension, "%s",(pch+1));   //0123456
-											
-											
-											if(!strcmp(extension,"GB" ))
-												ft=5;
-											if(!strcmp(extension,"GBC" ))
-												ft=6;
-											if(!strcmp(extension,"NES" ))
-												ft=7;	
-											if(!strcmp(extension,"GG" ))
-												ft=8;
-											if(!strcmp(extension,"MSX" ))
-												ft=9;													
-												
-											if(!strcmp(extension,"MPK" ))
-												ft=2;
-											if(!strcmp(extension,"Z64") || !strcmp(extension,"V64" )	|| !strcmp(extension,"N64" )	)
-												ft=1;
-												
-																				
+                            while( !(disp = display_lock()) );
+                            clearScreen(disp);
 
-										if(ft==1){ //rom
-											//load rom
-											
-											while( !(disp = display_lock()) );
-											clearScreen(disp);
-											u16 msg = 0;
-											sleep(300);
-											evd_ulockRegs();
-											sleep(300);
-											sprintf(rom_filename,"%s", list[cursor].filename);
-											
-											
-											select_mode=9;
-											
-											//read rom_config data
-											readRomConfig(disp, rom_filename, name_file);
-											
-											loadrom(disp,name_file, 1);	
-											display_show(disp);
-											//display_show(disp);
-											
-											//rom loaded mapping
-											input_mapping=4;
-											
-										}else 
-											if(ft==5 || ft==6){ //gb/gbc rom
-											//load rom
-											
-											while( !(disp = display_lock()) );
-											clearScreen(disp);
-											u16 msg = 0;
-											sleep(300);
-											evd_ulockRegs();
-											sleep(300);
-											sprintf(rom_filename,"%s", list[cursor].filename);
-											display_show(disp);
-											
-											select_mode=9;
-											
-											loadgbrom(disp,name_file);	
-											
-											display_show(disp);
-										}else 
-										if(ft==2){ //mempak
-											
+                            sleep(100);
+                            evd_ulockRegs();
+                            sleep(100);
+
+                            select_mode=9;
+                                                //short          fullpath
+                            readRomConfig(disp, short_s+1, lastrom_cfg_data);
+
+                            loadrom(disp, lastrom_cfg_data, 1);
+                            display_show(disp);
+                        }
+                        //nothing else :>
+
+                        drawShortInfoBox(disp, "    rom not found",0);
+                    }
+                    else if(list[cursor].type != DT_DIR  && empty==0){
+                        char name_file[64];
+
+                        if(strcmp(pwd,"/")==0 )
+                            sprintf(name_file,"/%s", list[cursor].filename);
+                        else
+                            sprintf(name_file,"%s/%s", pwd, list[cursor].filename);
+
+                        /*filetype
+                         * 1 rom
+                         * 2 mempak
+                         * 3 background
+                         * 4 mp3
+                         */
+
+                        int ft=0;
+                        char _upper_name_file[64];
+
+                        strcpy(_upper_name_file, name_file);
+
+                        strhicase(_upper_name_file,  strlen (_upper_name_file));
+                        sprintf(_upper_name_file, "%s", _upper_name_file );
+
+                        u8 extension[4];
+                        u8 *pch;
+                        pch=strrchr(_upper_name_file,'.');         //asd.n64
+
+                        sprintf(extension, "%s",(pch+1));   //0123456
+
+                        if(!strcmp(extension,"GB" ))
+                            ft=5;
+                        if(!strcmp(extension,"GBC" ))
+                            ft=6;
+                        if(!strcmp(extension,"NES" ))
+                            ft=7;
+                        if(!strcmp(extension,"GG" ))
+                            ft=8;
+                        if(!strcmp(extension,"MSX" ))
+                            ft=9;
+                        if(!strcmp(extension,"MPK" ))
+                            ft=2;
+                        if(!strcmp(extension,"Z64") || !strcmp(extension,"V64") || !strcmp(extension,"N64"))
+                            ft=1;
+
+                        if(ft==1){ //rom
+                            //load rom
+
+                            while( !(disp = display_lock()) );
+                            clearScreen(disp);
+                            u16 msg = 0;
+                            sleep(300);
+                            evd_ulockRegs();
+                            sleep(300);
+                            sprintf(rom_filename,"%s", list[cursor].filename);
 
 
+                            select_mode=9;
 
-										}
-										else 
-											if(ft==7){ //nes
-											//load rom
-											
-											while( !(disp = display_lock()) );
-											clearScreen(disp);
-											u16 msg = 0;
-											sleep(300);
-											evd_ulockRegs();
-											sleep(300);
-											sprintf(rom_filename,"%s", list[cursor].filename);
-											display_show(disp);
-											
-											select_mode=9;
-											
-											loadnesrom(disp,name_file);	
-											
-											display_show(disp);
-										}
-										else 
-											if(ft==8){ //gg
-											//load gg rom
-											
-											while( !(disp = display_lock()) );
-											clearScreen(disp);
-											u16 msg = 0;
-											sleep(300);
-											evd_ulockRegs();
-											sleep(300);
-											sprintf(rom_filename,"%s", list[cursor].filename);
-											display_show(disp);
-											
-											select_mode=9;
-											
-											loadggrom(disp,name_file);	
-											
-											display_show(disp);
-										}	
-										else 
-											if(ft==9){ //msx2
-											//load msx2 rom
-											
-											while( !(disp = display_lock()) );
-											clearScreen(disp);
-											u16 msg = 0;
-											sleep(300);
-											evd_ulockRegs();
-											sleep(300);
-											sprintf(rom_filename,"%s", list[cursor].filename);
-											display_show(disp);
-											
-											select_mode=9;
-											
-											loadmsx2rom(disp,name_file);	
-											
-											display_show(disp);
-										}
-			
+                            //read rom_config data
+                            readRomConfig(disp, rom_filename, name_file);
 
-									}																				
-					}
-					else
-					if(input_mapping==2){	
-					
-					
-					}
-					else
-					if(input_mapping==3){	
-						
-	
-						//better config color-set
-						graphics_set_color(graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF), graphics_make_color(0x00, 0x00, 0x00, 0x00));
-						clearScreen(disp);
-						display_dir(list, cursor, page, MAX_LIST, count, disp);
-						
-						if(input_text[0]!='\0'){ //input_text is set - do backup
-						    drawBoxNumber(disp,2);
+                            loadrom(disp,name_file, 1);
+                            display_show(disp);
 
-							display_show(disp);
-								
-									printText("Mempak-Backup:", 9, 9, disp);
-									printText(" ", 9, -1, disp);
-									printText("search...", 9, -1, disp);
-									mpk_to_file(disp, input_text, 0);
-									sleep(300);
+                            //rom loaded mapping
+                            input_mapping=4;
+                        }
+                        else if(ft==5 || ft==6){ //gb/gbc rom
+                            //load rom
 
-									drawShortInfoBox(disp, "         done",0);
-									//input_mapping=98;
-									sleep(2000);
-								
-								//reread filesystem
-								cursor_line=0;
-								readSDcard(disp,"/");
-							}
+                            while( !(disp = display_lock()) );
+                            clearScreen(disp);
+                            u16 msg = 0;
+                            sleep(300);
+                            evd_ulockRegs();
+                            sleep(300);
+                            sprintf(rom_filename,"%s", list[cursor].filename);
+                            display_show(disp);
 
-						input_mapping=1;
-						
-					}
-					else
-					if(input_mapping==4){
-						//rom start screen	
-						
-						//normal boot
-						//boot the loaded rom
-						bootRom(disp, 0);
-						//never return		
-					
-					}
-				
+                            select_mode=9;
 
+                            loadgbrom(disp,name_file);
 
-				}
-				else if( keys.c[0].L )
-                {
-					if(input_mapping==1){
-						
-						input_mapping=2;
-						
-						    drawBoxNumber(disp,2);
+                            display_show(disp);
+                        }
+                        else if(ft==2){ //mempak
+                        }
+                        else if(ft==7){ //nes
+                            //load rom
 
-							display_show(disp);
-								
-									printText("Mempak-Subsystem:", 9, 9, disp);
-									printText(" ", 9, -1, disp);
-									printText(" ", 9, -1, disp);
-									printText("  Z: View content", 9, -1, disp);
-									printText(" ", 9, -1, disp);
-									printText("  A: Backup - new", 9, -1, disp); //set mapping 3
-									printText(" ", 9, -1, disp);
-									printText("  R: Format", 9, -1, disp);
-									printText(" ", 9, -1, disp);
-									printText("  B: Abort", 9, -1, disp);
-									if(sound_on) playSound(2);
-							sleep(500);
-					}
-					else
-					if(input_mapping==2){	
+                            while( !(disp = display_lock()) );
+                            clearScreen(disp);
+                            u16 msg = 0;
+                            sleep(300);
+                            evd_ulockRegs();
+                            sleep(300);
+                            sprintf(rom_filename,"%s", list[cursor].filename);
+                            display_show(disp);
 
-					}
-					else
-					if(input_mapping==3){	
-					//chr input screen	
-						drawInputDel(disp);
-					}
-					else
-					if(input_mapping==9){	
-						//c-up or A
-						drawConfirmBox(disp);
-						//confirm restore mpk
-						input_mapping=6;
-					}					
-					
-										
-				//placeholder
+                            select_mode=9;
+
+                            loadnesrom(disp,name_file);
+
+                            display_show(disp);
+                        }
+                        else if(ft==8){ //gg
+                            //load gg rom
+
+                            while( !(disp = display_lock()) );
+                            clearScreen(disp);
+                            u16 msg = 0;
+                            sleep(300);
+                            evd_ulockRegs();
+                            sleep(300);
+                            sprintf(rom_filename,"%s", list[cursor].filename);
+                            display_show(disp);
+
+                            select_mode=9;
+
+                            loadggrom(disp,name_file);
+
+                            display_show(disp);
+                        }
+                        else if(ft==9){ //msx2
+                            //load msx2 rom
+
+                            while( !(disp = display_lock()) );
+                            clearScreen(disp);
+                            u16 msg = 0;
+                            sleep(300);
+                            evd_ulockRegs();
+                            sleep(300);
+                            sprintf(rom_filename,"%s", list[cursor].filename);
+                            display_show(disp);
+
+                            select_mode=9;
+
+                            loadmsx2rom(disp,name_file);
+
+                            display_show(disp);
+                        }
+
+                    }
                 }
-                else if( keys.c[0].R )
-                {
-					if(input_mapping==1){
-		
-
-		
-					}
-					else
-					if(input_mapping==2){
-		
-							//c-up or A
-							drawConfirmBox(disp);
-							//confirm format mpk
-							input_mapping=5;
-							
-					}
-					else
-					if(input_mapping==3){	
-					//chr input screen	
-						if(set==1)
-						drawInputAdd(disp, "A"); //P X )
-						 if(set==2)
-						drawInputAdd(disp, "H");
-						 if(set==3)
-						drawInputAdd(disp, "O");
-						 if(set==4)
-						drawInputAdd(disp, "V");
-					}
-					else
-					if(input_mapping==9){	
-						//c-up or A
-						drawConfirmBox(disp);
-						//confirm quick-backup
-						input_mapping=10;
-						
-						
-					}	
-										
-				//placeholder
+                else if(input_mapping==2){
                 }
-                else if( keys.c[0].C_up )
-                {
-					if(input_mapping==1){
-			
-					
-						if(list[cursor].type != DT_DIR  && empty==0){
-							drawBoxNumber(disp,11);
-							
-							char *part;
-							
-							part =  malloc(slen(list[cursor].filename));
-							sprintf(part,"%s", list[cursor].filename);
-							part[31]='\0';
-							
-							printText(part, 4, 14, disp);
-							
-							
-							if(slen(list[cursor].filename)>31){
-								sprintf(part,"%s", list[cursor].filename+31);
-								part[31]='\0';
-								printText(part, 4, -1, disp);
-							}
-							
-							free(part);
-							input_mapping=98;
-						}
-							
-					}
-					else
-					if(input_mapping==2){
-		
-					}
-					else
-					if(input_mapping==3){	
-					//chr input screen	
-						 if(set==1)
-						drawInputAdd(disp, "B"); //P X )
-						 if(set==2)
-						drawInputAdd(disp, "I");
-						 if(set==3)
-						drawInputAdd(disp, "P");
-						 if(set==4)
-						drawInputAdd(disp, "W");					
-					}
-					else
-					if(input_mapping==4){	
-						//rom start screen
-						if(cheats_on==0){
-							printText("cheat system activated...", 3, -1, disp);
-							cheats_on=1;
-						}
-					
-					}
-					else //format mpk
-					if(input_mapping==5){
-		
-													drawBoxNumber(disp,2);
-							// writeInitText(disp);
+                else if(input_mapping==3){
+                    //better config color-set
+                    graphics_set_color(
+                        graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF),
+                        graphics_make_color(0x00, 0x00, 0x00, 0x00)
+                    );
+                    clearScreen(disp);
+                    display_dir(list, cursor, page, MAX_LIST, count, disp);
 
-							display_show(disp);
-								
-									printText("Mempak-Format:", 9, 9, disp);
-									printText(" ", 9, -1, disp);
-									//printText("search...", 9, -1, disp);
-									
-										printText("formating...", 9, -1, disp);
-										
-									/* Make sure they don't have a rumble pak inserted instead */
-									switch( identify_accessory( 0 ) )
-									{
-										
-										
-										case ACCESSORY_NONE:
-										  
-											 printText("No Mempak", 9, -1, disp);
-											break;
-										case ACCESSORY_MEMPAK:
-											printText("Please wait...", 9, -1, disp);
-											if( format_mempak( 0 ) )
-											{
-												 printText("Error formatting!", 9, -1, disp);
-											}
-											else
-											{
-												// printText("done...", 9, -1, disp);
-												 
-												drawShortInfoBox(disp, "         done",0);
-												input_mapping=98;
-												 
-											}
+                    if(input_text[0]!='\0'){ //input_text is set - do backup
+                        drawBoxNumber(disp,2);
 
-											break;
-										case ACCESSORY_RUMBLEPAK:
-										  
-											 printText("Cannot format rumblepak!", 9, -1, disp);
-											break;
-									}
-									
-									
-									sleep(500);
-								
-								//reread filesystem
-								//readSDcard(disp,"/");
-							
+                        display_show(disp);
 
-						input_mapping=98;
-					}
-					else //restore mpk
-					if(input_mapping==6){
-						
-										
-						drawBoxNumber(disp,2);
-			
+                        printText("Mempak-Backup:", 9, 9, disp);
+                        printText(" ", 9, -1, disp);
+                        printText("search...", 9, -1, disp);
+                        mpk_to_file(disp, input_text, 0);
+                        sleep(300);
 
-							display_show(disp);
-								
-									printText("Mempak-Restore:", 9, 9, disp);
-									printText(" ", 9, -1, disp);
-					
-									file_to_mpk(disp, rom_filename);
-		
-									sleep(300);
-						
-						drawShortInfoBox(disp, "         done",0);
-						input_mapping=98;
-								
-					//	input_mapping=98;
-					display_show(disp);
-						
-						
-					}
-					else //quick-backup
-					if(input_mapping==10){
-							drawBoxNumber(disp,2);
+                        drawShortInfoBox(disp, "         done",0);
+                        sleep(2000);
 
-							display_show(disp);
-								
-									printText("Quick-Backup:", 9, 9, disp);
-									printText(" ", 9, -1, disp);
-									printText("search...", 9, -1, disp);
-									mpk_to_file(disp, list[cursor].filename ,1); //quick
-									sleep(300);
+                        //reread filesystem
+                        cursor_line=0;
+                        readSDcard(disp,"/");
+                    }
 
-									drawShortInfoBox(disp, "         done",0);
-									//input_mapping=98;
-									sleep(500);
-								input_mapping=98;
-								//reread filesystem
-							//	cursor_line=0;
-							//readSDcard(disp,"/");
-					}
-					
-					
-					
+                    input_mapping=1;
+
                 }
-				else
-				  if( keys.c[0].C_right )
-                {
-				//placeholder
-					if(input_mapping==1 && list[cursor].type != DT_DIR){
-								//show rom cfg screen
-								
-										char name_file[64];
-							 
-										if(strcmp(pwd,"/")==0 )
-											sprintf(name_file,"/%s", list[cursor].filename);
-											else
-												sprintf(name_file,"%s/%s", pwd, list[cursor].filename);
-								
-										/*filetype
-										 * 1 rom
-										 */
-										 
-											int ft=0;
-											char _upper_name_file[64];
-											
-											strcpy(_upper_name_file, name_file);
-											
-											strhicase(_upper_name_file,  strlen (_upper_name_file));
-											sprintf(_upper_name_file, "%s", _upper_name_file );
-											
-											u8 extension[4];
-										 	u8 * pch;
-											pch=strrchr(_upper_name_file,'.');   	  //asd.n64
-											
-											
-											sprintf(extension, "%s",(pch+1));   //0123456
-											
-											
-											if(!strcmp(extension,"Z64") || !strcmp(extension,"V64" )	|| !strcmp(extension,"N64" )	)
-												ft=1;
+                else if(input_mapping==4){
+                    //rom start screen
 
-										if(ft==1){ //rom
-											//cfg rom
-
-											sprintf(rom_filename,"%s", list[cursor].filename);
-											
-	
-											//preload config or file header
-											readRomConfig(disp, rom_filename, name_file);
-											
-											drawRomConfigBox(disp,0);
-											display_show(disp);
-											input_mapping=7;
-
-										}
-
-				
-					}
-					else
-					if(input_mapping==2){
-		
-					}
-					else
-					if(input_mapping==3){	
-					//chr input screen	
-						 if(set==1)
-						drawInputAdd(disp, "D"); //P X )
-						 if(set==2)
-						drawInputAdd(disp, "K");
-						 if(set==3)
-						drawInputAdd(disp, "R");
-						 if(set==4)
-						drawInputAdd(disp, "Y");					
-					}
-					else
-					if(input_mapping==4){	
-						//rom start screen
-					
-					if(force_tv!=0){
-						printText("force tv mode...", 3, -1, disp);
-						
-					}
-					
-					
-					}
-					
-									
-				}
-				else
-                if( keys.c[0].C_down )
-                {
-				//placeholder
-					if(input_mapping==1){
-						
-						input_mapping=99;	
-						
-						//sprintf(list_pwd_backup,"%s",pwd);
-						scopy(pwd, list_pwd_backup);
-						while( !(disp = display_lock()) );
-						
-							drawBg(disp); //background
-						
-						
-						toplist_cursor=1;
-						drawToplistBox(disp,0); //0 = load entries
-						
-						display_show(disp);		
-							
-						input_mapping=8;
-						//input_mapping=97;	
-						
-					}
-					else
-					if(input_mapping==2){
-		
-					}
-					else
-					if(input_mapping==3){	
-					//chr input screen	
-						 if(set==1)
-						drawInputAdd(disp, "F"); //P X )
-						 if(set==2)
-						drawInputAdd(disp, "M");
-						 if(set==3)
-						drawInputAdd(disp, "T");
-					     if(set==4)
-					    drawInputAdd(disp, "-"); //GR Set4					
-					}				
+                    //normal boot
+                    //boot the loaded rom
+                    bootRom(disp, 0);
+                    //never return
                 }
-				else
-                if( keys.c[0].C_left )
-                {
-				//placeholder
-					if(input_mapping==1){
-						
-										if(input_mapping==1 && list[cursor].type != DT_DIR ){//open
+            }
+            else if( keys.c[0].L ) {
+                if(input_mapping==1){
+                    input_mapping=2;
 
-										char name_file[64];
-							 
-										if(strcmp(pwd,"/")==0 )
-											sprintf(name_file,"/%s", list[cursor].filename);
-											else
-												sprintf(name_file,"%s/%s", pwd, list[cursor].filename);
-								
-										/*filetype
-										 * 1 rom
-										 * 2 mempak
-										 * 3 background
-										 * 4 mp3
-										 */
-										 
-											int ft=0;
-											char _upper_name_file[64];
-											
-											 strcpy(_upper_name_file, name_file);
-											
-											 strhicase(_upper_name_file,  strlen (_upper_name_file));
-											sprintf(_upper_name_file, "%s", _upper_name_file );
-											
-											u8 extension[4];
-										 	u8 * pch;
-											pch=strrchr(_upper_name_file,'.');
-											
-											
-											sprintf(extension, "%s",(pch+1));
+                    drawBoxNumber(disp,2);
 
-											if(!strcmp(extension,"MPK" ))
-												ft=2;
-											if(!strcmp(extension,"Z64") || !strcmp(extension,"V64" )	|| !strcmp(extension,"N64" )	)
-												ft=1;
+                    display_show(disp);
 
-										
-										if(ft==1){ //rom
-											//load rom
-											
-													
-													input_mapping=99;
-													
-														drawBoxNumber(disp,3); //rominfo
-	
-																u16 msg = 0;
-																sleep(300);
-																evd_ulockRegs();
-																sleep(300);
-																sprintf(rom_filename,"%s", list[cursor].filename);
-																romInfoScreen(disp, name_file, 0);	
-																
-
-																if(sound_on) playSound(2);
-														sleep(500);
-														input_mapping=98;	
-													
-										}
-										if(ft==2){ //mpk file
-										
-											drawBoxNumber(disp,4);
-											// writeInitText(disp);
-
-											display_show(disp);
-											
-											if(strcmp(pwd,"/")==0 )
-											sprintf(rom_filename,"/%s", list[cursor].filename);
-											else
-											sprintf(rom_filename,"%s/%s", pwd, list[cursor].filename);
-											
-												
-										//	sprintf(rom_filename,"%s", list[cursor].filename);
-											view_mpk_file(disp, rom_filename);
-
-											if(sound_on) playSound(2);
-											sleep(500);
-											input_mapping=98;
-											
-											
-										}
-	
-								} //mapping and not dir
-
-					}
-					else
-					if(input_mapping==2){
-		
-					}
-					else
-					if(input_mapping==3){	
-					//chr input screen	
-						if(set==1)
-						drawInputAdd(disp, "C"); //P X )
-						 if(set==2)
-						drawInputAdd(disp, "J");
-						 if(set==3)
-						drawInputAdd(disp, "Q");
-						 if(set==4)
-						drawInputAdd(disp, "X");
-					}				
+                    printText("Mempak-Subsystem:", 9, 9, disp);
+                    printText(" ", 9, -1, disp);
+                    printText(" ", 9, -1, disp);
+                    printText("  Z: View content", 9, -1, disp);
+                    printText(" ", 9, -1, disp);
+                    printText("  A: Backup - new", 9, -1, disp); //set mapping 3
+                    printText(" ", 9, -1, disp);
+                    printText("  R: Format", 9, -1, disp);
+                    printText(" ", 9, -1, disp);
+                    printText("  B: Abort", 9, -1, disp);
+                    if(sound_on) playSound(2);
+                    sleep(500);
                 }
-				else
-				if(keys.c[0].Z){
+                else if(input_mapping==2){
+                }
+                else if(input_mapping==3){
+                    //chr input screen
+                    drawInputDel(disp);
+                }
+                else if(input_mapping==9){
+                    //c-up or A
+                    drawConfirmBox(disp);
+                    //confirm restore mpk
+                    input_mapping=6;
+                }
+            }
+            else if( keys.c[0].R ) {
+                if(input_mapping==1){
+                }
+                else if(input_mapping==2){
+                    //c-up or A
+                    drawConfirmBox(disp);
+                    //confirm format mpk
+                    input_mapping=5;
+                }
+                else if(input_mapping==3){
+                    //chr input screen
+                    if(set==1)
+                        drawInputAdd(disp, "A"); //P X )
+                    if(set==2)
+                        drawInputAdd(disp, "H");
+                    if(set==3)
+                        drawInputAdd(disp, "O");
+                    if(set==4)
+                        drawInputAdd(disp, "V");
+                }
+                else if(input_mapping==9){
+                    //c-up or A
+                    drawConfirmBox(disp);
+                    //confirm quick-backup
+                    input_mapping=10;
+                }
+            }
+            else if( keys.c[0].C_up ) {
+                if(input_mapping==1){
+                    if(list[cursor].type != DT_DIR  && empty==0){
+                        drawBoxNumber(disp,11);
 
-					if(input_mapping==1){
-						
-						input_mapping=99;
-						
-						    drawBoxNumber(disp,2);
+                        char *part;
 
-							display_show(disp);
-								
-									printText("About: ", 9, 9, disp);
-									printText(" ", 9, -1, disp);
-									printText("ALT64: v0.1.8.6", 9, -1, disp);
-									printText("by saturnu", 9, -1, disp);
-									printText(" ", 9, -1, disp);
-									printText("thanks to:", 9, -1, disp);
-									printText("Krikzz", 9, -1, disp);
-									printText("ChillyWilly", 9, -1, disp);
-									printText("ShaunTaylor", 9, -1, disp);
-									printText("Conle", 9, -1, disp);
-									
-									/*
-									char mpkp[64];
-									sprintf(mpkp, "%s", mempak_path);
-									printText(mpkp, 9, -1, disp);
-									*/
-									
-									if(sound_on) playSound(2);
-							sleep(500);
-							input_mapping=98;
+                        part =  malloc(slen(list[cursor].filename));
+                        sprintf(part,"%s", list[cursor].filename);
+                        part[31]='\0';
+
+                        printText(part, 4, 14, disp);
+
+                        if(slen(list[cursor].filename)>31){
+                            sprintf(part,"%s", list[cursor].filename+31);
+                            part[31]='\0';
+                            printText(part, 4, -1, disp);
+                        }
+
+                        free(part);
+                        input_mapping=98;
+                    }
+                }
+                else if(input_mapping==2){
+                }
+                else if(input_mapping==3){
+                    //chr input screen
+                    if(set==1)
+                         drawInputAdd(disp, "B"); //P X )
+                    if(set==2)
+                        drawInputAdd(disp, "I");
+                    if(set==3)
+                        drawInputAdd(disp, "P");
+                    if(set==4)
+                        drawInputAdd(disp, "W");
+                }
+                else if(input_mapping==4){
+                    //rom start screen
+                    if(cheats_on==0){
+                        printText("cheat system activated...", 3, -1, disp);
+                        cheats_on=1;
+                    }
+                }
+                else if(input_mapping==5){ // format mpk
+                    drawBoxNumber(disp,2);
+                    display_show(disp);
+
+                    printText("Mempak-Format:", 9, 9, disp);
+                    printText(" ", 9, -1, disp);
+
+                    printText("formating...", 9, -1, disp);
+
+                    /* Make sure they don't have a rumble pak inserted instead */
+                    switch( identify_accessory( 0 ) ){
+                    case ACCESSORY_NONE:
+                        printText("No Mempak", 9, -1, disp);
+                        break;
+
+                    case ACCESSORY_MEMPAK:
+                        printText("Please wait...", 9, -1, disp);
+                        if( format_mempak( 0 ) ) {
+                             printText("Error formatting!", 9, -1, disp);
+                        }
+                        else {
+                            drawShortInfoBox(disp, "         done",0);
+                            input_mapping=98;
+                        }
+                        break;
+
+                    case ACCESSORY_RUMBLEPAK:
+                        printText("Cannot format rumblepak!", 9, -1, disp);
+                        break;
+                    }
+
+                    sleep(500);
+
+                    input_mapping=98;
+                }
+                else if(input_mapping==6){ //restore mpk
+                    drawBoxNumber(disp,2);
+                    display_show(disp);
+
+                    printText("Mempak-Restore:", 9, 9, disp);
+                    printText(" ", 9, -1, disp);
+
+                    file_to_mpk(disp, rom_filename);
+                    sleep(300);
+
+                    drawShortInfoBox(disp, "         done",0);
+                    input_mapping=98;
+
+                    display_show(disp);
+                }
+                else if(input_mapping==10){ //quick-backup
+                    drawBoxNumber(disp,2);
+                    display_show(disp);
+
+                    printText("Quick-Backup:", 9, 9, disp);
+                    printText(" ", 9, -1, disp);
+                    printText("search...", 9, -1, disp);
+
+                    mpk_to_file(disp, list[cursor].filename, 1); //quick
+                    sleep(300);
+
+                    drawShortInfoBox(disp, "         done",0);
+                    sleep(500);
+                    input_mapping=98;
+                }
+            }
+            else if( keys.c[0].C_right ) {
+                if(input_mapping==1 && list[cursor].type != DT_DIR){
+                    //show rom cfg screen
+
+                    char name_file[64];
+
+                    if(strcmp(pwd,"/")==0 )
+                        sprintf(name_file,"/%s", list[cursor].filename);
+                    else
+                        sprintf(name_file,"%s/%s", pwd, list[cursor].filename);
+
+                    /*filetype
+                     * 1 rom
+                     */
+
+                    int ft=0;
+                    char _upper_name_file[64];
+
+                    strcpy(_upper_name_file, name_file);
+
+                    strhicase(_upper_name_file,  strlen (_upper_name_file));
+                    sprintf(_upper_name_file, "%s", _upper_name_file );
+
+                    u8 extension[4];
+                    u8 *pch;
+                    pch=strrchr(_upper_name_file,'.');         //asd.n64
+
+                    sprintf(extension, "%s",(pch+1));   //0123456
+
+                    if(!strcmp(extension,"Z64") || !strcmp(extension,"V64") || !strcmp(extension,"N64"))
+                        ft=1;
+
+                    if(ft==1){ //rom
+                        //cfg rom
+                        sprintf(rom_filename,"%s", list[cursor].filename);
+
+                        //preload config or file header
+                        readRomConfig(disp, rom_filename, name_file);
+
+                        drawRomConfigBox(disp,0);
+                        display_show(disp);
+                        input_mapping=7;
+                    }
+                }
+                else if(input_mapping==2){
+                }
+                else if(input_mapping==3){
+                    //chr input screen
+                    if(set==1)
+                        drawInputAdd(disp, "D"); //P X )
+                    if(set==2)
+                        drawInputAdd(disp, "K");
+                    if(set==3)
+                        drawInputAdd(disp, "R");
+                    if(set==4)
+                        drawInputAdd(disp, "Y");
+                }
+                else if(input_mapping==4){
+                    //rom start screen
+
+                    if(force_tv!=0){
+                        printText("force tv mode...", 3, -1, disp);
+
+                    }
+                }
+            }
+            else if( keys.c[0].C_down ) {
+                if(input_mapping==1){
+                    input_mapping=99;
+
+                    scopy(pwd, list_pwd_backup);
+                    while( !(disp = display_lock()) );
+
+                    drawBg(disp); //background
+
+                    toplist_cursor=1;
+                    drawToplistBox(disp,0); //0 = load entries
+                    display_show(disp);
+
+                    input_mapping=8;
+                }
+                else if(input_mapping==2){
+                }
+                else if(input_mapping==3){
+                    //chr input screen
+                    if(set==1)
+                        drawInputAdd(disp, "F"); //P X )
+                    if(set==2)
+                        drawInputAdd(disp, "M");
+                    if(set==3)
+                        drawInputAdd(disp, "T");
+                    if(set==4)
+                        drawInputAdd(disp, "-"); //GR Set4
+                }
+            }
+            else if( keys.c[0].C_left ) {
+                if(input_mapping==1){
+                    if(input_mapping==1 && list[cursor].type != DT_DIR ){//open
+                        char name_file[64];
+
+                        if(strcmp(pwd,"/")==0 )
+                            sprintf(name_file,"/%s", list[cursor].filename);
+                        else
+                            sprintf(name_file,"%s/%s", pwd, list[cursor].filename);
+
+                        /*filetype
+                         * 1 rom
+                         * 2 mempak
+                         * 3 background
+                         * 4 mp3
+                         */
+
+                        int ft=0;
+                        char _upper_name_file[64];
+
+                        strcpy(_upper_name_file, name_file);
+                        strhicase(_upper_name_file,  strlen (_upper_name_file));
+                        sprintf(_upper_name_file, "%s", _upper_name_file );
+
+                        u8 extension[4];
+                        u8 *pch;
+                        pch=strrchr(_upper_name_file,'.');
+                        sprintf(extension, "%s",(pch+1));
+
+                        if(!strcmp(extension,"MPK" ))
+                            ft=2;
+                        if(!strcmp(extension,"Z64") || !strcmp(extension,"V64") || !strcmp(extension,"N64"))
+                            ft=1;
+
+                        if(ft==1){ //rom
+                            //load rom
+                            input_mapping=99;
+
+                            drawBoxNumber(disp,3); //rominfo
+
+                            u16 msg = 0;
+                            sleep(300);
+                            evd_ulockRegs();
+                            sleep(300);
+                            sprintf(rom_filename,"%s", list[cursor].filename);
+                            romInfoScreen(disp, name_file, 0);
+
+                            if(sound_on)
+                                playSound(2);
+
+                            sleep(500);
+                            input_mapping=98;
+                        }
+                        if(ft==2){ //mpk file
+                            drawBoxNumber(disp,4);
+                            display_show(disp);
+
+                            if(strcmp(pwd,"/")==0 )
+                                sprintf(rom_filename,"/%s", list[cursor].filename);
+                            else
+                                sprintf(rom_filename,"%s/%s", pwd, list[cursor].filename);
+
+                            view_mpk_file(disp, rom_filename);
+
+                            if(sound_on)
+                                playSound(2);
+
+                            sleep(500);
+                            input_mapping=98;
+                        }
+                    } //mapping and not dir
+                }
+                else if(input_mapping==2){
+                }
+                else if(input_mapping==3){
+                    //chr input screen
+                    if(set==1)
+                        drawInputAdd(disp, "C"); //P X )
+                    if(set==2)
+                        drawInputAdd(disp, "J");
+                    if(set==3)
+                        drawInputAdd(disp, "Q");
+                    if(set==4)
+                        drawInputAdd(disp, "X");
+                }
+            }
+            else if(keys.c[0].Z){
+                if(input_mapping==1){
+                    input_mapping=99;
+
+                    drawBoxNumber(disp,2);
+                    display_show(disp);
+
+                    printText("About: ", 9, 9, disp);
+                    printText(" ", 9, -1, disp);
+                    printText("ALT64: v0.1.8.6", 9, -1, disp);
+                    printText("by saturnu", 9, -1, disp);
+                    printText(" ", 9, -1, disp);
+                    printText("thanks to:", 9, -1, disp);
+                    printText("Krikzz", 9, -1, disp);
+                    printText("ChillyWilly", 9, -1, disp);
+                    printText("ShaunTaylor", 9, -1, disp);
+                    printText("Conle", 9, -1, disp);
+
+                    if(sound_on)
+                        playSound(2);
+
+                    sleep(500);
+                    input_mapping=98;
+                }
+                else if(input_mapping==2){
+                    drawBoxNumber(disp,4);
+                    display_show(disp);
+                    view_mpk(disp);
+
+                    if(sound_on)
+                        playSound(2);
+
+                    sleep(500);
+                    input_mapping=98;
+                }
+            }
+            else if(keys.c[0].A) { // open
+                if(input_mapping==1){
+                    while( !(disp = display_lock()) );
+
+                    if(input_mapping==1 && list[cursor].type == DT_DIR && empty==0){
+                        char name_dir[256];
+
+                        /* init pwd=/
+                         * /
+                         *
+                         * cursor=ED64
+                         * /ED64
+                         *
+                         * cursor=SAVE
+                         * /ED64/SAVE
+                         */
+
+                        if(strcmp(pwd,"/")==0 )
+                            sprintf(name_dir,"/%s", list[cursor].filename);
+                        else
+                            sprintf(name_dir,"%s/%s", pwd, list[cursor].filename);
+
+                        sprintf(curr_dirname,"%s", list[cursor].filename);
+                        sprintf(pwd,"%s", name_dir);
+
+                        //load dir
+                        cursor_lastline=0;
+                        cursor_line=0;
+
+                        //backup tree cursor postions
+                        if(cd_behaviour==1){
+                            cursor_history[cursor_history_pos]=cursor;
+                            cursor_history_pos++;
+                        }
+
+                        readSDcard(disp,name_dir);
+                        display_show(disp);
+                    }//mapping 1 and dir
+                    else if(input_mapping==1 && list[cursor].type != DT_DIR  && empty==0){//open
+                        char name_file[256];
+
+                        if(strcmp(pwd,"/")==0 )
+                            sprintf(name_file,"/%s", list[cursor].filename);
+                        else
+                            sprintf(name_file,"%s/%s", pwd, list[cursor].filename);
+
+                        /*filetype
+                         * 1 rom
+                         * 2 mempak
+                         * 3 background
+                         * 4 mp3
+                         */
+
+                        int ft=0;
+                        char _upper_name_file[256];
+
+                        strcpy(_upper_name_file, name_file);
+
+                        strhicase(_upper_name_file,  strlen (_upper_name_file));
+                        sprintf(_upper_name_file, "%s", _upper_name_file );
+
+                        u8 extension[4];
+                        u8 *pch;
+                        pch=strrchr(_upper_name_file,'.');         //asd.n64
+
+                        sprintf(extension, "%s",(pch+1));   //0123456
+
+                        if(!strcmp(extension,"GB" ))
+                            ft=5;
+                        if(!strcmp(extension,"GBC" ))
+                            ft=6;
+                        if(!strcmp(extension,"NES" ))
+                            ft=7;
+                        if(!strcmp(extension,"GG" ))
+                            ft=8;
+                        if(!strcmp(extension,"MSX" ))
+                            ft=9;
+                        if(!strcmp(extension,"MP3" ))
+                            ft=10;
+                        if(!strcmp(extension,"MPK" ))
+                            ft=2;
+                        if(!strcmp(extension,"Z64") || !strcmp(extension,"V64") || !strcmp(extension,"N64"))
+                            ft=1;
+
+                        if(ft==1){ //rom
+                            //load rom
+                            while( !(disp = display_lock()) );
+
+                            clearScreen(disp);
+                            u16 msg = 0;
+                            sleep(300);
+                            evd_ulockRegs();
+                            sleep(300);
+                            sprintf(rom_filename,"%s", list[cursor].filename);
+
+                            if(quick_boot){
+                                u8 resp=0;
+                                resp = fatCreateRecIfNotExist("/ED64/LASTROM.CFG", 0);
+                                resp = fatOpenFileByeName("/ED64/LASTROM.CFG", 1); //512 bytes fix one cluster
+                                static uint8_t lastrom_file_data[512] = { 0 };
+                                scopy(name_file, lastrom_file_data);
+                                fatWriteFile(&lastrom_file_data, 1);
+                            }
+
+                            select_mode=9;
+
+                            //read rom_config data
+                            readRomConfig(disp, rom_filename, name_file);
+
+                            loadrom(disp,name_file, 1);
+                            display_show(disp);
+
+                            //rom loaded mapping
+                            input_mapping=4;
+                        }
+                        else if(ft==5 || ft==6){ //gb/gbc rom
+                            //load rom
+                            while( !(disp = display_lock()) );
+
+                            clearScreen(disp);
+                            u16 msg = 0;
+                            sleep(300);
+                            evd_ulockRegs();
+                            sleep(300);
+                            sprintf(rom_filename,"%s", list[cursor].filename);
+                            display_show(disp);
+
+                            select_mode=9;
+
+                            loadgbrom(disp,name_file);
+
+                            display_show(disp);
+                        }
+                        else if(ft==2){ //mempak
+                            while( !(disp = display_lock()) );
+                             clearScreen(disp); //part clear?
+                            display_dir(list, cursor, page, MAX_LIST, count, disp);
+
+                            display_show(disp);
+
+                            drawShortInfoBox(disp, " L=Restore  R=Backup", 2);
+                            input_mapping=9;
+
+                            sprintf(rom_filename,"%s", name_file);
+                        }
+                        else if(ft==7){ //nes
+                            //load rom
+                            while( !(disp = display_lock()) );
+                            clearScreen(disp);
+                            u16 msg = 0;
+                            sleep(300);
+                            evd_ulockRegs();
+                            sleep(300);
+                            sprintf(rom_filename,"%s", list[cursor].filename);
+                            display_show(disp);
+
+                            select_mode=9;
+
+                            loadnesrom(disp,name_file);
+
+                            display_show(disp);
+                        }
+                        else if(ft==8){ //gg
+                            //load gg rom
+                            while( !(disp = display_lock()) );
+
+                            clearScreen(disp);
+                            u16 msg = 0;
+                            sleep(300);
+                            evd_ulockRegs();
+                            sleep(300);
+                            sprintf(rom_filename,"%s", list[cursor].filename);
+                            display_show(disp);
+
+                            select_mode=9;
+
+                            loadggrom(disp,name_file);
+
+                            display_show(disp);
+                        }
+                        else if(ft==9){ //msx2
+                            //load msx2 rom
+                            while( !(disp = display_lock()) );
+
+                            clearScreen(disp);
+                            u16 msg = 0;
+                            sleep(300);
+                            evd_ulockRegs();
+                            sleep(300);
+                            sprintf(rom_filename,"%s", list[cursor].filename);
+                            display_show(disp);
+
+                            select_mode=9;
+
+                            loadmsx2rom(disp,name_file);
+
+                            display_show(disp);
+                        }
+                        else if(ft==10){ //mp3
+                            //load mp3
+                            buf_size = audio_get_buffer_length() * 4;
+                            buf_ptr = malloc(buf_size);
+
+                            while( !(disp = display_lock()) );
+                            clearScreen(disp);
+                            drawShortInfoBox(disp, "      playback",0);
+
+                            long long start = 0, end = 0, curr, pause = 0, samples;
+                            int rate = 44100, last_rate = 44100, channels = 2;
+
+                            audio_init(44100,2);
+
+                            start_mp3(name_file, &samples, &rate, &channels);
+                            playing=1;
+                            select_mode=9;
+
+                            input_mapping=11;//mp3 stop
+
+                            display_show(disp);
+                        }
+                    } //mapping and not dir
+                }//mapping 1 end
+                else if(input_mapping==2){
+                    //open up charinput screen
+                    input_mapping=3;
+                    input_text[0]='\0';
+                    graphics_draw_sprite( disp, 0, 0, contr );
+                }
+                else if(input_mapping==3){
+                    //chr input screen
+                    if(set==1)
+                        drawInputAdd(disp, "G"); //P X )
+                    if(set==2)
+                        drawInputAdd(disp, "N");
+                    if(set==3)
+                        drawInputAdd(disp, "U");
+                    if(set==4)
+                        drawInputAdd(disp, "_");
+                }
+                else if(input_mapping==7){
+                    //save rom_cfg[] to
+                    // /ED64/CFG/Romname.cfg if not exist create
+                    // if exist open/write
+
+                    //print confirm msg
+                    char name_file[256];
+
+                    if(strcmp(pwd,"/")==0 )
+                        sprintf(name_file,"/%s", list[cursor].filename);
+                    else
+                        sprintf(name_file,"%s/%s", pwd, list[cursor].filename);
+
+                    u8 rom_cfg_file[128];
+
+                    u8 resp=0;
+
+                    //set rom_cfg
+                    sprintf(rom_cfg_file, "/ED64/CFG/%s.CFG",rom_filename );
+
+                    resp = fatCreateRecIfNotExist(rom_cfg_file, 0);
+                    resp = fatOpenFileByeName(rom_cfg_file, 1); //512 bytes fix one cluster
+
+                    static uint8_t cfg_file_data[512] = { 0 };
+                    cfg_file_data[0]=rom_config[1]; //cic
+                    cfg_file_data[1]=rom_config[2]; //save
+                    cfg_file_data[2]=rom_config[3]; //tv
+                    cfg_file_data[3]=rom_config[4]; //cheat
+                    cfg_file_data[4]=rom_config[5]; //chksum
+                    cfg_file_data[5]=rom_config[6]; //rating
+                    cfg_file_data[6]=rom_config[7]; //country
+                    cfg_file_data[7]=rom_config[8];
+                    cfg_file_data[8]=rom_config[9];
+
+                    //copy full rom path to offset at 32 byte - 32 bytes reversed
+                    scopy(name_file, cfg_file_data+32); //filename to rom_cfg file
+                    fatWriteFile(&cfg_file_data, 1);
+                    sleep(200);
+
+                    drawShortInfoBox(disp, "         done",0);
+                    toplist_reload=1;
+
+                    input_mapping=98;
+
+                }
+                else if(input_mapping==8){
+                    //run from toplist
+                    u8 * pch_s;
+                    pch_s=strrchr(toplist15[toplist_cursor-1]+1,'/');
+
+                    readRomConfig(disp, pch_s+1, toplist15[toplist_cursor-1]+1);
+
+                    loadrom(disp,toplist15[toplist_cursor-1]+1, 1);
+
+                    //rom loaded mapping
+                    input_mapping=4;
+
+                }
+                else if(input_mapping==98){
+                    //rom info screen
+
+                    while( !(disp = display_lock()) );
 
 
+                    clearScreen(disp); //part clear?
+                    display_dir(list, cursor, page, MAX_LIST, count, disp);
 
-					}
-					else
-					if(input_mapping==2){	
+                    display_show(disp);
 
-						
-							drawBoxNumber(disp,4);
-							// writeInitText(disp);
+                    input_mapping=1;
+                }
+            }//key a
+            else if(keys.c[0].B ) {  //go back
+                if(input_mapping==1){
+                    if(!(strcmp(pwd,"/")==0)){
+                        while( !(disp = display_lock()) );
 
-							display_show(disp);
-								
+                        //replace by strstr()? :>
+                        int slash_pos=0;
+                        int i = 0;
+                        while(pwd[i] != '\0'){
+                            if(pwd[i] == '/')
+                                slash_pos=i;
 
-									view_mpk(disp);
+                            i++;
+                        }
+                        char new_pwd[64];
 
-							if(sound_on) playSound(2);
-							sleep(500);
-							input_mapping=98;
+                        int j;
+                        for(j = 0; j < slash_pos; j++)
+                            new_pwd[j] = pwd[j];
 
-					}	
-					
-	
-				//placeholder
-				}
-				else
-					if(keys.c[0].A) //open
-						{
-						
-					   
-							if(input_mapping==1){
-								while( !(disp = display_lock()) );
-									
-								if(input_mapping==1 && list[cursor].type == DT_DIR && empty==0){
-										char name_dir[256];
-										
-										/* init pwd=/
-										 * /
-										 *  
-										 * cursor=ED64
-										 * /ED64
-										 * 
-										 * cursor=SAVE
-										 * /ED64/SAVE
-										 */
-										
+                        if(j==0)
+                            j++;
 
-										if(strcmp(pwd,"/")==0 )
-											sprintf(name_dir,"/%s", list[cursor].filename);
-											else
-												sprintf(name_dir,"%s/%s", pwd, list[cursor].filename);
-										
-										sprintf(curr_dirname,"%s", list[cursor].filename);
-										sprintf(pwd,"%s", name_dir);
-										
-										//load dir
-										
-										cursor_lastline=0;
-										cursor_line=0;
-										
-										
-										//backup tree cursor postions
-										
-										if(cd_behaviour==1){
-											//if(cursor){
-											cursor_history[cursor_history_pos]=cursor;
-											cursor_history_pos++;
-											//}
-										}
-									
-										readSDcard(disp,name_dir);
-										display_show(disp);		
-										
+                        new_pwd[j] = '\0';
 
-																		
-								}//mapping 1 and dir
-								else
-								if(input_mapping==1 && list[cursor].type != DT_DIR  && empty==0){//open
+                        sprintf(pwd,"%s", new_pwd);
 
-										char name_file[256];
-							 
-										if(strcmp(pwd,"/")==0 )
-											sprintf(name_file,"/%s", list[cursor].filename);
-											else
-												sprintf(name_file,"%s/%s", pwd, list[cursor].filename);
-							
-										/*filetype
-										 * 1 rom
-										 * 2 mempak
-										 * 3 background
-										 * 4 mp3
-										 */
-										 
-											int ft=0;
-											char _upper_name_file[256];
-											
-											strcpy(_upper_name_file, name_file);
-											
-											strhicase(_upper_name_file,  strlen (_upper_name_file));
-											sprintf(_upper_name_file, "%s", _upper_name_file );
-											
-											u8 extension[4];
-										 	u8 * pch;
-											pch=strrchr(_upper_name_file,'.');   	  //asd.n64
-											
-											
-											sprintf(extension, "%s",(pch+1));   //0123456
-											
-											
-											if(!strcmp(extension,"GB" ))
-												ft=5;
-											if(!strcmp(extension,"GBC" ))
-												ft=6;
-											if(!strcmp(extension,"NES" ))
-												ft=7;
-											if(!strcmp(extension,"GG" ))
-												ft=8;
-											if(!strcmp(extension,"MSX" ))
-												ft=9;	
-										if(!strcmp(extension,"MP3" ))
-												ft=10;	
-																								
-											if(!strcmp(extension,"MPK" ))
-												ft=2;
-											if(!strcmp(extension,"Z64") || !strcmp(extension,"V64" )	|| !strcmp(extension,"N64" )	)
-												ft=1;
+                        cursor_lastline=0;
+                        cursor_line=0;
 
-										if(ft==1){ //rom
-																					//load rom
-											
-											while( !(disp = display_lock()) );
-											clearScreen(disp);
-											u16 msg = 0;
-											sleep(300);
-											evd_ulockRegs();
-											sleep(300);
-											sprintf(rom_filename,"%s", list[cursor].filename);
-											
-											
-											if(quick_boot){
+                        readSDcard(disp,pwd);
 
-												u8 resp=0;
-												resp = fatCreateRecIfNotExist("/ED64/LASTROM.CFG", 0);
-												resp = fatOpenFileByeName("/ED64/LASTROM.CFG", 1); //512 bytes fix one cluster		
-												static uint8_t lastrom_file_data[512] = { 0 }; 
-												scopy(name_file, lastrom_file_data);
+                        if(cd_behaviour==1){
+                            cursor_history_pos--;
+                            cursor=cursor_history[cursor_history_pos];
 
-												fatWriteFile(&lastrom_file_data, 1);
-											}
-											
-											select_mode=9;
-											
-											//read rom_config data
-											readRomConfig(disp, rom_filename, name_file);
-											
-											loadrom(disp,name_file, 1);	
-											display_show(disp);
-											//display_show(disp);
-											
-											//rom loaded mapping
-											input_mapping=4;
-											
-	
-										}else 
-											if(ft==5 || ft==6){ //gb/gbc rom
-											//load rom
-											
-											while( !(disp = display_lock()) );
-											
-											clearScreen(disp);
-											u16 msg = 0;
-											sleep(300);
-											evd_ulockRegs();
-											sleep(300);
-											sprintf(rom_filename,"%s", list[cursor].filename);
-											display_show(disp);
-											
-											select_mode=9;
-											
-											loadgbrom(disp,name_file);	
-											
-											display_show(disp);
-										}else 
-										if(ft==2){ //mempak
+                            if(cursor_history[cursor_history_pos]>0){
+                                cursor_line=cursor_history[cursor_history_pos]-1;
+                                if(scroll_behaviour==0){
+                                    int p = cursor_line/20;
+                                    page=p*20;
+                                }
+                                else{
+                                    if(cursor_line>19)
+                                    cursor_line=19;
+                                }
+                            }
+                            else
+                                cursor_line=0;
+                        }
 
+                        while( !(disp = display_lock()) );
 
-												 while( !(disp = display_lock()) );
-												
+                        new_scroll_pos(&cursor, &page, MAX_LIST, count);
 
-												clearScreen(disp); //part clear?
-												display_dir(list, cursor, page, MAX_LIST, count, disp);
-												
-												display_show(disp);
-												
-												
-													
-												/*	
-												//c-up or A
-												drawConfirmBox(disp);
-												//confirm format mpk
-												input_mapping=6;
-												* 
-												*/
-												
-												drawShortInfoBox(disp, " L=Restore  R=Backup", 2);
-												input_mapping=9;
-												
-												sprintf(rom_filename,"%s", name_file);
-												
-												
-										}
-										else 
-											if(ft==7){ //nes
-											//load rom
-											
-											while( !(disp = display_lock()) );
-											clearScreen(disp);
-											u16 msg = 0;
-											sleep(300);
-											evd_ulockRegs();
-											sleep(300);
-											sprintf(rom_filename,"%s", list[cursor].filename);
-											display_show(disp);
-											
-											select_mode=9;
-											
-											loadnesrom(disp,name_file);	
-											
-											display_show(disp);
-										}
-										else 
-											if(ft==8){ //gg
-											//load gg rom
-											
-											while( !(disp = display_lock()) );
-											clearScreen(disp);
-											u16 msg = 0;
-											sleep(300);
-											evd_ulockRegs();
-											sleep(300);
-											sprintf(rom_filename,"%s", list[cursor].filename);
-											display_show(disp);
-											
-											select_mode=9;
-											
-											loadggrom(disp,name_file);	
-											
-											display_show(disp);
-										}	
-										else 
-											if(ft==9){ //msx2
-											//load msx2 rom
-											
-											while( !(disp = display_lock()) );
-											clearScreen(disp);
-											u16 msg = 0;
-											sleep(300);
-											evd_ulockRegs();
-											sleep(300);
-											sprintf(rom_filename,"%s", list[cursor].filename);
-											display_show(disp);
-											
-											select_mode=9;
-											
-											loadmsx2rom(disp,name_file);	
-											
-											display_show(disp);
-										}
-										else 
-											if(ft==10){ //mp3
-											//load mp3
-												buf_size = audio_get_buffer_length() * 4;
-												buf_ptr = malloc(buf_size);
-												
-											
-											while( !(disp = display_lock()) );
-											clearScreen(disp);
-												drawShortInfoBox(disp, "      playback",0);
-												
-												long long start = 0, end = 0, curr, pause = 0, samples;
-												int rate = 44100, last_rate = 44100, channels = 2;
-												
-												audio_init(44100,2);
-												
-												start_mp3(name_file, &samples, &rate, &channels);
-												playing=1;
-												select_mode=9;
-												
-												input_mapping=11;//mp3 stop
-												
-											display_show(disp);
+                        clearScreen(disp); //part clear?
+                        display_dir(list, cursor, page, MAX_LIST, count, disp);
 
-										}											
-										
-										
-										
-								} //mapping and not dir
-								
-									
-							}//mapping 1 end
-							else
-							if(input_mapping==2){	
-								
-								//open up charinput screen
-								input_mapping=3;
-								//inputText(, contr,disp);
-								input_text[0]='\0';
-								graphics_draw_sprite( disp, 0, 0, contr );
-								
+                        display_show(disp);
+                    }//not root
+                }
+                else if(input_mapping==2){
+                    while( !(disp = display_lock()) );
 
-							}								
-							else
-							if(input_mapping==3){	
-							//chr input screen	
-							          
-							   // mode = 1 - mode;
-								if(set==1)
-								drawInputAdd(disp, "G"); //P X )
-								 if(set==2)
-								drawInputAdd(disp, "N");
-								 if(set==3)
-								drawInputAdd(disp, "U");
-							     if(set==4)
-							    drawInputAdd(disp, "_");
-							}
-							else
-							if(input_mapping==7){	
-		
-								//save rom_cfg[] to
-								// /ED64/CFG/Romname.cfg if not exist create
-								// if exist open/write
-								
-								//print confirm msg
-								char name_file[256];
-					 
-								if(strcmp(pwd,"/")==0 )
-									sprintf(name_file,"/%s", list[cursor].filename);
-								else
-									sprintf(name_file,"%s/%s", pwd, list[cursor].filename);
-							
-								
-								
-								u8 rom_cfg_file[128];
-							
-								u8 resp=0;
-							
-								//set rom_cfg 
-								sprintf(rom_cfg_file, "/ED64/CFG/%s.CFG",rom_filename );
+                    graphics_set_color(graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF), graphics_make_color(0x00, 0x00, 0x00, 0x00));
+                    clearScreen(disp);
+                    display_show(disp);
 
-								resp = fatCreateRecIfNotExist(rom_cfg_file, 0);
-								resp = fatOpenFileByeName(rom_cfg_file, 1); //512 bytes fix one cluster
+                    display_dir(list, cursor, page, MAX_LIST, count, disp);
+                    input_mapping=1;
+                    display_show(disp);
+                }
+                else if(input_mapping==3){
+                    //chr input screen
 
-											
-								static uint8_t cfg_file_data[512] = { 0 }; 
-								cfg_file_data[0]=rom_config[1]; //cic
-								cfg_file_data[1]=rom_config[2]; //save
-								cfg_file_data[2]=rom_config[3]; //tv
-								cfg_file_data[3]=rom_config[4]; //cheat
-								cfg_file_data[4]=rom_config[5]; //chksum
-								cfg_file_data[5]=rom_config[6]; //rating
-								cfg_file_data[6]=rom_config[7]; //country
-								cfg_file_data[7]=rom_config[8];
-								cfg_file_data[8]=rom_config[9];
-								
-								//copy full rom path to offset at 32 byte - 32 bytes reversed
-								scopy(name_file, cfg_file_data+32); //filename to rom_cfg file
-								
-								
+                    /* Lazy switching */
+                    if(set==1)
+                        drawInputAdd(disp, "E"); //P X )
+                    if(set==2)
+                        drawInputAdd(disp, "L");
+                    if(set==3)
+                        drawInputAdd(disp, "S");
+                    if(set==4)
+                        drawInputAdd(disp, "Z");
+                }
+                else if(input_mapping==98 || input_mapping==5 || input_mapping==6 || input_mapping==7 || input_mapping==10){
+                    //rom info screen
 
-								fatWriteFile(&cfg_file_data, 1);
+                    while( !(disp = display_lock()) );
 
+                    clearScreen(disp); //part clear?
+                    display_dir(list, cursor, page, MAX_LIST, count, disp);
 
-								sleep(200);
-							
-								drawShortInfoBox(disp, "         done",0);
-								toplist_reload=1;
-								
-								
-								input_mapping=98;
-								
-								
-								/*
-								//back to list mode
-								while( !(disp = display_lock()) );
-								
+                    display_show(disp);
 
-								clearScreen(disp); //part clear?
-								display_dir(list, cursor, page, MAX_LIST, count, disp);
-								
-								display_show(disp);
-								
-								input_mapping=1;
-								* 
-								*
-								*/
-							}
-							else
-							if(input_mapping==8){	
-							//run from toplist
-							
-								
-								
-								u8 * pch_s;
-								pch_s=strrchr(toplist15[toplist_cursor-1]+1,'/');	
-								//drawShortInfoBox(disp,pch_s,0);
-								
-								readRomConfig(disp, pch_s+1, toplist15[toplist_cursor-1]+1);
-								
-								loadrom(disp,toplist15[toplist_cursor-1]+1, 1);	
-								//display_show(disp);
-								//display_show(disp);
-								
-								//rom loaded mapping
-								input_mapping=4;
-								
-							}
-							else
-						if(input_mapping==98){	
-							//rom info screen
+                    input_mapping=1;
+                }
+                else if(input_mapping==8){
+                    //leave toplist
+                    while( !(disp = display_lock()) );
 
-						 while( !(disp = display_lock()) );
-						
+                    readSDcard(disp,list_pwd_backup);
 
-						clearScreen(disp); //part clear?
-						display_dir(list, cursor, page, MAX_LIST, count, disp);
-						
-						display_show(disp);
-						
-						input_mapping=1;
-						}								
+                    if(scroll_behaviour==0){
+                        cursor=list_pos_backup[0];
+                        page=list_pos_backup[1];
+                    }
+                    else{
+                        cursor_line=0;
+                    }
 
+                    clearScreen(disp); //part clear?
+                    display_dir(list, cursor, page, MAX_LIST, count, disp);
 
-					}//key a
+                    display_show(disp);
 
+                    input_mapping=1;
+                }
+                else if(input_mapping==11){
+                    //stop mp3
 
-					else if(keys.c[0].B ) //go back
-					{
+                    stop_mp3();
+                    playing=0;
 
-						if(input_mapping==1){
-								
-								
-								if(!(strcmp(pwd,"/")==0)){
-								while( !(disp = display_lock()) );
+                    clearScreen(disp); //part clear?
+                    display_dir(list, cursor, page, MAX_LIST, count, disp);
 
-									//replace by strstr()? :>
-									int slash_pos=0;
-									int i = 0;
-									while(pwd[i] != '\0'){
-										if(pwd[i] == '/')
-										slash_pos=i;
-										i++;
-									}
-									char new_pwd[64];
-									
-									int j;
-									for(j = 0; j < slash_pos; j++)
-									new_pwd[j] = pwd[j];
-								
-									if(j==0) j++;
-									new_pwd[j] = '\0';
-									
-									sprintf(pwd,"%s", new_pwd);
-									
-										cursor_lastline=0;
-										cursor_line=0;
-										
-										
+                    display_show(disp);
 
-										
-									readSDcard(disp,pwd);
-									
-
-										if(cd_behaviour==1){
-											cursor_history_pos--;
-											cursor=cursor_history[cursor_history_pos];
-											
-												if(cursor_history[cursor_history_pos]>0){
-												
-													cursor_line=cursor_history[cursor_history_pos]-1;
-													
-													if(scroll_behaviour==0){
-														
-														int p = cursor_line/20;
-														page=p*20;
-													}
-													else{
-														if(cursor_line>19)
-														cursor_line=19;
-													}
-												}
-												else
-													cursor_line=0;
-										}
-									
-									
-
-											
-											
-											 while( !(disp = display_lock()) );
-											
-											new_scroll_pos(&cursor, &page, MAX_LIST, count);
-											
-											clearScreen(disp); //part clear?
-											display_dir(list, cursor, page, MAX_LIST, count, disp);
-											
-											display_show(disp);
-									
-									
-									
-									
-									
-									
-									
-									
-									display_show(disp);	
-								}//not root	
-								
-								
-						}
-						else
-						if(input_mapping==2){	
-							while( !(disp = display_lock()) );
-	
-						graphics_set_color(graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF), graphics_make_color(0x00, 0x00, 0x00, 0x00));
-						clearScreen(disp);
-						
-						display_show(disp);	
-						
-						display_dir(list, cursor, page, MAX_LIST, count, disp);
-						input_mapping=1;
-							display_show(disp);		
-						}
-						else
-						if(input_mapping==3){	
-						//chr input screen	
-
-							/* Lazy switching */
-						   // mode = 1 - mode;
-							if(set==1)
-							drawInputAdd(disp, "E"); //P X )
-							 if(set==2)
-							drawInputAdd(disp, "L");
-							 if(set==3)
-							drawInputAdd(disp, "S");
-							 if(set==4)
-							drawInputAdd(disp, "Z");
-						
-						}
-						else
-						if(input_mapping==98 || input_mapping==5 || input_mapping==6 || input_mapping==7 || input_mapping==10){	
-							//rom info screen
-
-						 while( !(disp = display_lock()) );
-
-						clearScreen(disp); //part clear?
-						display_dir(list, cursor, page, MAX_LIST, count, disp);
-						
-						display_show(disp);
-						
-						input_mapping=1;
-						}
-						else
-						if(input_mapping==8){	
-							//leave toplist
-
-						while( !(disp = display_lock()) );
-						
-
-						readSDcard(disp,list_pwd_backup);
-						
-						if(scroll_behaviour==0){
-							cursor=list_pos_backup[0];
-							page=list_pos_backup[1];
-						}
-						else{
-							cursor_line=0;
-						}
-						
-						clearScreen(disp); //part clear?
-						display_dir(list, cursor, page, MAX_LIST, count, disp);
-						
-						display_show(disp);
-						
-						input_mapping=1;
-						}					
-						else
-						if(input_mapping==11){	
-						//stop mp3
-
-						stop_mp3();
-						playing=0;
-						
-						clearScreen(disp); //part clear?
-						display_dir(list, cursor, page, MAX_LIST, count, disp);
-						
-						display_show(disp);
-						
-						input_mapping=1;
-						}						
-	
-	
-	
-	
-							
-					}//key b
-					//if(input_mapping==2)
-					 sleep(10);
-           
+                    input_mapping=1;
+                }
+            }//key b
+            sleep(10);
         }
     }
 
-	//never return
+    //never return
     while(1);
 
     return 0;
 }
-
