@@ -601,7 +601,7 @@ sprite_t *loadImage32(u8 *png, int size) {
     tbuf = malloc(size);
     memcpy(tbuf,png,size);
 
-    ibuf = stbi_load_from_memory(tbuf, size, &x, &y, &n, 4);
+    ibuf = (u32*)stbi_load_from_memory(tbuf, size, &x, &y, &n, 4);
     free(tbuf);
     if (!ibuf)
         return 0;                       // couldn't decode image
@@ -653,7 +653,7 @@ sprite_t *loadImage32DFS(char *fname) {
     dfs_read(tbuf, 1, size, fd);
     dfs_close(fd);
 
-    ibuf = stbi_load_from_memory(tbuf, size, &x, &y, &n, 4);
+    ibuf = (u32*)stbi_load_from_memory(tbuf, size, &x, &y, &n, 4);
     free(tbuf);
     if (!ibuf)
         return 0;                       // couldn't decode image
@@ -732,7 +732,7 @@ void simulate_boot(u32 cic_chip, u8 gBootCic) {
     u32 info = *(vu32 *)0xB000003C;
     vu64 *gGPR = (vu64 *)0xA03E0000;
     vu32 *codes = (vu32 *)0xA0000180;
-    u64 bootAddr = 0xFFFFFFFFA4000040LL;
+    u32 bootAddr = 0xA4000040;
     char *cp, *vp, *tp;
     char temp[8];
     int i, type, val;
@@ -773,7 +773,7 @@ void simulate_boot(u32 cic_chip, u8 gBootCic) {
             *dp++ = *sp++;
         // default boot address with cheats
         sp = (vu32 *)0xB0000008;
-        bootAddr = 0xFFFFFFFF00000000LL | *sp;
+        bootAddr = 0x00000000 | *sp;
 
         // move general int handler
         sp = (vu32 *)0xA0000180;
@@ -1083,7 +1083,7 @@ void simulate_boot(u32 cic_chip, u8 gBootCic) {
                         temp[5] = cp[7];
                         temp[6] = 0;
                         val = strtol(temp, (char **)NULL, 16);
-                        bootAddr = 0xFFFFFFFF80000000LL | (val & 0xFFFFF);
+                        bootAddr = 0x80000000 | (val & 0xFFFFF);
                         break;
 
                     case 0xEE:
@@ -1107,7 +1107,7 @@ void simulate_boot(u32 cic_chip, u8 gBootCic) {
                         temp[6] = 0;
                         val = strtol(temp, (char **)NULL, 16);
                         val -= (bootAddr & 0xFFFFFF);
-                        tp = (char *)(0xFFFFFFFFA02A0000LL + val);
+                        tp = (char *)(0xA02A0000 + val);
                         if (gGSCodes[curr_cheat].mask) {
                             val = gGSCodes[curr_cheat].value & gGSCodes[curr_cheat].mask;
                         }
@@ -1132,7 +1132,7 @@ void simulate_boot(u32 cic_chip, u8 gBootCic) {
                         temp[6] = 0;
                         val = strtol(temp, (char **)NULL, 16);
                         val -= (bootAddr & 0xFFFFFF);
-                        tp = (char *)(0xFFFFFFFFA02A0000LL + val);
+                        tp = (char *)(0xA02A0000 + val);
                         if (gGSCodes[curr_cheat].mask) {
                             val = gGSCodes[curr_cheat].value & gGSCodes[curr_cheat].mask;
                         }
