@@ -84,7 +84,7 @@ $ make tools && make tools-install
 Clone `libmikmod-n64` and build:
 
 ```bash
-$ git clone https://github.com/parasyte/libdragon.git
+$ git clone https://github.com/parasyte/libmikmod-n64.git
 $ cd libmikmod-n64
 $ make
 $ make install
