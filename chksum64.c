@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <libdragon.h>
 
+#include "sys.h"
+
 
 #define BUFSIZE 0x8000
 #define SDRAM_START 0xb0000000
