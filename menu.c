@@ -1169,7 +1169,7 @@ void loadrom(display_context_t disp, u8 *buff, int fast){
     sleep(1000); //needless waiting :>
 
     if (debug)
-    printText("timing done", 3, -1, disp);
+        printText("timing done", 3, -1, disp);
 
     u8 tmp[32];
     u8 filename[64];
@@ -1255,7 +1255,6 @@ void loadrom(display_context_t disp, u8 *buff, int fast){
     if (debug) {
         sprintf(tmp, "Info: cic=%i save=%i",cic,save);
         printText(tmp, 3, -1, disp);
-
     }
 
     //new rom_config
@@ -1329,7 +1328,7 @@ void loadrom(display_context_t disp, u8 *buff, int fast){
         }
     }
 
-    if (debug)
+    if (debug) {
         for (int i = 0; i < 4; i++) {
             u8 buff[16];
             dma_read_s(buff, 0xb0000000 + 0x00100000*i, 1);
@@ -1337,18 +1336,19 @@ void loadrom(display_context_t disp, u8 *buff, int fast){
             printText(tmp, 3, -1, disp);
 
         }
+    }
 
-        if(!fast){
-            sleep(200);
+    if(!fast){
+        sleep(200);
 
-            printText(" ", 3, -1, disp);
-            printText("(C-UP to activate cheats)", 3, -1, disp);
-            printText("(C-RIGHT to force menu tv mode)", 3, -1, disp);
-            printText("done: PRESS START", 3, -1, disp);
-        }
-        else{
-            bootRom(disp, 1);
-        }
+        printText(" ", 3, -1, disp);
+        printText("(C-UP to activate cheats)", 3, -1, disp);
+        printText("(C-RIGHT to force menu tv mode)", 3, -1, disp);
+        printText("done: PRESS START", 3, -1, disp);
+    }
+    else{
+        bootRom(disp, 1);
+    }
 }
 
 
@@ -3235,7 +3235,7 @@ int main(void) {
         int save_job = evd_readReg(REG_SAV_CFG);
 
         if(save_job!=0)
-        fast_boot=1;
+            fast_boot=1;
 
         //not gamepads more or less the n64 hardware-controllers
         controller_init();
