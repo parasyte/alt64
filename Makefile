@@ -7,9 +7,9 @@ N64TOOL = $(ROOTDIR)/bin/n64tool
 HEADERNAME = header
 
 
-LINK_FLAGS = -G4 -L$(ROOTDIR)/lib -L$(ROOTDIR)/mips64-elf/lib -ldragon -lmikmod -lmad -lc -lm -ldragonsys -lnosys $(LIBS) -Tn64ld.x
+LINK_FLAGS = -O1 -L$(ROOTDIR)/lib -L$(ROOTDIR)/mips64-elf/lib -ldragon -lmikmod -lmad -lyaml -lc -lm -ldragonsys -lnosys $(LIBS) -Tn64ld.x
 PROG_NAME = menu
-CFLAGS = -std=gnu99 -march=vr4300 -mtune=vr4300 -G4 -I$(ROOTDIR)/include -I$(ROOTDIR)/mips64-elf/include -lpthread -lrt -D_REENTRANT -DUSE_TRUETYPE
+CFLAGS = -std=gnu99 -march=vr4300 -mtune=vr4300 -O1 -I$(ROOTDIR)/include -I$(ROOTDIR)/mips64-elf/include -lpthread -lrt -D_REENTRANT -DUSE_TRUETYPE
 ASFLAGS = -mtune=vr4300 -march=vr4300
 CC = $(GCCN64PREFIX)gcc
 AS = $(GCCN64PREFIX)as

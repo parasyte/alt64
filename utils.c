@@ -19,18 +19,6 @@ extern short int gCheats;               /* 0 = off, 1 = select, 2 = all */
 extern short int force_tv;
 extern short int boot_country;
 
-struct gscEntry {
-    char *description;
-    char *gscodes;
-    u16  count;
-    u16  state;
-    u16  mask;
-    u16  value;
-};
-typedef struct gscEntry gscEntry_t;
-
-extern gscEntry_t gGSCodes[];
-
 static u8 __attribute__((aligned(16))) dmaBuf[128*1024];
 static volatile struct _PI_regs_s * const _PI_regs = (struct _PI_regs_s *)0xa4600000;
 
@@ -503,20 +491,20 @@ PI_BSD_DOM1_RLS_REG (0x04600020) write word 0x00000803
 
 void _data_cache_invalidate_all(void) {
     asm(
-        "li $8,0x80000000\n"
-        "li $9,0x80000000\n"
-        "addu $9,$9,0x1FF0\n"
-        "cacheloop:\n"
-        "cache 1,0($8)\n"
-        "cache 1,16($8)\n"
-        "cache 1,32($8)\n"
-        "cache 1,48($8)\n"
-        "cache 1,64($8)\n"
-        "cache 1,80($8)\n"
-        "cache 1,96($8)\n"
-        "addu $8,$8,112\n"
-        "bne $8,$9,cacheloop\n"
-        "cache 1,0($8)\n"
+        "li $8,0x80000000;"
+        "li $9,0x80000000;"
+        "addu $9,$9,0x1FF0;"
+        "cacheloop:;"
+        "cache 1,0($8);"
+        "cache 1,16($8);"
+        "cache 1,32($8);"
+        "cache 1,48($8);"
+        "cache 1,64($8);"
+        "cache 1,80($8);"
+        "cache 1,96($8);"
+        "addu $8,$8,112;"
+        "bne $8,$9,cacheloop;"
+        "cache 1,0($8);"
     : // no outputs
     : // no inputs
     : "$8", "$9" // trashed registers
@@ -717,902 +705,452 @@ void drawImage(display_context_t dcon, sprite_t *sprite) {
 #define CIC_6105 5
 #define CIC_6106 6
 
+#define ROM         ((vu32 *)0xB0000000)
+#define EXE_START   0xB0001000
+#define EXE_SIZE    0x00100004
+#define TV_TYPE     *(vu32 *)0x80000300
+#define RAM_SIZE_1  *(vu32 *)0x80000318
+#define RAM_SIZE_2  *(vu32 *)0x800003F0
 
-void globalTest(void) {
-    gCheats=1;
-}
+void simulate_boot(u32 cic_chip, u8 gBootCic, u32 *cheat_lists[2]) {
+    // Clear screen
+    IO_WRITE(VI_V_INT, 0x3FF);
+    IO_WRITE(VI_H_LIMITS, 0);
+    IO_WRITE(VI_CUR_LINE, 0);
 
+    // Reset controller and clear interrupt
+    IO_WRITE(PI_STATUS_REG, 0x03);
 
-void simulate_boot(u32 cic_chip, u8 gBootCic) {
-    if (cic_chip == CIC_6104)
-    cic_chip = CIC_6102;
+    // Set cart latency registers with values specified in ROM
+    u32 lat = ROM[0];
+    IO_WRITE(PI_BSD_DOM1_LAT_REG, lat & 0xFF);
+    IO_WRITE(PI_BSD_DOM1_PWD_REG, lat >> 8);
+    IO_WRITE(PI_BSD_DOM1_PGS_REG, lat >> 16);
+    IO_WRITE(PI_BSD_DOM1_RLS_REG, lat >> 20);
 
-    u32 ix, sz, cart, country;
-    vu32 *src, *dst;
-    u32 info = *(vu32 *)0xB000003C;
-    vu64 *gGPR = (vu64 *)0xA03E0000;
-    vu32 *codes = (vu32 *)0xA0000180;
-    u64 bootAddr = 0xFFFFFFFFA4000040LL;
-    char *cp, *vp, *tp;
-    char temp[8];
-    int i, type, val;
-    int curr_cheat = 0;
+    // Fix RAM size location (State required by CIC-NUS-6105)
+    vu32 *ram_size = (cic_chip == CIC_6105) ? &RAM_SIZE_2 : &RAM_SIZE_1;
+    *ram_size = (gBootCic == CIC_6105) ? RAM_SIZE_2 : RAM_SIZE_1;
 
-    cart = info >> 16;
-    country = (info >> 8) & 0xFF;
-
-    if(boot_country!=0){
-        switch(boot_country){
-            case 1: country = 0x45; break; //ntsc region
-            case 2: country = 0x50; break; //pal region
-            default: break;
-        }
+    if (force_tv) {
+        /*
+         * This magic bit-twiddling is required to retain backward compatibility
+         * with old ini files. It converts alt64's tv mode to N64's tv mode:
+         * alt64:
+         *   0: Use default
+         *   1: Force NTSC
+         *   2: Force PAL
+         *   3: Force M-PAL
+         * N64:
+         *   0: PAL
+         *   1: NTSC
+         *   2: M-PAL
+         *   3: Unused
+         */
+        TV_TYPE = MIN((~force_tv - 1) & 3, 2);
     }
-
-    // clear XBUS/Flush/Freeze
-    ((vu32 *)0xA4100000)[3] = 0x15;
-
-    sz = (gBootCic != CIC_6105) ? *(vu32 *)0xA0000318 : *(vu32 *)0xA00003F0;
-    if (cic_chip == CIC_6105)
-        *(vu32 *)0xA00003F0 = sz;
-    else
-        *(vu32 *)0xA0000318 = sz;
-
-    // clear some OS globals for cleaner boot
-    *(vu32 *)0xA000030C = 0;             // cold boot
-    memset((void *)0xA000031C, 0, 64);   // clear app nmi buffer
 
     if (gCheats) {
-        u16 xv, yv, zv;
-        u32 xx;
-        vu32 *sp, *dp;
-        // get rom os boot segment - note, memcpy won't work for copying rom
-        sp = (vu32 *)0xB0001000;
-        dp = (vu32 *)0xA02A0000;
-        for (ix=0; ix<0x100000; ix++)
-            *dp++ = *sp++;
-        // default boot address with cheats
-        sp = (vu32 *)0xB0000008;
-        bootAddr = 0xFFFFFFFF00000000LL | *sp;
+        // Copy patcher into a memory location where it will not be overwritten
+        void *patcher = (void*)0x80700000; // Temporary patcher location
+        u32 patcher_length = &&patcher_end - &&patcher_start;
+        memcpy(patcher, &&patcher_start, patcher_length);
 
-        // move general int handler
-        sp = (vu32 *)0xA0000180;
-        dp = (vu32 *)0xA0000120;
-        for (ix=0; ix<0x60; ix+=4)
-            *dp++ = *sp++;
+        // Copy code lists into memory, behind the patcher
+        u32 *p = patcher + patcher_length;
+        *(u32**)0xA06FFFFC = p; // Save temporary code list location
+        for (int i = 0; i < 2; i++) {
+            int j = -2;
+            do {
+                j += 2;
+                patcher_length += 8;
 
-        // insert new general int handler prologue
-        *codes++ = 0x401a6800;  // mfc0     k0,c0_cause
-        *codes++ = 0x241b005c;  // li       k1,23*4
-        *codes++ = 0x335a007c;  // andi     k0,k0,0x7c
-        *codes++ = 0x175b0012;  // bne      k0,k1,0x1d8
-        *codes++ = 0x00000000;  // nop
-        *codes++ = 0x40809000;  // mtc0     zero,c0_watchlo
-        *codes++ = 0x401b7000;  // mfc0     k1,c0_epc
-        *codes++ = 0x8f7a0000;  // lw       k0,0(k1)
-        *codes++ = 0x3c1b03e0;  // lui      k1,0x3e0
-        *codes++ = 0x035bd024;  // and      k0,k0,k1
-        *codes++ = 0x001ad142;  // srl      k0,k0,0x5
-        *codes++ = 0x3c1ba000;  // lui      k1,0xa000
-        *codes++ = 0x8f7b01cc;  // lw       k1,0x01cc(k1)
-        *codes++ = 0x035bd025;  // or       k0,k0,k1
-        *codes++ = 0x3c1ba000;  // lui      k1,0xa000
-        *codes++ = 0xaf7a01cc;  // sw       k0,0x01cc(k1)
-        *codes++ = 0x3c1b8000;  // lui      k1,0x8000
-        *codes++ = 0xbf7001cc;  // cache    0x10,0x01cc(k1)
-        *codes++ = 0x3c1aa000;  // lui      k0,0xa000
-        *codes++ = 0x37400120;  // ori      zero,k0,0x120
-        *codes++ = 0x42000018;  // eret
-        *codes++ = 0x00000000;  // nop
-
-        // process cheats
-        while (gGSCodes[curr_cheat].count != 0xFFFF) {
-            if (!gGSCodes[curr_cheat].state || !gGSCodes[curr_cheat].count) {
-                // cheat not enabled or no codes, skip
-                curr_cheat++;
-                continue;
-            }
-
-            for (i=0; i<gGSCodes[curr_cheat].count; i++) {
-                cp = &gGSCodes[curr_cheat].gscodes[i*16 + 0];
-                vp = &gGSCodes[curr_cheat].gscodes[i*16 + 9];
-
-                temp[0] = cp[0];
-                temp[1] = cp[1];
-                temp[2] = 0;
-                type = strtol(temp, (char **)NULL, 16);
-
-                switch(type) {
-                    case 0x80:
-                        // write 8-bit value to (cached) ram continuously
-                        // 80XXYYYY 00ZZ
-                        temp[0] = cp[2];
-                        temp[1] = cp[3];
-                        temp[2] = 0;
-                        xv = strtol(temp, (char **)NULL, 16);
-                        temp[0] = cp[4];
-                        temp[1] = cp[5];
-                        temp[2] = cp[6];
-                        temp[3] = cp[7];
-                        temp[4] = 0;
-                        yv = strtol(temp, (char **)NULL, 16);
-                        if (yv & 0x8000) xv++; // adjust for sign extension of yv
-                        if (gGSCodes[curr_cheat].mask) {
-                            zv = gGSCodes[curr_cheat].value & gGSCodes[curr_cheat].mask;
-                        }
-                        else {
-                            temp[0] = vp[2];
-                            temp[1] = vp[3];
-                            temp[2] = 0;
-                            zv = strtol(temp, (char **)NULL, 16);
-                        }
-                        *codes++ = 0x3c1a8000 | xv; // lui  k0,80xx
-                        *codes++ = 0x241b0000 | zv; // li   k1,00zz
-                        *codes++ = 0xa35b0000 | yv; // sb   k1,yyyy(k0)
-                        break;
-
-                    case 0x81:
-                        // write 16-bit value to (cached) ram continuously
-                        // 81XXYYYY 00ZZ
-                        temp[0] = cp[2];
-                        temp[1] = cp[3];
-                        temp[2] = 0;
-                        xv = strtol(temp, (char **)NULL, 16);
-                        temp[0] = cp[4];
-                        temp[1] = cp[5];
-                        temp[2] = cp[6];
-                        temp[3] = cp[7];
-                        temp[4] = 0;
-                        yv = strtol(temp, (char **)NULL, 16);
-                        if (yv & 0x8000) xv++; // adjust for sign extension of yv
-                        if (gGSCodes[curr_cheat].mask) {
-                            zv = gGSCodes[curr_cheat].value & gGSCodes[curr_cheat].mask;
-                        }
-                        else
-                        {
-                            temp[0] = vp[0];
-                            temp[1] = vp[1];
-                            temp[2] = vp[2];
-                            temp[3] = vp[3];
-                            temp[4] = 0;
-                            zv = strtol(temp, (char **)NULL, 16);
-                        }
-                        *codes++ = 0x3c1a8000 | xv; // lui  k0,80xx
-                        *codes++ = 0x241b0000 | zv; // li   k1,zzzz
-                        *codes++ = 0xa75b0000 | yv; // sh   k1,yyyy(k0)
-                        break;
-
-                    case 0x88:
-                        // write 8-bit value to (cached) ram on GS button pressed - unimplemented
-                        // 88XXYYYY 00ZZ
-                        break;
-
-                    case 0x89:
-                        // write 16-bit value to (cached) ram on GS button pressed - unimplemented
-                        // 89XXYYYY ZZZZ
-                        break;
-
-                    case 0xA0:
-                        // write 8-bit value to (uncached) ram continuously
-                        // A0XXYYYY 00ZZ
-                        temp[0] = cp[2];
-                        temp[1] = cp[3];
-                        temp[2] = 0;
-                        xv = strtol(temp, (char **)NULL, 16);
-                        temp[0] = cp[4];
-                        temp[1] = cp[5];
-                        temp[2] = cp[6];
-                        temp[3] = cp[7];
-                        temp[4] = 0;
-                        yv = strtol(temp, (char **)NULL, 16);
-                        if (yv & 0x8000) xv++; // adjust for sign extension of yv
-                        if (gGSCodes[curr_cheat].mask) {
-                            zv = gGSCodes[curr_cheat].value & gGSCodes[curr_cheat].mask;
-                        }
-                        else {
-                            temp[0] = vp[2];
-                            temp[1] = vp[3];
-                            temp[2] = 0;
-                            zv = strtol(temp, (char **)NULL, 16);
-                        }
-                        *codes++ = 0x3c1aa000 | xv; // lui  k0,A0xx
-                        *codes++ = 0x241b0000 | zv; // li   k1,00zz
-                        *codes++ = 0xa35b0000 | yv; // sb   k1,yyyy(k0)
-                        break;
-
-                    case 0xA1:
-                        // write 16-bit value to (uncached) ram continuously
-                        // A1XXYYYY 00ZZ
-                        temp[0] = cp[2];
-                        temp[1] = cp[3];
-                        temp[2] = 0;
-                        xv = strtol(temp, (char **)NULL, 16);
-                        temp[0] = cp[4];
-                        temp[1] = cp[5];
-                        temp[2] = cp[6];
-                        temp[3] = cp[7];
-                        temp[4] = 0;
-                        yv = strtol(temp, (char **)NULL, 16);
-                        if (yv & 0x8000) xv++; // adjust for sign extension of yv
-                        if (gGSCodes[curr_cheat].mask) {
-                            zv = gGSCodes[curr_cheat].value & gGSCodes[curr_cheat].mask;
-                        }
-                        else {
-                            temp[0] = vp[0];
-                            temp[1] = vp[1];
-                            temp[2] = vp[2];
-                            temp[3] = vp[3];
-                            temp[4] = 0;
-                            zv = strtol(temp, (char **)NULL, 16);
-                        }
-                        *codes++ = 0x3c1aa000 | xv; // lui  k0,A0xx
-                        *codes++ = 0x241b0000 | zv; // li   k1,zzzz
-                        *codes++ = 0xa75b0000 | yv; // sh   k1,yyyy(k0)
-                        break;
-
-                    case 0xCC:
-                        // deactivate expansion ram using 3rd method
-                        // CC000000 0000
-                        if (cic_chip == CIC_6105)
-                            *(vu32 *)0xA00003F0 = 0x00400000;
-                        else
-                            *(vu32 *)0xA0000318 = 0x00400000;
-                        break;
-
-                    case 0xD0:
-                        // do next gs code if ram location is equal to 8-bit value
-                        // D0XXYYYY 00ZZ
-                        temp[0] = cp[2];
-                        temp[1] = cp[3];
-                        temp[2] = 0;
-                        xv = strtol(temp, (char **)NULL, 16);
-                        temp[0] = cp[4];
-                        temp[1] = cp[5];
-                        temp[2] = cp[6];
-                        temp[3] = cp[7];
-                        temp[4] = 0;
-                        yv = strtol(temp, (char **)NULL, 16);
-                        if (yv & 0x8000) xv++; // adjust for sign extension of yv
-                        temp[0] = vp[2];
-                        temp[1] = vp[3];
-                        temp[2] = 0;
-                        zv = strtol(temp, (char **)NULL, 16);
-                        *codes++ = 0x3c1a8000 | xv; // lui  k0,0x80xx
-                        *codes++ = 0x835a0000 | yv; // lb   k0,yyyy(k0)
-                        *codes++ = 0x241b0000 | zv; // li   k1,00zz
-                        *codes++ = 0x175b0004;      // bne  k0,k1,4
-                        *codes++ = 0x00000000;      // nop
-                        break;
-
-                    case 0xD1:
-                        // do next gs code if ram location is equal to 16-bit value
-                        // D1XXYYYY 00ZZ
-                        temp[0] = cp[2];
-                        temp[1] = cp[3];
-                        temp[2] = 0;
-                        xv = strtol(temp, (char **)NULL, 16);
-                        temp[0] = cp[4];
-                        temp[1] = cp[5];
-                        temp[2] = cp[6];
-                        temp[3] = cp[7];
-                        temp[4] = 0;
-                        yv = strtol(temp, (char **)NULL, 16);
-                        if (yv & 0x8000) xv++; // adjust for sign extension of yv
-                        temp[0] = vp[0];
-                        temp[1] = vp[1];
-                        temp[2] = vp[2];
-                        temp[3] = vp[3];
-                        temp[4] = 0;
-                        zv = strtol(temp, (char **)NULL, 16);
-                        *codes++ = 0x3c1a8000 | xv; // lui  k0,0x80xx
-                        *codes++ = 0x875a0000 | yv; // lh   k0,yyyy(k0)
-                        *codes++ = 0x241b0000 | zv; // li   k1,zzzz
-                        *codes++ = 0x175b0004;      // bne  k0,k1,4
-                        *codes++ = 0x00000000;      // nop
-                        break;
-
-                    case 0xD2:
-                        // do next gs code if ram location is not equal to 8-bit value
-                        // D2XXYYYY 00ZZ
-                        temp[0] = cp[2];
-                        temp[1] = cp[3];
-                        temp[2] = 0;
-                        xv = strtol(temp, (char **)NULL, 16);
-                        temp[0] = cp[4];
-                        temp[1] = cp[5];
-                        temp[2] = cp[6];
-                        temp[3] = cp[7];
-                        temp[4] = 0;
-                        yv = strtol(temp, (char **)NULL, 16);
-                        if (yv & 0x8000) xv++; // adjust for sign extension of yv
-                        temp[0] = vp[2];
-                        temp[1] = vp[3];
-                        temp[2] = 0;
-                        zv = strtol(temp, (char **)NULL, 16);
-                        *codes++ = 0x3c1a8000 | xv; // lui  k0,0x80xx
-                        *codes++ = 0x835a0000 | yv; // lb   k0,yyyy(k0)
-                        *codes++ = 0x241b0000 | zv; // li   k1,00zz
-                        *codes++ = 0x135b0004;      // beq  k0,k1,4
-                        *codes++ = 0x00000000;      // nop
-                        break;
-
-                    case 0xD3:
-                        // do next gs code if ram location is not equal to 16-bit value
-                        // D3XXYYYY 00ZZ
-                        temp[0] = cp[2];
-                        temp[1] = cp[3];
-                        temp[2] = 0;
-                        xv = strtol(temp, (char **)NULL, 16);
-                        temp[0] = cp[4];
-                        temp[1] = cp[5];
-                        temp[2] = cp[6];
-                        temp[3] = cp[7];
-                        temp[4] = 0;
-                        yv = strtol(temp, (char **)NULL, 16);
-                        if (yv & 0x8000) xv++; // adjust for sign extension of yv
-                        temp[0] = vp[0];
-                        temp[1] = vp[1];
-                        temp[2] = vp[2];
-                        temp[3] = vp[3];
-                        temp[4] = 0;
-                        zv = strtol(temp, (char **)NULL, 16);
-                        *codes++ = 0x3c1a8000 | xv; // lui  k0,0x80xx
-                        *codes++ = 0x875a0000 | yv; // lh   k0,yyyy(k0)
-                        *codes++ = 0x241b0000 | zv; // li   k1,zzzz
-                        *codes++ = 0x135b0004;      // beq  k0,k1,4
-                        *codes++ = 0x00000000;      // nop
-                        break;
-
-                    case 0xDD:
-                        // deactivate expansion ram using 2nd method
-                        // DD000000 0000
-                        if (cic_chip == CIC_6105)
-                            *(vu32 *)0xA00003F0 = 0x00400000;
-                        else
-                            *(vu32 *)0xA0000318 = 0x00400000;
-                        break;
-
-                    case 0xDE:
-                        // set game boot address
-                        // DEXXXXXX 0000 => boot address = 800XXXXX, msn ignored
-                        temp[0] = cp[2];
-                        temp[1] = cp[3];
-                        temp[2] = cp[4];
-                        temp[3] = cp[5];
-                        temp[4] = cp[6];
-                        temp[5] = cp[7];
-                        temp[6] = 0;
-                        val = strtol(temp, (char **)NULL, 16);
-                        bootAddr = 0xFFFFFFFF80000000LL | (val & 0xFFFFF);
-                        break;
-
-                    case 0xEE:
-                        // deactivate expansion ram using 1st method
-                        // EE000000 0000
-                        if (cic_chip == CIC_6105)
-                            *(vu32 *)0xA00003F0 = 0x00400000;
-                        else
-                            *(vu32 *)0xA0000318 = 0x00400000;
-                        break;
-
-                    case 0xF0:
-                        // write 8-bit value to ram before boot
-                        // F0XXXXXX 00YY
-                        temp[0] = cp[2];
-                        temp[1] = cp[3];
-                        temp[2] = cp[4];
-                        temp[3] = cp[5];
-                        temp[4] = cp[6];
-                        temp[5] = cp[7];
-                        temp[6] = 0;
-                        val = strtol(temp, (char **)NULL, 16);
-                        val -= (bootAddr & 0xFFFFFF);
-                        tp = (char *)(0xA02A0000 + val);
-                        if (gGSCodes[curr_cheat].mask) {
-                            val = gGSCodes[curr_cheat].value & gGSCodes[curr_cheat].mask;
-                        }
-                        else {
-                            temp[0] = vp[2];
-                            temp[1] = vp[3];
-                            temp[2] = 0;
-                            val = strtol(temp, (char **)NULL, 16);
-                        }
-                        *tp = val & 0x00FF;
-                        break;
-
-                    case 0xF1:
-                        // write 16-bit value to ram before boot
-                        // F1XXXXXX YYYY
-                        temp[0] = cp[2];
-                        temp[1] = cp[3];
-                        temp[2] = cp[4];
-                        temp[3] = cp[5];
-                        temp[4] = cp[6];
-                        temp[5] = cp[7];
-                        temp[6] = 0;
-                        val = strtol(temp, (char **)NULL, 16);
-                        val -= (bootAddr & 0xFFFFFF);
-                        tp = (char *)(0xA02A0000 + val);
-                        if (gGSCodes[curr_cheat].mask) {
-                            val = gGSCodes[curr_cheat].value & gGSCodes[curr_cheat].mask;
-                        }
-                        else {
-                            temp[0] = vp[0];
-                            temp[1] = vp[1];
-                            temp[2] = vp[2];
-                            temp[3] = vp[3];
-                            temp[4] = 0;
-                            val = strtol(temp, (char **)NULL, 16);
-                        }
-                        *tp++ = (val >> 8) & 0x00FF;
-                        *tp = val & 0x00FF;
-                        break;
-
-                    case 0xFF:
-                        // set code base
-                        // FFXXXXXX 0000
-                        temp[0] = cp[2];
-                        temp[1] = cp[3];
-                        temp[2] = cp[4];
-                        temp[3] = cp[5];
-                        temp[4] = cp[6];
-                        temp[5] = cp[7];
-                        temp[6] = 0;
-                        val = strtol(temp, (char **)NULL, 16);
-                        //codes = (vu32 *)(0xA0000000 | (val & 0xFFFFFF));
-                        break;
-                }
-            }
-            curr_cheat++;
+                *p++ = cheat_lists[i][j];
+                *p++ = cheat_lists[i][j + 1];
+            } while (cheat_lists[i][j] || cheat_lists[i][j + 1]);
         }
 
-        // generate jump to moved general int handler
-        *codes++ = 0x3c1a8000;  // lui  k0,0x8000
-        *codes++ = 0x375a0120;  // ori  k0,k0,0x120
-        *codes++ = 0x03400008;  // jr   k0
-        *codes++ = 0x00000000;  // nop
-
-        // flush general int handler memory
-        data_cache_hit_writeback_invalidate((void *)0x80000120, 0x2E0);
-        inst_cache_hit_invalidate((void *)0x80000120, 0x2E0);
-
-        // flush os boot segment
-        data_cache_hit_writeback_invalidate((void *)0x802A0000, 0x100000);
-
-        // flush os boot segment memory
-        data_cache_hit_writeback_invalidate((void *)(u32)bootAddr, 0x100000);
-        inst_cache_hit_invalidate((void *)(u32)bootAddr, 0x100000);
+        // Write cache to physical memory and invalidate
+        data_cache_hit_writeback(patcher, patcher_length);
+        inst_cache_hit_invalidate(patcher, patcher_length);
     }
 
-    // Copy low 0x1000 bytes to DMEM
-    //copy bootcode to RSP DMEM starting at 0xA4000040; <- bootaddr
-    src = (vu32 *)0xB0000000; //i think 0xB0000040; is the right value
-    dst = (vu32 *)0xA4000000; //0xA4000040;
-    for (ix=0; ix<(0x1000>>2); ix++)
-        dst[ix] = src[ix];
+    // Start game via CIC boot code
+    asm __volatile__ (
+        ".set noreorder;"
+
+        "lui    $t0, 0x8000;"
+
+        // State required by all CICs
+        "move   $s3, $zero;"            // osRomType (0: N64, 1: 64DD)
+        "lw     $s4, 0x0300($t0);"      // osTvType (0: PAL, 1: NTSC, 2: MPAL)
+        "move   $s5, $zero;"            // osResetType (0: Cold, 1: NMI)
+        "lui    $s6, %%hi(cic_ids);"    // osCicId (See cic_ids LUT)
+        "addu   $s6, $s6, %0;"
+        "lbu    $s6, %%lo(cic_ids)($s6);"
+        "lw     $s7, 0x0314($t0);"      // osVersion
+
+        // Copy PIF code to RSP IMEM (State required by CIC-NUS-6105)
+        "lui    $a0, 0xA400;"
+        "lui    $a1, %%hi(imem_start);"
+        "ori    $a2, $zero, 0x0008;"
+    "1:"
+        "lw     $t0, %%lo(imem_start)($a1);"
+        "addiu  $a1, $a1, 4;"
+        "sw     $t0, 0x1000($a0);"
+        "addiu  $a2, $a2, -1;"
+        "bnez   $a2, 1b;"
+        "addiu  $a0, $a0, 4;"
+
+        // Copy CIC boot code to RSP DMEM
+        "lui    $t3, 0xA400;"
+        "ori    $t3, $t3, 0x0040;"      // State required by CIC-NUS-6105
+        "move   $a0, $t3;"
+        "lui    $a1, 0xB000;"
+        "ori    $a2, 0x0FC0;"
+    "1:"
+        "lw     $t0, 0x0040($a1);"
+        "addiu  $a1, $a1, 4;"
+        "sw     $t0, 0x0000($a0);"
+        "addiu  $a2, $a2, -4;"
+        "bnez   $a2, 1b;"
+        "addiu  $a0, $a0, 4;"
+
+        // Boot with or without cheats enabled?
+        "beqz   %1, 2f;"
+
+        // Patch CIC boot code
+        "lui    $a1, %%hi(cic_patch_offsets);"
+        "addu   $a1, $a1, %0;"
+        "lbu    $a1, %%lo(cic_patch_offsets)($a1);"
+        "addu   $a0, $t3, $a1;"
+        "lui    $a1, 0x081C;"           // "j 0x80700000"
+        "ori    $a2, $zero, 0x06;"
+        "bne    %0, $a2, 1f;"
+        "lui    $a2, 0x8188;"
+        "ori    $a2, $a2, 0x764A;"
+        "xor    $a1, $a1, $a2;"         // CIC-NUS-6106 encryption
+    "1:"
+        "sw     $a1, 0x0700($a0);"      // Patch CIC boot code with jump
+
+        // Patch CIC boot code to disable checksum failure halt
+        // Required for CIC-NUS-6105
+        "ori    $a2, $zero, 0x05;"
+        "beql   %0, $a2, 2f;"
+        "sw     $zero, 0x06CC($a0);"
+
+        // Go!
+    "2:"
+        "lui    $sp, 0xA400;"
+        "ori    $ra, $sp, 0x1550;"      // State required by CIC-NUS-6105
+        "jr     $t3;"
+        "ori    $sp, $sp, 0x1FF0;"      // State required by CIC-NUS-6105
 
 
-    // Need to copy crap to IMEM for CIC-6105 boot.
-    dst = (vu32 *)0xA4001000;
+    // Table of all CIC IDs
+    "cic_ids:"
+        ".byte  0x00;"                  // Unused
+        ".byte  0x3F;"                  // NUS-CIC-6101
+        ".byte  0x3F;"                  // NUS-CIC-6102
+        ".byte  0x78;"                  // NUS-CIC-6103
+        ".byte  0x00;"                  // Unused
+        ".byte  0x91;"                  // NUS-CIC-6105
+        ".byte  0x85;"                  // NUS-CIC-6106
+        ".byte  0x00;"                  // Unused
 
-    // register values due to pif boot for CiC chip and country code, and IMEM crap
-    gGPR[0]=0x0000000000000000LL;
-    gGPR[6]=0xFFFFFFFFA4001F0CLL;
-    gGPR[7]=0xFFFFFFFFA4001F08LL;
-    gGPR[8]=0x00000000000000C0LL;
-    gGPR[9]=0x0000000000000000LL;
-    gGPR[10]=0x0000000000000040LL;
-    gGPR[11]=bootAddr; // 0xFFFFFFFFA4000040LL;
-    gGPR[16]=0x0000000000000000LL;
-    gGPR[17]=0x0000000000000000LL;
-    gGPR[18]=0x0000000000000000LL;
-    gGPR[19]=0x0000000000000000LL;
-    gGPR[21]=0x0000000000000000LL;
-    gGPR[26]=0x0000000000000000LL;
-    gGPR[27]=0x0000000000000000LL;
-    gGPR[28]=0x0000000000000000LL;
-    gGPR[29]=0xFFFFFFFFA4001FF0LL;
-    gGPR[30]=0x0000000000000000LL;
+    "cic_patch_offsets:"
+        ".byte  0x00;"                  // Unused
+        ".byte  0x30;"                  // CIC-NUS-6101
+        ".byte  0x2C;"                  // CIC-NUS-6102
+        ".byte  0x20;"                  // CIC-NUS-6103
+        ".byte  0x00;"                  // Unused
+        ".byte  0x8C;"                  // CIC-NUS-6105
+        ".byte  0x60;"                  // CIC-NUS-6106
+        ".byte  0x00;"                  // Unused
 
-    switch (country) {
-        case 0x44: //Germany
-        case 0x46: //french
-        case 0x49: //Italian
-        case 0x50: //Europe
-        case 0x53: //Spanish
-        case 0x55: //Australia
-        case 0x58: // ????
-        case 0x59: // X (PAL)
-            if(force_tv!=0)
-                *(u32 *) 0x80000300 = force_tv; //pal
-            else
-                *(u32 *) 0x80000300 = 2;
+    // These instructions are copied to RSP IMEM; we don't execute them.
+    "imem_start:"
+        "lui    $t5, 0xBFC0;"
+    "1:"
+        "lw     $t0, 0x07FC($t5);"
+        "addiu  $t5, $t5, 0x07C0;"
+        "andi   $t0, $t0, 0x0080;"
+        "bnezl  $t0, 1b;"
+        "lui    $t5, 0xBFC0;"
+        "lw     $t0, 0x0024($t5);"
+        "lui    $t3, 0xB000;"
 
-            switch (cic_chip) {
-                case CIC_6102:
-                    gGPR[5]=0xFFFFFFFFC0F1D859LL;
-                    gGPR[14]=0x000000002DE108EALL;
-                    gGPR[24]=0x0000000000000000LL;
-                    break;
+        :                               // outputs
+        : "r" (cic_chip),               // inputs
+          "r" (gCheats)
+        : "$4", "$5", "$6", "$8",       // clobber
+          "$11", "$19", "$20", "$21",
+          "$22", "$23", "memory"
+    );
 
-                case CIC_6103:
-                    gGPR[5]=0xFFFFFFFFD4646273LL;
-                    gGPR[14]=0x000000001AF99984LL;
-                    gGPR[24]=0x0000000000000000LL;
-                    break;
+patcher_start:
+    asm __volatile__ (
+        ".set noat;"
+        ".set noreorder;"
 
-                case CIC_6105:
-                    dst[0x04>>2] = 0xBDA807FC;
-                    gGPR[5]=0xFFFFFFFFDECAAAD1LL;
-                    gGPR[14]=0x000000000CF85C13LL;
-                    gGPR[24]=0x0000000000000002LL;
-                    break;
+    // Installs general exception handler, router, and code engine
+    "patcher:"
+        "lui    $t5, 0x8070;"           // Start of temporary patcher location
+        "lui    $t6, 0x8000;"           // Start of cached memory
+        "li     $t7, 0x007FFFFF;"       // Address mask
+        "li     $t8, 0x807C5C00;"       // Permanent code engine location
+//      "lw     $t9, 0xFFFC($t5);"      // Assembles incorrectly (gcc sucks)
+        "addiu  $t9, $t5, -4;"          // Go to hell, gcc!
+        "lw     $t9, 0x0000($t9);"      // Get temporary code lists location
 
-                case CIC_6106:
-                    gGPR[5]=0xFFFFFFFFB04DC903LL;
-                    gGPR[14]=0x000000001AF99984LL;
-                    gGPR[24]=0x0000000000000002LL;
-                    break;
-            }
+    "1:"
+        // Apply boot-time cheats
+        "lw     $v0, 0x0000($t9);"
+        "bnez   $v0, 2f;"
+        "lw     $v1, 0x0004($t9);"
+        "beqz   $v1, 1f;"
 
-            gGPR[20]=0x0000000000000000LL;
-            gGPR[23]=0x0000000000000006LL;
-            gGPR[31]=0xFFFFFFFFA4001554LL;
-            break;
+    "2:"
+        "addiu  $t9, $t9, 0x0008;"
+        "srl    $t2, $v0, 24;"
+        "li     $at, 0xEE;"
+        "beq    $t2, $at, 5f;"
+        "li     $at, 0xF0;"
+        "and    $v0, $v0, $t7;"
+        "beq    $t2, $at, 4f;"
+        "or     $v0, $v0, $t6;"
+        "li     $at, 0xF1;"
+        "beq    $t2, $at, 3f;"
+        "nop;"
 
-        case 0x37: // 7 (Beta)
-        case 0x41: // ????
-        case 0x45: //USA
-        case 0x4A: //Japan
-            if(force_tv!=0)
-                *(u32 *) 0x80000300 = force_tv; //pal
-            else
-                *(u32 *) 0x80000300 = 1; //ntsc
+        // Apply FF code type
+        "li     $at, 0xFFFFFFFC;"       // Mask address
+        "b      1b;"
+        "and    $t8, $v0, $at;"         // Update permanent code engine location
 
-            // Fall-through
+    "3:"
+        // Apply F1 code type
+        "b      1b;"
+        "sh     $v1, 0x0000($v0);"
 
-        default:
-            switch (cic_chip) {
-                case CIC_6102:
-                    gGPR[5]=0xFFFFFFFFC95973D5LL;
-                    gGPR[14]=0x000000002449A366LL;
-                    break;
+    "4:"
+        // Apply F0 code type
+        "b      1b;"
+        "sb     $v1, 0x0000($v0);"
 
-                case CIC_6103:
-                    gGPR[5]=0xFFFFFFFF95315A28LL;
-                    gGPR[14]=0x000000005BACA1DFLL;
-                    break;
-
-                case CIC_6105:
-                    dst[0x04>>2] = 0x8DA807FC;
-                    gGPR[5]=0x000000005493FB9ALL;
-                    gGPR[14]=0xFFFFFFFFC2C20384LL;
-                    break;
-
-                case CIC_6106:
-                    gGPR[5]=0xFFFFFFFFE067221FLL;
-                    gGPR[14]=0x000000005CD2B70FLL;
-                    break;
-            }
-
-            gGPR[20]=0x0000000000000001LL;
-            gGPR[23]=0x0000000000000000LL;
-            gGPR[24]=0x0000000000000003LL;
-            gGPR[31]=0xFFFFFFFFA4001550LL;
-            break;
-    }
-
-    switch (cic_chip) {
-        case CIC_6101:
-            gGPR[22]=0x000000000000003FLL;
-            break;
-
-        case CIC_6102:
-            gGPR[1]=0x0000000000000001LL;
-            gGPR[2]=0x000000000EBDA536LL;
-            gGPR[3]=0x000000000EBDA536LL;
-            gGPR[4]=0x000000000000A536LL;
-            gGPR[12]=0xFFFFFFFFED10D0B3LL;
-            gGPR[13]=0x000000001402A4CCLL;
-            gGPR[15]=0x000000003103E121LL;
-            gGPR[22]=0x000000000000003FLL;
-            gGPR[25]=0xFFFFFFFF9DEBB54FLL;
-            break;
-
-        case CIC_6103:
-            gGPR[1]=0x0000000000000001LL;
-            gGPR[2]=0x0000000049A5EE96LL;
-            gGPR[3]=0x0000000049A5EE96LL;
-            gGPR[4]=0x000000000000EE96LL;
-            gGPR[12]=0xFFFFFFFFCE9DFBF7LL;
-            gGPR[13]=0xFFFFFFFFCE9DFBF7LL;
-            gGPR[15]=0x0000000018B63D28LL;
-            gGPR[22]=0x0000000000000078LL;
-            gGPR[25]=0xFFFFFFFF825B21C9LL;
-            break;
-
-        case CIC_6105:
-            dst[0x00>>2] = 0x3C0DBFC0;
-            dst[0x08>>2] = 0x25AD07C0;
-            dst[0x0C>>2] = 0x31080080;
-            dst[0x10>>2] = 0x5500FFFC;
-            dst[0x14>>2] = 0x3C0DBFC0;
-            dst[0x18>>2] = 0x8DA80024;
-            dst[0x1C>>2] = 0x3C0BB000;
-            gGPR[1]=0x0000000000000000LL;
-            gGPR[2]=0xFFFFFFFFF58B0FBFLL;
-            gGPR[3]=0xFFFFFFFFF58B0FBFLL;
-            gGPR[4]=0x0000000000000FBFLL;
-            gGPR[12]=0xFFFFFFFF9651F81ELL;
-            gGPR[13]=0x000000002D42AAC5LL;
-            gGPR[15]=0x0000000056584D60LL;
-            gGPR[22]=0x0000000000000091LL;
-            gGPR[25]=0xFFFFFFFFCDCE565FLL;
-            break;
-
-        case CIC_6106:
-            gGPR[1]=0x0000000000000000LL;
-            gGPR[2]=0xFFFFFFFFA95930A4LL;
-            gGPR[3]=0xFFFFFFFFA95930A4LL;
-            gGPR[4]=0x00000000000030A4LL;
-            gGPR[12]=0xFFFFFFFFBCB59510LL;
-            gGPR[13]=0xFFFFFFFFBCB59510LL;
-            gGPR[15]=0x000000007A3C07F4LL;
-            gGPR[22]=0x0000000000000085LL;
-            gGPR[25]=0x00000000465E3F72LL;
-            break;
-    }
-
-    // set HW registers
-    IO_WRITE(PI_STATUS_REG, 0x03);
-    switch (cart) {
-        case 0x4258: // 'BX' - Battle Tanx
-            IO_WRITE(PI_BSD_DOM1_LAT_REG, 0x80);
-            IO_WRITE(PI_BSD_DOM1_RLS_REG, 0x37);
-            IO_WRITE(PI_BSD_DOM1_PWD_REG, 0x12);
-            IO_WRITE(PI_BSD_DOM1_PGS_REG, 0x40);
-            break;
-
-        case 0x4237: // 'B7' - Banjo Tooie
-            IO_WRITE(PI_BSD_DOM1_LAT_REG, 0x80);
-            IO_WRITE(PI_BSD_DOM1_RLS_REG, 0x37);
-            IO_WRITE(PI_BSD_DOM1_PWD_REG, 0x12);
-            IO_WRITE(PI_BSD_DOM1_PGS_REG, 0x40);
-            break;
-
-        case 0x5A4C: // 'ZL' - Zelda OOT
-/*
-            IO_WRITE(PI_BSD_DOM2_LAT_REG, 0x00000005);
-            IO_WRITE(PI_BSD_DOM2_PWD_REG, 0x0000000C);
-            IO_WRITE(PI_BSD_DOM2_PGS_REG, 0x0000000D);
-            IO_WRITE(PI_BSD_DOM2_RLS_REG, 0x00000002);
-*/
-
-/* unstable
-            IO_WRITE(PI_BSD_DOM1_LAT_REG, 0x00000040);
-            IO_WRITE(PI_BSD_DOM1_RLS_REG, 0x00803712);
-            IO_WRITE(PI_BSD_DOM1_PWD_REG, 0x00008037);
-            IO_WRITE(PI_BSD_DOM1_PGS_REG, 0x00000803);
-*/
-            break;
-
-        default:
-            break;
-    }
-
-/*
-load immediate:
-
-li	register_destination, value
-#load immediate value into destination register
-
- ---
-
- Registers in coprocessor 0 cannot be used directly by MIPS instructions. Instead, there are two
- instructions that work much like load and store instructions. The mfc0 (move from coprocessor 0) instruction
- loads data from a coprocessor 0 register into a CPU register. The mtc0 likewise stores data in a cp0 register.
-
-Note
-
-The mtc0 instruction, like the store instruction has the destination last. This is especially important to note,
- since the syntax for cp0 registers looks the same as the syntax for CPU registers. For example, the following copies
- the contents of CPU register 13 to cp0 register 12.
-    mtc0    $13, $12
+    "5:"
+        // Apply EE code type
+        "lui    $v0, 0x0040;"
+        "sw     $v0, 0x0318($t6);"
+        "b      1b;"
+        "sw     $v0, 0x03F0($t6);"
 
 
-     mthi	010001	MoveTo	hi = $s
+    "1:"
+        // Install General Exception Handler
+        "srl    $at, $t8, 2;"
+        "and    $v0, $at, $t7;"
+        "lui    $at, 0x0800;"
+        "or     $v0, $v0, $at;"         // Jump to code engine
+        "sw     $v0, 0x0180($t6);"
+        "sw     $zero, 0x0184($t6);"
 
 
- LUI -- Load upper immediate
+        // Install code engine to permanent location
+        "sw     $t8, 0x0188($t6);"      // Save permanent code engine location
+        "la     $at, %%lo(patcher);"
+        "la     $v0, %%lo(code_engine_start);"
+        "la     $v1, %%lo(code_engine_end);"
+        "subu   $at, $v0, $at;"         // Get patcher length
+        "subu   $v1, $v1, $v0;"         // Get code engine length
+        "addu   $v0, $t5, $at;"         // Get temporary code engine location
+    "1:"
+        "lw     $at, 0x0000($v0);"
+        "addiu  $v1, $v1, -4;"
+        "sw     $at, 0x0000($t8);"
+        "addiu  $v0, $v0, 4;"
+        "bgtz   $v1, 1b;"
+        "addiu  $t8, $t8, 4;"
+        "sw     $t8, 0x018C($t6);"      // Save permanent code list location
 
-Description:
-The immediate value is shifted left 16 bits and stored in the register. The lower 16 bits are zeroes.
-Operation:
-$t = (imm << 16); advance_pc (4);
-Syntax:
-lui $t, imm
-Encoding:
-0011 11-- ---t tttt iiii iiii iiii iiii
 
- * */
+    "1:"
+        // Install in-game code list
+        "lw     $v0, 0x0000($t9);"
+        "lw     $v1, 0x0004($t9);"
+        "addiu  $t9, $t9, 8;"
+        "sw     $v0, 0x0000($t8);"
+        "sw     $v1, 0x0004($t8);"
+        "bnez   $v0, 1b;"
+        "addiu  $t8, $t8, 8;"
+        "bnez   $v1, 1b;"
+        "nop;"
 
-    // now set MIPS registers - set CP0, and then GPRs, then jump thru gpr11 (which is usually 0xA400040)
-    if (!gCheats)
-        asm(".set noat\n\t"
-            ".set noreorder\n\t"
-            "li $8,0x34000000\n\t"
-            "mtc0 $8,$12\n\t"
-            "nop\n\t"
-            "nop\n\t"
-            "li $9,0x0006E463\n\t"
-            "mtc0 $9,$16\n\t"
-            "nop\n\t"
-            "nop\n\t"
-            "li $8,0x00005000\n\t"
-            "mtc0 $8,$9\n\t"
-            "nop\n\t"
-            "nop\n\t"
-            "li $9,0x0000005C\n\t"
-            "mtc0 $9,$13\n\t"
-            "nop\n\t"
-            "nop\n\t"
-            "li $8,0x007FFFF0\n\t"
-            "mtc0 $8,$4\n\t"
-            "nop\n\t"
-            "nop\n\t"
-            "nop\n\t"
-            "li $9,0xFFFFFFFF\n\t"
-            "mtc0 $9,$14\n\t"
-            "nop\n\t"
-            "nop\n\t"
-            "mtc0 $9,$8\n\t"
-            "nop\n\t"
-            "nop\n\t"
-            "mtc0 $9,$30\n\t"
-            "nop\n\t"
-            "nop\n\t"
-            "lui $8,0\n\t"
-            "mthi $8\n\t"
-            "nop\n\t"
-            "nop\n\t"
-            "mtlo $8\n\t"
-            "nop\n\t"
-            "nop\n\t"
-            "ctc1 $8,$31\n\t"
-            "nop\n\t"
-            "lui $31,0xA03E\n\t"
-            //"lui $31,0xA008\n\t"
-            "ld $1,0x08($31)\n\t"
-            "ld $2,0x10($31)\n\t"
-            "ld $3,0x18($31)\n\t"
-            "ld $4,0x20($31)\n\t"
-            "ld $5,0x28($31)\n\t"
-            "ld $6,0x30($31)\n\t"
-            "ld $7,0x38($31)\n\t"
-            "ld $8,0x40($31)\n\t"
-            "ld $9,0x48($31)\n\t"
-            "ld $10,0x50($31)\n\t"
-            "ld $11,0x58($31)\n\t"
-            "ld $12,0x60($31)\n\t"
-            "ld $13,0x68($31)\n\t"
-            "ld $14,0x70($31)\n\t"
-            "ld $15,0x78($31)\n\t"
-            "ld $16,0x80($31)\n\t"
-            "ld $17,0x88($31)\n\t"
-            "ld $18,0x90($31)\n\t"
-            "ld $19,0x98($31)\n\t"
-            "ld $20,0xA0($31)\n\t"
-            "ld $21,0xA8($31)\n\t"
-            "ld $22,0xB0($31)\n\t"
-            "ld $23,0xB8($31)\n\t"
-            "ld $24,0xC0($31)\n\t"
-            "ld $25,0xC8($31)\n\t"
-            "ld $26,0xD0($31)\n\t"
-            "ld $27,0xD8($31)\n\t"
-            "ld $28,0xE0($31)\n\t"
-            "ld $29,0xE8($31)\n\t"
-            "ld $30,0xF0($31)\n\t"
-            "ld $31,0xF8($31)\n\t"
-            "jr $11\n\t"
-            "nop"
-            ::: "$8" );
 
-    else
-        asm(".set noreorder\n\t"
-            "li $8,0x34000000\n\t"
-            "mtc0 $8,$12\n\t"
-            "nop\n\t"
-            "li $9,0x0006E463\n\t"
-            "mtc0 $9,$16\n\t"
-            "nop\n\t"
-            "li $8,0x00005000\n\t"
-            "mtc0 $8,$9\n\t"
-            "nop\n\t"
-            "li $9,0x0000005C\n\t"
-            "mtc0 $9,$13\n\t"
-            "nop\n\t"
-            "li $8,0x007FFFF0\n\t"
-            "mtc0 $8,$4\n\t"
-            "nop\n\t"
-            "li $9,0xFFFFFFFF\n\t"
-            "mtc0 $9,$14\n\t"
-            "nop\n\t"
-            "mtc0 $9,$30\n\t"
-            "nop\n\t"
-            "lui $8,0\n\t"
-            "mthi $8\n\t"
-            "nop\n\t"
-            "mtlo $8\n\t"
-            "nop\n\t"
-            "ctc1 $8,$31\n\t"
-            "nop\n\t"
-            "li $9,0x00000183\n\t"
-            "mtc0 $9,$18\n\t"
-            "nop\n\t"
-            "mtc0 $zero,$19\n\t"
-            "nop\n\t"
-            "lui $8,0xA03C\n\t"
-            "la $9,2f\n\t"
-            "la $10,9f\n\t"
-            ".set noat\n"
-            "1:\n\t"
-            "lw $2,($9)\n\t"
-            "sw $2,($8)\n\t"
-            "addiu $8,$8,4\n\t"
-            "addiu $9,$9,4\n\t"
-            "bne $9,$10,1b\n\t"
-            "nop\n\t"
-            "lui $8,0xA03C\n\t"
-            "jr $8\n\t"
-            "nop\n"
-            "2:\n\t"
-            "lui $9,0xB000\n\t"
-            "lw $9,8($9)\n\t"
-            "lui $8,0x2000\n\t"
-            "or $8,$8,$9\n\t"
-            "lui $9,0xA02A\n\t"
-            "lui $10,0xA03A\n\t"
-            "3:\n\t"
-            "lw $2,($9)\n\t"
-            "sw $2,($8)\n\t"
-            "addiu $8,$8,4\n\t"
-            "addiu $9,$9,4\n\t"
-            "bne $9,$10,3b\n\t"
-            "nop\n\t"
-            "lui $31,0xA03E\n\t"
-            "ld $1,0x08($31)\n\t"
-            "ld $2,0x10($31)\n\t"
-            "ld $3,0x18($31)\n\t"
-            "ld $4,0x20($31)\n\t"
-            "ld $5,0x28($31)\n\t"
-            "ld $6,0x30($31)\n\t"
-            "ld $7,0x38($31)\n\t"
-            "ld $8,0x40($31)\n\t"
-            "ld $9,0x48($31)\n\t"
-            "ld $10,0x50($31)\n\t"
-            "ld $11,0x58($31)\n\t"
-            "ld $12,0x60($31)\n\t"
-            "ld $13,0x68($31)\n\t"
-            "ld $14,0x70($31)\n\t"
-            "ld $15,0x78($31)\n\t"
-            "ld $16,0x80($31)\n\t"
-            "ld $17,0x88($31)\n\t"
-            "ld $18,0x90($31)\n\t"
-            "ld $19,0x98($31)\n\t"
-            "ld $20,0xA0($31)\n\t"
-            "ld $21,0xA8($31)\n\t"
-            "ld $22,0xB0($31)\n\t"
-            "ld $23,0xB8($31)\n\t"
-            "ld $24,0xC0($31)\n\t"
-            "ld $25,0xC8($31)\n\t"
-            "ld $26,0xD0($31)\n\t"
-            "ld $27,0xD8($31)\n\t"
-            "ld $28,0xE0($31)\n\t"
-            "ld $29,0xE8($31)\n\t"
-            "ld $30,0xF0($31)\n\t"
-            "ld $31,0xF8($31)\n\t"
-            "jr $11\n\t"
-            "nop\n"
-            "9:\n"
-            ::: "$8" );
+        // Write cache to physical memory and invalidate (GEH)
+        "ori    $t0, $t6, 0x0180;"
+        "li     $at, 0x0010;"
+    "1:"
+        "cache  0x19, 0x0000($t0);"     // Data cache hit writeback
+        "cache  0x10, 0x0000($t0);"     // Instruction cache hit invalidate
+        "addiu  $at, $at, -4;"
+        "bnez   $at, 1b;"
+        "addiu  $t0, $t0, 4;"
+
+
+        // Write cache to physical memory and invalidate (code engine + list)
+        "lw     $t0, 0x0188($t6);"
+        "subu   $at, $t8, $t0;"
+    "1:"
+        "cache  0x19, 0x0000($t0);"     // Data cache hit writeback
+        "cache  0x10, 0x0000($t0);"     // Instruction cache hit invalidate
+        "addiu  $at, $at, -4;"
+        "bnez   $at, 1b;"
+        "addiu  $t0, $t0, 4;"
+
+
+        // Protect GEH via WatchLo/WatchHi
+        "li     $t0, 0x0181;"           // Watch 0x80000180 for writes
+        "mtc0   $t0, $18;"              // Cp0 WatchLo
+        "nop;"
+        "mtc0   $zero, $19;"            // Cp0 WatchHi
+
+
+        // Start game!
+        "jr     $t1;"
+        "nop;"
+
+
+    "code_engine_start:"
+        "mfc0   $k0, $13;"              // Cp0 Cause
+        "andi   $k1, $k0, 0x1000;"      // Pre-NMI
+        "bnezl  $k1, 1f;"
+        "mtc0   $zero, $18;"            // Cp0 WatchLo
+    "1:"
+
+        "andi   $k0, $k0, 0x7C;"
+        "li     $k1, 0x5C;"             // Watchpoint
+        "bne    $k0, $k1, 1f;"
+
+        // Watch exception; manipulate register contents
+        "mfc0   $k1, $14;"              // Cp0 EPC
+        "lw     $k1, 0x0000($k1);"      // Load cause instruction
+        "lui    $k0, 0x03E0;"
+        "and    $k1, $k1, $k0;"         // Mask (base) register
+        "srl    $k1, $k1, 5;"           // Shift it to the "rt" position
+        "lui    $k0, 0x3740;"           // Upper half "ori $zero, $k0, 0x0120"
+        "or     $k1, $k1, $k0;"
+        "ori    $k1, $k1, 0x0120;"      // Lower half "ori $zero, $k0, 0x0120"
+        "lui    $k0, 0x8000;"
+        "lw     $k0, 0x0188($k0);"      // Load permanent code engine location
+        "sw     $k1, 0x0060($k0);"      // Self-modifying code FTW!
+        "cache  0x19, 0x0060($k0);"     // Data cache hit writeback
+        "cache  0x10, 0x0060($k0);"     // Instruction cache hit invalidate
+        "lui    $k0, 0x8000;"
+        "nop;"                          // Short delay for cache sync
+        "nop;"
+        "nop;"
+        "nop;"                          // Placeholder for self-modifying code
+        "eret;"                         // Back to game
+
+    "1:"
+        // Run code engine
+        "lui    $k0, 0x8000;"
+        "lw     $k0, 0x0188($k0);"
+        "addiu  $k0, $k0, -0x28;"
+        "sd     $v1, 0x0000($k0);"
+        "sd     $v0, 0x0008($k0);"
+        "sd     $t9, 0x0010($k0);"
+        "sd     $t8, 0x0018($k0);"
+        "sd     $t7, 0x0020($k0);"
+
+        // Handle cheats
+        "lui    $t9, 0x8000;"
+        "lw     $t9, 0x018C($t9);"      // Get code list location
+    "1:"
+        "lw     $v0, 0x0000($t9);"      // Load address
+        "bnez   $v0, 2f;"
+        "lw     $v1, 0x0004($t9);"      // Load value
+        "beqz   $v1, 4f;"
+        "nop;"
+
+        // Address == 0 (TODO)
+        "b      1b;"
+
+    "2:"
+        // Address != 0
+        "addiu  $t9, $t9, 0x0008;"
+        "srl    $t7, $v0, 24;"
+        "sltiu  $k1, $t7, 0xD0;"        // Code type < 0xD0 ?
+        "sltiu  $t8, $t7, 0xD4;"        // Code type < 0xD4 ?
+        "xor    $k1, $k1, $t8;"         // $k1 = (0xD0 >= code_type < 0xD4)
+        "li     $t8, 0x50;"
+        "bne    $t7, $t8, 3f;"          // Code type != 0x50 ? -> 3
+
+        // GS Patch/Repeater
+        "srl    $t8, $v0, 8;"
+        "andi   $t8, $t8, 0x00FF;"      // Get address count
+        "andi   $t7, $v0, 0x00FF;"      // Get address increment
+        "lw     $v0, 0x0000($t9);"      // Load address
+        "lw     $k1, 0x0004($t9);"      // Load value
+        "addiu  $t9, $t9, 0x0008;"
+
+    "2:"
+        "sh     $k1, 0x0000($v0);"      // Repeater/Patch write
+        "addiu  $t8, $t8, -1;"
+        "addu   $v0, $v0, $t7;"
+        "bnez   $t8, 2b;"
+        "addu   $k1, $k1, $v1;"
+        "b      1b;"
+
+    "3:"
+        // GS RAM write or Conditional
+        "lui    $t7, 0x0300;"
+        "and    $t7, $v0, $t7;"         // Test for 8-bit or 16-bit code type
+        "li     $t8, 0xA07FFFFF;"
+        "and    $v0, $v0, $t8;"
+        "lui    $t8, 0x8000;"
+        "beqz   $k1, 2f;"
+        "or     $v0, $v0, $t8;"         // Mask address
+
+        // GS Conditional
+        "sll    $k1, $t7, 7;"
+        "beqzl  $k1, 3f;"
+        "lbu    $t8, 0x0000($v0);"      // 8-bit conditional
+        "lhu    $t8, 0x0000($v0);"      // 16-bit conditional
+    "3:"
+        "srl    $t7, $t7, 22;"
+        "andi   $t7, $t7, 8;"           // Test for equal-to or not-equal-to
+        "beql   $v1, $t8, 1b;"
+        "add    $t9, $t9, $t7;"         // Add if equal
+        "xori   $t7, $t7, 8;"
+        "b      1b;"
+        "add    $t9, $t9, $t7;"         // Add if not-equal
+
+    "2:"
+        // GS RAM write
+        "sll    $k1, $t7, 7;"
+        "beqzl  $k1, 3f;"
+        "sb     $v1, 0x0000($v0);"      // Constant 8-bit write
+        "sh     $v1, 0x0000($v0);"      // Constant 16-bit write
+    "3:"
+        "b      1b;"
+
+    "4:"
+        // Restore registers from our temporary stack, and back to the game!
+        "ld     $t7, 0x0020($k0);"
+        "ld     $t8, 0x0018($k0);"
+        "ld     $t9, 0x0010($k0);"
+        "ld     $v0, 0x0008($k0);"
+        "j      0x80000120;"
+        "ld     $v1, 0x0000($k0);"
+    "code_engine_end:"
+
+        :                               // outputs
+        :                               // inputs
+        : "memory"                      // clobber
+    );
+patcher_end:
+
+    return;
 }

@@ -25,7 +25,7 @@ void dma_read_s(void * ram_address, unsigned long pi_address, unsigned long len)
 void readSDcard(display_context_t disp, char *directory);
 int readConfigFile(void);
 //void readCheatFile(display_context_t disp);
-int readCheatFile(char *filename);
+int readCheatFile(char *filename, u32 *cheat_lists[2]);
 static int configHandler(void* user, const char* section, const char* name, const char* value);
 int saveTypeToSd(display_context_t disp, char* save_filename ,int tpye);
 int saveTypeFromSd(display_context_t disp, char* rom_name, int stype);
@@ -87,22 +87,3 @@ void drawRomConfigBox(display_context_t disp,int line);
  * @return An aligned address guaranteed to be >= the unaligned address
  */
 #define ALIGN_16BYTE(x)     ((void *)(((uint32_t)(x)+15) & 0xFFFFFFF0))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

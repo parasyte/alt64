@@ -33,6 +33,7 @@ toolchain recommended by libdragon, with some updated versions.
 * [libdragon](https://github.com/parasyte/libdragon)
 * [libmikmod-n64](https://github.com/parasyte/libmikmod-n64)
 * [libmad-n64](https://github.com/parasyte/libmad-n64)
+* [libyaml](http://pyyaml.org/wiki/LibYAML)
 
 ### Build the Toolchain
 
@@ -98,11 +99,30 @@ toolchain installation path:
 ```bash
 $ git clone https://github.com/parasyte/libmad-n64.git
 $ cd libmad-n64
-$ export PATH=$PATH:/usr/local/mips64-elf/bin
+$ export PATH=$PATH:$(N64_INST)/bin
 $ CFLAGS="-march=vr4300 -mtune=vr4300 -mno-extern-sdata" \
-  LDFLAGS="-L/usr/local/mips64-elf/lib" LIBS="-lc -lnosys" \
+  LDFLAGS="-L$(N64_INST)/lib" LIBS="-lc -lnosys" \
   ./configure --host=mips64-elf --disable-shared \
-  --prefix=/usr/local/mips64-elf --enable-speed --enable-fpm=mips
+  --prefix=$(N64_INST) --enable-speed --enable-fpm=mips
+$ make
+$ make install
+```
+
+### Build `libyaml`
+
+Download libyaml 0.1.6 and build, be sure to set the path according to your
+toolchain installation path:
+
+```bash
+$ hg clone https://bitbucket.org/xi/libyaml
+$ cd libyaml
+$ hg update 0.1.6
+$ ./bootstrap
+$ export PATH=$PATH:$(N64_INST)/bin
+$ CFLAGS="-std=gnu99 -march=vr4300 -mtune=vr4300" \
+  LDFLAGS="-L$(N64_INST)/lib -Tn64ld.x" \
+  LIBS="-ldragon -lc -ldragonsys -lnosys" \
+  ./configure --host=mips64-elf --prefix=$(N64_INST)
 $ make
 $ make install
 ```

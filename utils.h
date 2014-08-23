@@ -4,7 +4,7 @@
 #include <libdragon.h>
 
 /*
- * 
+ *
 
 0000h              (1 byte): initial PI_BSB_DOM1_LAT_REG value (0x80)
 0001h              (1 byte): initial PI_BSB_DOM1_PGS_REG value (0x37)
@@ -31,6 +31,8 @@
 0040h - 0FFFh (1008 dwords): Boot code
 */
 
+#define DP_BASE_REG		0x04100000
+#define VI_BASE_REG		0x04400000
 #define PI_BASE_REG		0x04600000
 #define PIF_RAM_START		0x1FC007C0
 
@@ -92,6 +94,29 @@
 #define	PI_STATUS_IO_BUSY	0x02
 #define	PI_STATUS_DMA_BUSY	0x01
 
+#define                      DPC_START                    (DP_BASE_REG + 0x00)
+#define                      DPC_END                      (DP_BASE_REG + 0x04)
+#define                      DPC_CURRENT                  (DP_BASE_REG + 0x08)
+#define                      DPC_STATUS                   (DP_BASE_REG + 0x0C)
+#define                      DPC_CLOCK                    (DP_BASE_REG + 0x10)
+#define                      DPC_BUFBUSY                  (DP_BASE_REG + 0x14)
+#define                      DPC_PIPEBUSY                 (DP_BASE_REG + 0x18)
+#define                      DPC_TMEM                     (DP_BASE_REG + 0x1C)
+
+#define	VI_CONTROL	(VI_BASE_REG + 0x00)
+#define	VI_FRAMEBUFFER	(VI_BASE_REG + 0x04)
+#define	VI_WIDTH	(VI_BASE_REG + 0x08)
+#define	VI_V_INT	(VI_BASE_REG + 0x0C)
+#define	VI_CUR_LINE	(VI_BASE_REG + 0x10)
+#define	VI_TIMING	(VI_BASE_REG + 0x14)
+#define	VI_V_SYNC	(VI_BASE_REG + 0x18)
+#define	VI_H_SYNC	(VI_BASE_REG + 0x1C)
+#define	VI_H_SYNC2	(VI_BASE_REG + 0x20)
+#define	VI_H_LIMITS	(VI_BASE_REG + 0x24)
+#define	VI_COLOR_BURST	(VI_BASE_REG + 0x28)
+#define	VI_H_SCALE	(VI_BASE_REG + 0x2C)
+#define	VI_VSCALE	(VI_BASE_REG + 0x30)
+
 #define	PHYS_TO_K0(x)	((u32)(x)|0x80000000)	/* physical to kseg0 */
 #define	K0_TO_PHYS(x)	((u32)(x)&0x1FFFFFFF)	/* kseg0 to physical */
 #define	PHYS_TO_K1(x)	((u32)(x)|0xA0000000)	/* physical to kseg1 */
@@ -112,7 +137,7 @@
 #define FRAM_EXECUTE_CMD		0xD2000000
 #define FRAM_STATUS_MODE_CMD	0xE1000000
 #define FRAM_ERASE_OFFSET_CMD	0x4B000000
-#define FRAM_WRITE_OFFSET_CMD	0xA5000000 
+#define FRAM_WRITE_OFFSET_CMD	0xA5000000
 #define FRAM_ERASE_MODE_CMD		0x78000000
 #define FRAM_WRITE_MODE_CMD		0xB4000000
 #define FRAM_READ_MODE_CMD		0xF0000000
@@ -128,6 +153,22 @@
 #define CIC_6105 5
 #define CIC_6106 6
 
+#if !defined(MIN)
+    #define MIN(a, b) ({ \
+        __typeof__ (a) _a = (a); \
+        __typeof__ (b) _b = (b); \
+        _a < _b ? _a : _b; \
+    })
+#endif
+
+#if !defined(MAX)
+    #define MAX(a, b) ({ \
+        __typeof__ (a) _a = (a); \
+        __typeof__ (b) _b = (b); \
+        _a > _b ? _a : _b; \
+    })
+#endif
+
 sprite_t *loadImage32DFS(char *fname);
 sprite_t *loadImageDFS(char *fname);
 sprite_t *loadImage32(u8 *tbuf, int size);
@@ -142,8 +183,7 @@ void swap_header(unsigned char* header, int loadlength);
 
 void restoreTiming(void);
 
-void simulate_boot(u32 boot_cic, u8 bios_cic);
-void globalTest(void);
+void simulate_boot(u32 boot_cic, u8 bios_cic, u32 *cheat_list[2]);
 
 
 u8 getCicType(u8 bios_cic);
@@ -161,7 +201,7 @@ int getSRAM128(  uint8_t *buffer);
 int getEeprom4k(  uint8_t *buffer);
 int getEeprom16k(  uint8_t *buffer);
 int getFlashRAM(  uint8_t *buffer);
-		
+
 int setSRAM(uint8_t *buffer,int size);
 int setSRAM32(  uint8_t *buffer);
 int setSRAM128(  uint8_t *buffer);

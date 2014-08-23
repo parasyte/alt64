@@ -39,18 +39,8 @@
 #include <mikmod.h>
 #include "mp3.h"
 
-//cheats
-struct gscEntry {
-    char *description;
-    char *gscodes;
-    u16  count;
-    u16  state;
-    u16  mask;
-    u16  value;
-};
-typedef struct gscEntry gscEntry_t;
-
-gscEntry_t gGSCodes[256];
+// YAML parser
+#include <yaml.h>
 
 #ifdef USE_TRUETYPE
 #define STB_TRUETYPE_IMPLEMENTATION
@@ -649,7 +639,7 @@ void drawBoxNumber(display_context_t disp, int box){
 
     switch(box){
     case 1:    drawBox(20, 24, 277, 193, disp); break; //filebrowser
-    case 2:    drawBox(60, 64, 197, 114, disp); break; //info screen
+    case 2:    drawBox(60, 56, 200, 128, disp); break; //info screen
     case 3:
         box_color= graphics_make_color(0x00, 0x00, 0x60, 0xC9);
         drawBox(79, 29, 161, 180, disp);
@@ -1246,11 +1236,10 @@ void loadrom(display_context_t disp, u8 *buff, int fast){
 
     if (get_cic_save(cartID_short, &cic, &save)) {
         if(!fast)
-        printText("found in db", 3, -1, disp);
+            printText("found in db", 3, -1, disp);
         //thanks for the db :>
         // cart was found, use CIC and SaveRAM type
     }
-
 
     if (debug) {
         sprintf(tmp, "Info: cic=%i save=%i",cic,save);
@@ -1317,7 +1306,6 @@ void loadrom(display_context_t disp, u8 *buff, int fast){
     }
     else{
         resp = diskRead(begin_sector, (void *)0xb0000000, lower_half);
-        sleep(10);
         resp = diskRead(begin_sector+lower_half, (void *)0xb2000000, file_sectors-lower_half);
     }
 
@@ -2149,376 +2137,185 @@ void readSDcard(display_context_t disp, char *directory){
     display_dir(list, cursor, page, MAX_LIST, count, disp);
 }
 
-//void readCheatFile(char *filename, display_context_t disp){
-int readCheatFile(char *filename){
-    //var file readin
-    u8 tmp[32];
-    u8 ok=0;
-    u8 firstr=1;
+/*
+ * Returns two cheat lists:
+ * - One for the "at boot" cheats
+ * - Another for the "in-game" cheats
+ */
+int readCheatFile(char *filename, u32 *cheat_lists[2]) {
+    // YAML parser
+    yaml_parser_t parser;
+    yaml_event_t event;
 
-    char *cp, *vp, *dp;
-    char buffer[512];
-    char temp[42];
-    char buff[512];
+    // State for YAML parser
+    int is_code = 0;
+    int code_on = 1;
+    int done = 0;
+    u32 *list1;
+    u32 *list2;
+    char *next;
 
-    int i = 0, j, type, offset = 0;
+    int repeater = 0;
+    u32 address;
+    u32 value;
 
-    int curr_cheat = -1;
+    yaml_parser_initialize(&parser);
 
     FatRecord rec_tmpf;
-    ok = fatFindRecord(filename, &rec_tmpf, 0);
-
-    if(ok!=0){
+    int ok = fatFindRecord(filename, &rec_tmpf, 0);
+    if (ok != 0) {
         return -1; //err file not found
     }
-    else{
-        u8 resp = 0;
-        resp = fatOpenFileByeName(filename, 0);
 
-        //filesize of the opend file -> is the readfile / 512
-        int fsize= file.sec_available*512;
-        char cheatfile_rawdata[fsize];
-
-        resp = fatReadFile(&cheatfile_rawdata, fsize / 512); //1 cluster
-
-        int line_chr=0;
-        long c=0;
-
-        for(c=0;c<fsize;c++){
-            buff[line_chr++]=cheatfile_rawdata[c];
-
-            if(cheatfile_rawdata[c]=='\n'){
-                i = 0;
-
-                // process GameShark Code line
-                cp = vp = dp = NULL;
-
-                while ((buff[i] == ' ') || (buff[i] == '\t'))
-                    i++; // skip initial whitespace
-
-                // check for blank line
-                if ((buff[i] == '\n') || (buff[i] == '\r')) //carriage return
-                {
-                    line_chr=0;
-                    continue; // skip
-                }
-
-                if ((buff[i] == '#') || (buff[i] == ';')) {
-                    line_chr=0;
-                    continue; // skip
-                }
-
-                cp = &buff[i];
-
-                while ((buff[i] != ' ') && (buff[i] != '\t') && (buff[i] != '\n') && (buff[i] != '\r'))
-                    i++;
-
-                buff[i] = 0;
-                i++;
-
-                while ((buff[i] == ' ') || (buff[i] == '\t'))
-                    i++; // skip whitespace
-
-                vp = &buff[i];
-                while ((buff[i] != ' ') && (buff[i] != '\t') && (buff[i] != '\n') && (buff[i] != '\r'))
-                    i++; // find end of GameShark code value
-
-                if ((buff[i] == ' ') || (buff[i] == '\t')) {
-                    buff[i] =0;
-                    i++;
-
-                    while ((buff[i] == ' ') || (buff[i] == '\t'))
-                        i++; // skip whitespace
-
-                    if ((buff[i] != '\n') && (buff[i] != '\r') && (buff[i] != '#') && (buff[i] != ';')) {
-                        dp = &buff[i];
-
-                        while ((buff[i] != '\n') && (buff[i] != '\r'))
-                            i++; // find end of GameShark code description
-
-                        buff[i] =0;
-                    }
-                }
-                else {
-                    buff[i] =0;
-                }
-
-                if (dp) {
-                    // starting new cheat
-                    curr_cheat++;
-
-                    gGSCodes[curr_cheat].description= strdup(dp);
-                    gGSCodes[curr_cheat].gscodes = NULL;
-                    gGSCodes[curr_cheat].count = 0;
-                    gGSCodes[curr_cheat].state = 1;
-                    gGSCodes[curr_cheat].mask = 0;
-
-                    if (!ishexchar(vp[3]))
-                        gGSCodes[curr_cheat].mask |= 0x000F;
-
-                    if (!ishexchar(vp[2]))
-                        gGSCodes[curr_cheat].mask |= 0x00F0;
-
-                    if (!ishexchar(vp[1]))
-                        gGSCodes[curr_cheat].mask |= 0x0F00;
-
-                    if (!ishexchar(vp[0]))
-                        gGSCodes[curr_cheat].mask |= 0xF000;
-
-                    gGSCodes[curr_cheat].value = 0;
-                    offset = 0;
-                }
-
-                if (curr_cheat < 0)
-                    continue; // safety check
-
-                temp[0] = cp[0];
-                temp[1] = cp[1];
-                temp[2] = 0;
-                type = strtol(temp, (char **)NULL, 16);
-
-                switch (type) {
-                case 0x50:
-                    // patch codes - unimplemented, also skips next line
-                    // 5000XXYY 00ZZ
-                    // TTTTTTTT VVVV
-                    //skip next line missing
-                    break;
-
-                case 0x80:
-                    // write 8-bit value to (cached) ram continuously
-                    // 80XXYYYY 00ZZ
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-
-                case 0x81:
-                    // write 16-bit value to (cached) ram continuously
-                    // 81XXYYYY ZZZZ
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-
-                case 0x88:
-                    // write 8-bit value to (cached) ram on GS button pressed - unimplemented
-                    // 88XXYYYY 00ZZ
-                    break;
-
-                case 0x89:
-                    // write 16-bit value to (cached) ram on GS button pressed - unimplemented
-                    // 89XXYYYY ZZZZ
-                    break;
-
-                case 0xA0:
-                    // write 8-bit value to (uncached) ram continuously
-                    // A0XXYYYY 00ZZ => 3C1A A0XX 375A YYYY 241B 00ZZ A35B 0000
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-
-                case 0xA1:
-                    // write 16-bit value to (uncached) ram continuously
-                    // A1XXYYYY ZZZZ => 3C1A A0XX 375A YYYY 241B ZZZZ A75B 0000
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-
-                case 0xCC:
-                    // deactivate expansion ram using 3rd method
-                    // CC000000 0000
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-
-                case 0xD0:
-                    // do next gs code if ram location is equal to 8-bit value
-                    // D0XXYYYY 00ZZ
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-
-                case 0xD1:
-                    // do next gs code if ram location is equal to 16-bit value
-                    // D1XXYYYY ZZZZ
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-
-                case 0xD2:
-                    // do next gs code if ram location is not equal to 8-bit value
-                    // D2XXYYYY 00ZZ
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-
-                case 0xD3:
-                    // do next gs code if ram location is not equal to 16-bit value
-                    // D1XXYYYY ZZZZ
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-
-                case 0xDD:
-                    // deactivate expansion ram using 2nd method
-                    // DD000000 0000
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-
-                case 0xDE:
-                    // set game boot address
-                    // DEXXXXXX 0000
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-
-                case 0xEE:
-                    // deactivate expansion ram using 1st method
-                    // EE000000 0000
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-
-                case 0xF0:
-                    // write 8-bit value to (cached) ram before boot
-                    // F0XXXXXX 00YY
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-
-                case 0xF1:
-                    // write 16-bit value to (cached) ram before boot
-                    // F1XXXXXX YYYY
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-
-                case 0xFF:
-                    // set code base
-                    // FFXXXXXX 0000
-                    if (gGSCodes[curr_cheat].gscodes)
-                        gGSCodes[curr_cheat].gscodes = realloc(gGSCodes[curr_cheat].gscodes, offset + 16);
-                    else
-                        gGSCodes[curr_cheat].gscodes = malloc(16);
-
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset], cp, 9);
-                    memcpy(&gGSCodes[curr_cheat].gscodes[offset+9], vp, 5);
-                    gGSCodes[curr_cheat].count++;
-                    offset += 16;
-                    break;
-                }
-
-                line_chr=0;
-            }
-        }
-
-        curr_cheat++;
-        gGSCodes[curr_cheat].count = 0xFFFF; // end of table
-        gGSCodes[curr_cheat].gscodes = NULL;
-        gGSCodes[curr_cheat].state = 0;
+    u8 resp = 0;
+    resp = fatOpenFileByeName(filename, 0);
+
+    //filesize of the opend file -> is the readfile / 512
+    int fsize = file.sec_available * 512;
+    char *cheatfile = malloc(fsize);
+    if (!cheatfile) {
+        return -2; // Out of memory
     }
 
-    return 0; //ok
+    /*
+     * Size of the cheat list can never be more than half the size of the YAML
+     * Minimum YAML example:
+     *   A:-80001234 FFFF
+     * Which is exactly 16 bytes.
+     * The cheat list in this case fits into exactly 8 bytes (2 words):
+     *   0x80001234, 0x0000FFFF
+     */
+    list1 = calloc(1, fsize + 2); // Plus 2 words to be safe
+    if (!list1) {
+        // Free
+        free(cheatfile);
+        return -2; // Out of memory
+    }
+    list2 = &list1[fsize / sizeof(u32) / 2];
+    cheat_lists[0] = list1;
+    cheat_lists[1] = list2;
+
+    resp = fatReadFile(cheatfile, fsize / 512); //1 cluster
+
+    yaml_parser_set_input_string(&parser, cheatfile, strlen(cheatfile));
+
+    do {
+        if (!yaml_parser_parse(&parser, &event)) {
+            // Free
+            yaml_parser_delete(&parser);
+            yaml_event_delete(&event);
+            free(cheatfile);
+            free(cheat_lists[0]);
+            cheat_lists[0] = 0;
+            cheat_lists[1] = 0;
+
+            return -3; // Parse error
+        }
+
+        // Process YAML
+        switch (event.type) {
+        case YAML_MAPPING_START_EVENT:
+            // Begin code block
+            is_code = 0;
+            break;
+
+        case YAML_SEQUENCE_START_EVENT:
+            // Begin code lines
+            is_code = 1;
+            code_on = (event.data.sequence_start.tag ?
+                !!strcasecmp(event.data.sequence_start.tag, "!off") :
+                1
+            );
+            break;
+
+        case YAML_SEQUENCE_END_EVENT:
+            // End code lines
+            is_code = 0;
+            code_on = 1;
+            repeater = 0;
+            break;
+
+        case YAML_SCALAR_EVENT:
+            // Code line
+            if (!is_code || !code_on) {
+                break;
+            }
+
+            address = strtoul(event.data.scalar.value, &next, 16);
+            value   = strtoul(next, NULL, 16);
+
+            // Do not check code types within "repeater data"
+            if (repeater) {
+                repeater--;
+                *list2++ = address;
+                *list2++ = value;
+                break;
+            }
+
+            // Determine destination cheat_list for the code type
+            switch (address >> 24) {
+
+            // Uncessary code types
+            case 0x20: // Clear code list
+            case 0xCC: // Exception Handler Selection
+            case 0xDE: // Entry Point
+                break;
+
+            // Boot-time cheats
+            case 0xEE: // Disable Expansion Pak
+            case 0xF0: // 8-bit Boot-Time Write
+            case 0xF1: // 16-bit Boot-Time Write
+            case 0xFF: // Cheat Engine Location
+                *list1++ = address;
+                *list1++ = value;
+                break;
+
+            // In-game cheats
+            case 0x50: // Repeater/Patch
+                // Validate repeater count
+                if (address & 0x0000FF00) {
+                    repeater = 1;
+                    *list2++ = address;
+                    *list2++ = value;
+                }
+                break;
+
+            // Everything else
+            default:
+                if (!address) {
+                    // TODO: Support special code types! :)
+                }
+                // Fall-through!
+
+            case 0xD0: // 8-bit Equal-To Conditional
+            case 0xD1: // 16-bit Equal-To Conditional
+            case 0xD2: // 8-bit Not-Equal-To Conditional
+            case 0xD3: // 16-bit Not-Equal-To Conditional
+                // Validate 16-bit codes
+                if ((address & 0x01000001) == 0x01000001) {
+                    break;
+                }
+
+                *list2++ = address;
+                *list2++ = value;
+                break;
+            }
+            break;
+
+        case YAML_STREAM_END_EVENT:
+            // And we're outta here!
+            done = 1;
+            break;
+        }
+
+        yaml_event_delete(&event);
+    } while (!done);
+
+    // Free
+    yaml_parser_delete(&parser);
+    free(cheatfile);
+
+    return repeater; // Ok or repeater error
 }
 
 void timing(display_context_t disp){
@@ -2536,33 +2333,34 @@ void timing(display_context_t disp){
     printText(tmp, 3, -1, disp);
 }
 
-void bootRom(display_context_t disp, int silent){
-    if(boot_cic!=0){
-        if(boot_save!=0){
+void bootRom(display_context_t disp, int silent) {
+    if (boot_cic != 0) {
+        if (boot_save != 0){
             u8 cfg_file[32];
             u8 found=0;
             u8 resp=0;
             u8 tmp[32];
 
             //set cfg file with last loaded cart info and save-type
-            sprintf(cfg_file, "/ED64/%s/LAST.CRT",save_path);
+            sprintf(cfg_file, "/ED64/%s/LAST.CRT", save_path);
 
             resp = fatCreateRecIfNotExist(cfg_file, 0);
             resp = fatOpenFileByeName(cfg_file, 1); //512 bytes fix one cluster
 
             static uint8_t cfg_file_data[512] = { 0 };
-            cfg_file_data[0]=boot_save;
-            cfg_file_data[1]=boot_cic;
-            scopy(rom_filename, cfg_file_data+2);
+            cfg_file_data[0] = boot_save;
+            cfg_file_data[1] = boot_cic;
+            scopy(rom_filename, cfg_file_data + 2);
 
             fatWriteFile(&cfg_file_data, 1);
-
             sleep(500);
-            //set the fpga cart-save tpye
 
+            //set the fpga cart-save type
             evd_setSaveType(boot_save);
 
-            if (debug)  printText("try to restore save from sd", 3, -1, disp);
+            if (debug) {
+                printText("try to restore save from sd", 3, -1, disp);
+            }
             resp = saveTypeFromSd(disp, rom_filename, boot_save);
 
             if (debug) {
@@ -2583,43 +2381,35 @@ void bootRom(display_context_t disp, int silent){
         cart = info >> 16;
         country = (info >> 8) & 0xFF;
 
-        if(cheats_on){
-            gCheats=1;
+        u32 *cheat_lists[2] = { NULL, NULL };
+        if (cheats_on) {
+            gCheats = 1;
             printText("try to load cheat-file...", 3, -1, disp);
 
             char cheat_filename[64];
-            sprintf(cheat_filename,"/ED64/CHEATS/%s.cht",rom_filename);
+            sprintf(cheat_filename, "/ED64/CHEATS/%s.yml", rom_filename);
 
-            int ok = readCheatFile(cheat_filename);
-            if(ok==0) {
-                if(!silent)
-                    printText("cheats found...", 3, -1, disp);
-
+            int ok = readCheatFile(cheat_filename, cheat_lists);
+            if (ok == 0) {
+                printText("cheats found...", 3, -1, disp);
                 sleep(600);
             }
             else {
-                if(!silent)
-                    printText("cheats not found...", 3, -1, disp);
-
-                gCheats=0;
+                printText("cheats not found...", 3, -1, disp);
                 sleep(2000);
+                gCheats = 0;
             }
         }
         else {
-            gCheats=0;
+            gCheats = 0;
         }
 
         disable_interrupts();
-        if(!silent){
-            if(gCheats)
-                printText("cheat boot", 3, -1, disp);
-            else
-                printText("normal boot", 3, -1, disp);
-        }
-        int bios_cic=getCicType(1);
+        int bios_cic = getCicType(1);
 
-        if(checksum_fix_on)
+        if (checksum_fix_on) {
             checksum_sdram();
+        }
 
         evd_lockRegs();
         sleep(1000);
@@ -2630,7 +2420,7 @@ void bootRom(display_context_t disp, int silent){
         graphics_fill_screen(disp, 0x000000FF);
         display_show(disp);
 
-        simulate_boot(boot_cic, bios_cic); // boot_cic
+        simulate_boot(boot_cic, bios_cic, cheat_lists); // boot_cic
     }
 }
 
@@ -4176,13 +3966,17 @@ int main(void) {
                     drawBoxNumber(disp,2);
                     display_show(disp);
 
-                    printText("About: ", 9, 9, disp);
+                    printText("About: ", 9, 8, disp);
                     printText(" ", 9, -1, disp);
-                    printText("ALT64: v0.1.8.6", 9, -1, disp);
+                    printText("ALT64: v0.1.8.6-cheat", 9, -1, disp);
                     printText("by saturnu", 9, -1, disp);
+                    printText(" ", 9, -1, disp);
+                    printText("Code engine by:", 9, -1, disp);
+                    printText("Jay Oster", 9, -1, disp);
                     printText(" ", 9, -1, disp);
                     printText("thanks to:", 9, -1, disp);
                     printText("Krikzz", 9, -1, disp);
+                    printText("Richard Weick", 9, -1, disp);
                     printText("ChillyWilly", 9, -1, disp);
                     printText("ShaunTaylor", 9, -1, disp);
                     printText("Conle", 9, -1, disp);
