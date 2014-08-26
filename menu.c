@@ -2185,7 +2185,7 @@ int readCheatFile(char *filename, u32 *cheat_lists[2]) {
      * The cheat list in this case fits into exactly 8 bytes (2 words):
      *   0x80001234, 0x0000FFFF
      */
-    list1 = calloc(1, fsize + 2); // Plus 2 words to be safe
+    list1 = calloc(1, fsize + 2 * sizeof(u32)); // Plus 2 words to be safe
     if (!list1) {
         // Free
         free(cheatfile);
