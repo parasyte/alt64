@@ -13,3 +13,4 @@
 ## Temporary files
 *.tmp
 *~
+*.VC.db*
