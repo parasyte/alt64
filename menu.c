@@ -797,8 +797,13 @@ void configure() {
         if (!(msg & (1 << 14))) {
             msg |= 1 << 14;
             evd_writeReg(REG_MAX_MSG, msg);
-
-            bi_load_firmware(firmware);
+            if (firm == 0x0214) {
+                int fpf = dfs_open("/firmware.bin");
+                firmware = malloc( dfs_size( fpf ) );
+                dfs_read( firmware, 1, dfs_size( fpf ), fpf );
+                dfs_close( fpf );
+                bi_load_firmware(firmware);
+            }
 
             sleep(1);
             evd_init();
@@ -3012,11 +3017,6 @@ int main(void) {
         printf("Filesystem failed to start!\n");
     }
     else {
-        int fpf = dfs_open("/firmware.bin");
-        firmware = malloc( dfs_size( fpf ) );
-        dfs_read( firmware, 1, dfs_size( fpf ), fpf );
-        dfs_close( fpf );
-
         // everdrive initial function
         configure();
 
