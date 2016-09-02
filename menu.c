@@ -1347,65 +1347,64 @@ void loadrom(display_context_t disp, u8 *buff, int fast){
 
 int backupSaveData(display_context_t disp){
         //backup cart-save on sd after reboot
-        u8 fname[32];
-        u8 found=0;
-        int save_t;
+        u8 config_file_path[32];
+        int save_format;
 
-        sprintf(fname, "/ED64/%s/LAST.CRT",save_path);
-        uint8_t cfg_data[512];
+        sprintf(config_file_path, "/ED64/%s/LAST.CRT",save_path);
+        uint8_t cfg_data[512]; //TODO: this should be a strut
 
         FatRecord rec_tmpf;
-        found = fatFindRecord(fname, &rec_tmpf, 0);
+        u8 file_found = fatFindRecord(config_file_path, &rec_tmpf, 0); //TODO: why does fatFindRecord return 0 for true?!
 
-        printText("Save System - please stand by", 3, 4, disp);
+        printText("Saving Last Played Game State - please wait...", 3, 4, disp);
 
-        if(found==0){
+        if(file_found==0){ //TODO: fatFindRecord could be moved into the if statement.
             //found
 
             //file to cfg_data buffer
             u8 resp = 0;
-            resp = fatOpenFileByeName(fname, 0);
-            resp = fatReadFile(&cfg_data, 1);
+            resp = fatOpenFileByeName(config_file_path, 0); //TODO: not sure why we bother setting a response here as it is not used for anything?!
+            resp = fatReadFile(&cfg_data, 1); //TODO: not sure why we bother setting a response here as it is not used for anything?!
 
             //split in save type and cart-id
-            save_t=cfg_data[0];
+            save_format=cfg_data[0];
             int last_cic=cfg_data[1];
-            scopy(cfg_data+2, rom_filename);
+            scopy(cfg_data+2, rom_filename); //string copy
 
             //set savetype to 0 disable for next boot
-            if(save_t!=0){
+            if(save_format!=0){
                 //set savetype to off
                 cfg_data[0]=0;
 
                 u8 tmp[32];
 
-                resp = fatOpenFileByeName(fname, 1); //if sector is set filemode=WR writeable
+                resp = fatOpenFileByeName(config_file_path, 1); //if sector is set filemode=WR writeable
 
                 if (debug) {
-                    sprintf(tmp, "fatOpenFileByeName ret=%i",resp);
+                    sprintf(tmp, "FAT_OpenFileByName returned: %i",resp);
                     printText(tmp, 3, -1, disp);
                 }
 
                 resp = fatWriteFile(&cfg_data, 1); //filemode must be wr
 
                 if (debug) {
-                    sprintf(tmp, "fatWriteFile ret=%i",resp);
+                    printText("Disabling save for subsequent system reboots", 3, -1, disp);
+                    sprintf(tmp, "FAT_WriteFile returned: %i",resp);
                     printText(tmp, 3, -1, disp);
 
-                    printText("SaveType-tag has been disabled for next boot", 3, -1, disp);
                 }
 
-                volatile u8 save_cfg_stat=0;
-                volatile u8 val=0;
+                volatile u8 save_config_state=0;
+                volatile u8 val=0; //TODO: not sure why we are bothering with the reg response as it is never used.
                 val = evd_readReg(0);
-                save_cfg_stat = evd_readReg(REG_SAV_CFG);
+                save_config_state = evd_readReg(REG_SAV_CFG);
 
-                if(save_cfg_stat!=0)
+                if(save_config_state!=0)
                     save_reboot=1;
             }
             else {
                 if (debug)
-                    printText("no need to save to sd", 3, -1, disp);
+                    printText("Save not required.", 3, -1, disp);
                 else
                     printText("...ready", 3, -1, disp);
 
@@ -1416,7 +1415,7 @@ int backupSaveData(display_context_t disp){
         }
         else{
             if (debug)
-                printText("last.crt not found", 3, -1, disp);
+                printText("No previous ROM loaded - the file 'last.crt' was not found!", 3, -1, disp);
             else
                 printText("...ready", 3, -1, disp);
 
@@ -1429,15 +1428,15 @@ int backupSaveData(display_context_t disp){
 
         //reset with save request
         if(save_reboot){
-            printText("saving...", 3, -1, disp);
-            if(  saveTypeToSd(disp, rom_filename, save_t) ){
+            printText("Copying RAM to SD card...", 3, -1, disp);
+            if(  saveTypeToSd(disp, rom_filename, save_format) ){
                 if (debug)
-                    printText("save upload done...", 3, -1, disp);
+                    printText("Operation completed sucessfully...", 3, -1, disp);
                 else
                     printText("...ready", 3, -1, disp);
             }
             else if (debug)
-                printText("not saved...", 3, -1, disp);
+                printText("ERROR: the RAM was not successfully saved!", 3, -1, disp);
         }
         else {
             if (debug)
@@ -3968,8 +3967,9 @@ int main(void) {
 
                     printText("About: ", 9, 8, disp);
                     printText(" ", 9, -1, disp);
-                    printText("ALT64: v0.1.8.6-cheat", 9, -1, disp);
+                    printText("ALT64: v0.1.8.6.1", 9, -1, disp);
                     printText("by saturnu", 9, -1, disp);
+                    printText("V3 support by JonesAlmighty", 9, -1, disp);
                     printText(" ", 9, -1, disp);
                     printText("Code engine by:", 9, -1, disp);
                     printText("Jay Oster", 9, -1, disp);
