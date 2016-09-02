@@ -781,7 +781,7 @@ void configure() {
     asm_date = memRomRead32(0x38);
     evd_setCfgBit(ED_CFG_SDRAM_ON, 1);
 
-    firm = evd_readReg(REG_VER);
+    firm = evd_readReg(REG_VER); //TODO: why not just use evd_getFirmVersion()
 
     if (streql("ED64 SD boot", buff, 12) && firm >= 0x0116) {
         sd_mode = 1;
@@ -1354,17 +1354,16 @@ int backupSaveData(display_context_t disp){
         uint8_t cfg_data[512]; //TODO: this should be a strut
 
         FatRecord rec_tmpf;
-        u8 file_found = fatFindRecord(config_file_path, &rec_tmpf, 0); //TODO: why does fatFindRecord return 0 for true?!
 
-        printText("Saving Last Played Game State - please wait...", 3, 4, disp);
+        printText("Saving Last Played Game State...", 3, 4, disp);
 
-        if(file_found==0){ //TODO: fatFindRecord could be moved into the if statement.
+        if(fatFindRecord(config_file_path, &rec_tmpf, 0) == 0) { //TODO: why does fatFindRecord return 0 for true?!
             //found
 
             //file to cfg_data buffer
             u8 resp = 0;
-            resp = fatOpenFileByeName(config_file_path, 0); //TODO: not sure why we bother setting a response here as it is not used for anything?!
-            resp = fatReadFile(&cfg_data, 1); //TODO: not sure why we bother setting a response here as it is not used for anything?!
+            fatOpenFileByeName(config_file_path, 0);
+            fatReadFile(&cfg_data, 1);
 
             //split in save type and cart-id
             save_format=cfg_data[0];
@@ -1395,12 +1394,15 @@ int backupSaveData(display_context_t disp){
                 }
 
                 volatile u8 save_config_state=0;
-                volatile u8 val=0; //TODO: not sure why we are bothering with the reg response as it is never used.
-                val = evd_readReg(0);
+                evd_readReg(0);
                 save_config_state = evd_readReg(REG_SAV_CFG);
 
-                if(save_config_state!=0)
+                if(save_config_state!=0 || evd_getFirmVersion() >= 0x0300 ) { //save register set or the firmware is V3
+                    if(save_config_state==0) {//we are V3 and have had a hard reboot
+                        evd_writeReg(REG_SAV_CFG, 1); //so we need to tell the save register it still has data.
+                    }
                     save_reboot=1;
+                }
             }
             else {
                 if (debug)
@@ -1839,7 +1841,7 @@ int saveTypeFromSd(display_context_t disp, char* rom_name, int stype) {
     }
     else{
         printText("no savegame found", 3, -1, disp);
-        //todo clear memory arena
+        //todo clear memory area
 
         return 0;
     }
@@ -3021,7 +3023,7 @@ int main(void) {
 
         //fast boot for backup-save data
         int sj = evd_readReg(0);
-        int save_job = evd_readReg(REG_SAV_CFG);
+        int save_job = evd_readReg(REG_SAV_CFG); //TODO: or the firmware is V3
 
         if(save_job!=0)
             fast_boot=1;
