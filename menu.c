@@ -3967,11 +3967,10 @@ int main(void) {
                     drawBoxNumber(disp,2);
                     display_show(disp);
 
-                    printText("About: ", 9, 8, disp);
+                    printText("ALT64: v0.1.8.6.1", 9, 8, disp);
                     printText(" ", 9, -1, disp);
-                    printText("ALT64: v0.1.8.6.1", 9, -1, disp);
-                    printText("by saturnu", 9, -1, disp);
-                    printText("V3 support by JonesAlmighty", 9, -1, disp);
+                    printText("by Saturnu", 9, -1, disp);
+                    printText("& JonesAlmighty", 9, -1, disp);
                     printText(" ", 9, -1, disp);
                     printText("Code engine by:", 9, -1, disp);
                     printText("Jay Oster", 9, -1, disp);
