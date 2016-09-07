@@ -658,7 +658,7 @@ u8 fatGetNextCluster(u32 *cluster) {
 
 }
 
-u8 fatOpenFileByeName(u8 *name, u32 wr_sectors) {
+u8 fatOpenFileByeName(u8 *name, u32 wr_sectors) { //TODO: spelling mistake
 
     //u16 i;
     u8 resp;
