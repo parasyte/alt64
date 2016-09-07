@@ -39,6 +39,9 @@
 #include <mikmod.h>
 #include "mp3.h"
 
+//debug
+#include "debug.h"
+
 // YAML parser
 #include <yaml.h>
 
@@ -103,7 +106,6 @@ typedef struct
 
 volatile u32 *romaddr_ptr = (u32 *) ROM_ADDR;
 unsigned int gBootCic=CIC_6102;
-u8 debug=DBG_MODE;
 
 static uint8_t mempak_data[128 * 256];
 static void *bg_buffer;
@@ -1163,8 +1165,7 @@ void loadrom(display_context_t disp, u8 *buff, int fast){
     sleep(10);
     sleep(1000); //needless waiting :>
 
-    if (debug)
-        printText("timing done", 3, -1, disp);
+    TRACE(disp, "timing done");
 
     u8 tmp[32];
     u8 filename[64];
@@ -1173,22 +1174,20 @@ void loadrom(display_context_t disp, u8 *buff, int fast){
     sprintf(filename, "%s",buff);
     int swapped=0;
 
-    if (debug)
-        printText(buff, 3, -1, disp);
+    TRACE(disp, buff);
 
     FatRecord rec_tmpf;
     //not needed any longer :>
     //file IS there, it's selected at this point
     ok = fatFindRecord(filename, &rec_tmpf, 0);
-    if (debug)
-        printText("found", 3, -1, disp);
+
+    TRACE(disp, "found");
 
     u8 resp = 0;
 
     resp = fatOpenFileByeName(filename, 0); //err if not found ^^
 
-    if (debug)
-        printText("opened", 3, -1, disp);
+    TRACE(disp, "opened");
 
     int mb = file.sec_available/2048;
     int file_sectors = file.sec_available;
@@ -1246,10 +1245,7 @@ void loadrom(display_context_t disp, u8 *buff, int fast){
         // cart was found, use CIC and SaveRAM type
     }
 
-    if (debug) {
-        sprintf(tmp, "Info: cic=%i save=%i",cic,save);
-        printText(tmp, 3, -1, disp);
-    }
+    TRACEF(disp, "Info: cic=%i save=%i", cic, save);
 
     //new rom_config
     boot_cic=rom_config[1]+1;
@@ -1267,23 +1263,16 @@ void loadrom(display_context_t disp, u8 *buff, int fast){
         printText(tmp, 3, -1, disp);
     }
 
-    if (debug)
-        printText("enalbe sd_mode", 3, -1, disp);
+    TRACE(disp, "enalbe sd_mode");
 
     resp = evd_isSDMode();
 
-    if (debug) {
-        sprintf(tmp, "sdmode: %i",resp);
-        printText(tmp, 3, -1, disp);
+    TRACEF(disp, "sdmode: %i", resp);
+    TRACEF(disp, "Size: %i", file.sec_available);
+    TRACEF(disp, "f_sector: %i", file.sector);
+    TRACE(disp, "loading:");
 
-        sprintf(tmp, "Size: %i", file.sec_available);
-        printText(tmp, 3, -1, disp);
 
-        sprintf(tmp, "f_sector: %i", file.sector);
-        printText(tmp, 3, -1, disp);
-
-        printText("loading:", 3, -1, disp);
-    }
     sleep(10);
 
     if(swapped==1){
@@ -1291,8 +1280,7 @@ void loadrom(display_context_t disp, u8 *buff, int fast){
         sleep(400);
         evd_mmcSetDmaSwap(1);
 
-        if (debug)
-            printText("swapping on", 3, -1, disp);
+        TRACE(disp, "swapping on");
 
         sleep(10);
     }
@@ -1315,21 +1303,16 @@ void loadrom(display_context_t disp, u8 *buff, int fast){
     }
 
     if(resp){
-        if (debug) {
-            sprintf(tmp, "mmcToCart: %i",resp);
-            printText(tmp, 3, -1, disp);
-        }
+        TRACEF(disp, "mmcToCart: %i", resp);
     }
 
-    if (debug) {
+    //if (debug) {
         for (int i = 0; i < 4; i++) {
             u8 buff[16];
             dma_read_s(buff, 0xb0000000 + 0x00100000*i, 1);
-            sprintf(tmp, "probe: %hhx",buff[0]);
-            printText(tmp, 3, -1, disp);
-
+            TRACEF(disp, "probe: %hhx", buff[0]);
         }
-    }
+    //}
 
     if(!fast){
         sleep(200);
@@ -1379,19 +1362,12 @@ int backupSaveData(display_context_t disp){
 
                 resp = fatOpenFileByeName(config_file_path, 1); //if sector is set filemode=WR writeable
 
-                if (debug) {
-                    sprintf(tmp, "FAT_OpenFileByName returned: %i",resp);
-                    printText(tmp, 3, -1, disp);
-                }
+                TRACEF(disp, "FAT_OpenFileByName returned: %i", resp);
 
                 resp = fatWriteFile(&cfg_data, 1); //filemode must be wr
 
-                if (debug) {
-                    printText("Disabling save for subsequent system reboots", 3, -1, disp);
-                    sprintf(tmp, "FAT_WriteFile returned: %i",resp);
-                    printText(tmp, 3, -1, disp);
-
-                }
+                TRACE(disp, "Disabling save for subsequent system reboots");
+                TRACEF(disp, "FAT_WriteFile returned: %i", resp);
 
                 volatile u8 save_config_state=0;
                 evd_readReg(0);
@@ -1405,10 +1381,8 @@ int backupSaveData(display_context_t disp){
                 }
             }
             else {
-                if (debug)
-                    printText("Save not required.", 3, -1, disp);
-                else
-                    printText("...ready", 3, -1, disp);
+                TRACE(disp, "Save not required.");
+                printText("...ready", 3, -1, disp);
 
                 sleep(200);
 
@@ -1416,35 +1390,29 @@ int backupSaveData(display_context_t disp){
             }
         }
         else{
-            if (debug)
-                printText("No previous ROM loaded - the file 'last.crt' was not found!", 3, -1, disp);
-            else
-                printText("...ready", 3, -1, disp);
+            TRACE(disp, "No previous ROM loaded - the file 'last.crt' was not found!");
+            printText("...ready", 3, -1, disp);
 
             return 0;
         }
 
-        if (debug) {
-            sleep(5000);
-        }
+        //if (debug) {
+        //    sleep(5000);
+        //}
 
         //reset with save request
-        if(save_reboot){
+        if (save_reboot) {
             printText("Copying RAM to SD card...", 3, -1, disp);
-            if(  saveTypeToSd(disp, rom_filename, save_format) ){
-                if (debug)
-                    printText("Operation completed sucessfully...", 3, -1, disp);
-                else
-                    printText("...ready", 3, -1, disp);
+            if (saveTypeToSd(disp, rom_filename, save_format)) {
+                printText("Operation completed sucessfully...", 3, -1, disp);
             }
-            else if (debug)
-                printText("ERROR: the RAM was not successfully saved!", 3, -1, disp);
+            else {
+                TRACE(disp, "ERROR: the RAM was not successfully saved!");
+            }
         }
         else {
-            if (debug)
-                printText("no reset - save request", 3, -1, disp);
-            else
-                printText("...ready", 3, -1, disp);
+            TRACE(disp, "no reset - save request");
+            printText("...ready", 3, -1, disp);
 
             sleep(300);
         }
@@ -1810,34 +1778,26 @@ int saveTypeFromSd(display_context_t disp, char* rom_name, int stype) {
 
     uint8_t cartsave_data[size];
 
-    if (debug) {
-        printText(fname, 3, -1, disp);
-        sleep(2000);
-    }
+    //if (debug) {
+        TRACE(disp, fname);
+        //sleep(2000);
+    //}
 
     FatRecord rec_tmpf;
     found = fatFindRecord(fname, &rec_tmpf, 0);
 
-    if (debug) {
-        sprintf(tmp, "fatFindRecord ret=%i",found);
-        printText(tmp, 3, -1, disp);
-    }
+    TRACEF(disp, "fatFindRecord returned: %i", found);
+
 
     if(found==0){
         u8 resp = 0;
         resp = fatOpenFileByeName(fname, 0);
 
-        if (debug) {
-            sprintf(tmp, "fatOpenFileByeName ret=%i",resp);
-            printText(tmp, 3, -1, disp);
-        }
+        TRACEF(disp, "fatOpenFileByeName returned: %i", resp);
 
         resp = fatReadFile(cartsave_data, size / 512);
 
-        if (debug) {
-            sprintf(tmp, "fatReadFile ret=%i",resp);
-            printText(tmp, 3, -1, disp);
-        }
+        TRACEF(disp, "fatReadFile returned: %i", resp);
     }
     else{
         printText("no savegame found", 3, -1, disp);
@@ -1872,10 +1832,7 @@ int saveTypeToSd(display_context_t disp, char* rom_name ,int stype) {
     int size;
     size = saveTypeToSize(stype); // int byte
 
-    if (debug) {
-        sprintf(tmp, "size for save=%i",size);
-        printText(tmp, 3, -1, disp);
-    }
+    TRACEF(disp, "size for save=%i", size);
 
 
     sprintf(fname, "/ED64/%s/%s.%s",save_path,rom_name,saveTypeToExtension(stype,ext_type));
@@ -1883,10 +1840,7 @@ int saveTypeToSd(display_context_t disp, char* rom_name ,int stype) {
     FatRecord rec_tmpf;
     found = fatFindRecord(fname, &rec_tmpf, 0);
 
-    if (debug) {
-        sprintf(tmp, "found=%i",found);
-        printText(tmp, 3, -1, disp);
-    }
+    TRACEF(disp, "found=%i", found);
 
     u8 resp=0;
 
@@ -1896,19 +1850,13 @@ int saveTypeToSd(display_context_t disp, char* rom_name ,int stype) {
         printText("try fatCreateRecIfNotExist", 3, -1, disp);
         resp = fatCreateRecIfNotExist(fname, 0);
 
-        if (debug) {
-            sprintf(tmp, "fatCreateRecIfNotExist ret=%i",resp);    //0 means try to create
-            printText(tmp, 3, -1, disp);
-        }
+        TRACEF(disp, "fatCreateRecIfNotExist returned: %i", resp);    //0 means try to create
     }
 
     //open file with stype size
     resp = fatOpenFileByeName(fname, size / 512);
 
-    if (debug) {
-        sprintf(tmp, "fatOpenFileByeName ret=%i",resp);    //100 not exist
-        printText(tmp, 3, -1, disp);
-    }
+    TRACEF(disp, "fatOpenFileByeName returned: %i", resp);    //100 not exist
 
     //for savegame
     uint8_t cartsave_data[size];
@@ -1916,10 +1864,8 @@ int saveTypeToSd(display_context_t disp, char* rom_name ,int stype) {
     for(int zero=0; zero<size;zero++)
         cartsave_data[zero]=0;
 
-    if (debug) {
-        sprintf(tmp, "cartsave_data=%p",&cartsave_data);
-        printText(tmp, 3, -1, disp);
-    }
+    TRACEF(disp, "cartsave_data=%p", &cartsave_data);
+
 
     //universal dumpfunction
     //returns data from fpga/cart to save on sd
@@ -2364,21 +2310,16 @@ void bootRom(display_context_t disp, int silent) {
             //set the fpga cart-save type
             evd_setSaveType(boot_save);
 
-            if (debug) {
-                printText("try to restore save from sd", 3, -1, disp);
-            }
+            TRACE(disp, "try to restore save from sd");
+
             resp = saveTypeFromSd(disp, rom_filename, boot_save);
 
-            if (debug) {
-                sprintf(tmp, "saveTypeFromSd ret=%i",resp);
-                printText(tmp, 3, -1, disp);
-            }
+            TRACEF(disp, "saveTypeFromSd returned: %i", resp);
         }
 
-        if (debug) {
-            printText("Cartridge-Savetype set", 3, -1, disp);
-            printText("information stored for reboot-save...", 3, -1, disp);
-        }
+
+        TRACE(disp, "Cartridge-Savetype set");
+        TRACE(disp, "information stored for reboot-save...");
 
         sleep(50);
 

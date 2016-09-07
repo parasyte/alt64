@@ -63,11 +63,6 @@ void drawRomConfigBox(display_context_t disp,int line);
 #define ishexchar(c) (((c >= '0') && (c <= '9')) || ((c >= 'A') && (c <= 'F')) || ((c >= 'a') && (c <= 'f')))
 
 
-//debug flag to enable some debug outputs
-///////////////////////////////////////////
-#define DBG_MODE        0
-///////////////////////////////////////////
-
 /**
  * @brief Return the uncached memory address of a cached address
  *

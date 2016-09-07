@@ -10,6 +10,7 @@ HEADERNAME = header
 LINK_FLAGS = -O1 -L$(ROOTDIR)/lib -L$(ROOTDIR)/mips64-elf/lib -ldragon -lmikmod -lmad -lyaml -lc -lm -ldragonsys -lnosys $(LIBS) -Tn64ld.x
 PROG_NAME = menu
 CFLAGS = -std=gnu99 -march=vr4300 -mtune=vr4300 -O1 -I./inc -I$(ROOTDIR)/include -I$(ROOTDIR)/mips64-elf/include -lpthread -lrt -D_REENTRANT -DUSE_TRUETYPE
+CFLAGS += $(SET_DEBUG)
 ASFLAGS = -mtune=vr4300 -march=vr4300
 CC = $(GCCN64PREFIX)gcc
 AS = $(GCCN64PREFIX)as
@@ -33,6 +34,10 @@ test.dfs:
 	$(MKDFSPATH) test.dfs ./res/filesystem/
 
 all: $(PROG_NAME).v64
+
+debug: $(PROG_NAME).v64
+
+debug: SET_DEBUG=-DDEBUG
 
 clean:
 	rm -f *.v64 *.elf *.o *.bin *.dfs
