@@ -22,7 +22,7 @@ OBJCOPY = $(GCCN64PREFIX)objcopy
 #SOURCES := menu.c everdrive.c fat.c disk.c mem.c sys.c ini.c strlib.c utils.c sram.c stb_image.c chksum64.c mp3.c  
 #SOURCES := $(wildcard $(SRCDIR)/*.c)
 #OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
-OBJECTS = menu.o everdrive.o fat.o disk.o mem.o sys.o ini.o strlib.o utils.o sram.o stb_image.o chksum64.o mp3.o
+OBJECTS = menu.o everdrive.o fat.o disk.o mem.o sys.o ini.o strlib.o utils.o sram.o chksum64.o mp3.o
 
 $(PROG_NAME).v64: $(PROG_NAME).elf $(PROG_NAME).dfs
 	$(OBJCOPY) $(BINDIR)/$(PROG_NAME).elf $(BINDIR)/$(PROG_NAME).bin -O binary

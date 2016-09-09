@@ -12,8 +12,9 @@
 #include "utils.h"
 #include "sram.h"
 
-#define STBI_HEADER_FILE_ONLY
-#include "stb_image.c"
+//#define STBI_HEADER_FILE_ONLY
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 extern short int gCheats;               /* 0 = off, 1 = select, 2 = all */
 extern short int force_tv;
