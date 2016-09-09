@@ -5,8 +5,8 @@ if [ -e $file ]
 then
 	echo -e "File $file exists - mount ok"
 	echo -e "copy..."
-	sudo cp OS64.v64 /mnt/ED64/
-	sudo cp ALT64.INI /mnt/ED64/
+	sudo cp ../bin/OS64.v64 /mnt/ED64/
+	sudo cp ../res/ALT64.INI /mnt/ED64/
 	echo -e "umounting..."
 	sudo umount /mnt
 	echo -e "done..."

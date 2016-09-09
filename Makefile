@@ -37,7 +37,7 @@ $(PROG_NAME).elf : $(OBJECTS)
 	#@$(CC) $(CFLAGS) -c $< -o $@
 
 copy: $(PROG_NAME).v64
-	sh upload.sh
+	sh ./tools/upload.sh
 
 $(PROG_NAME).dfs:
 	$(MKDFSPATH) $(BINDIR)/$(PROG_NAME).dfs $(RESDIR)/filesystem/
