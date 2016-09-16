@@ -2551,7 +2551,9 @@ void alterRomConfig(int type, int mode){
     u8 min_country=0;
     u8 max_country=2;
 
-    if(type==1){//start cic
+switch (type) {
+    case 1: 
+    //start cic
         if(mode==1){
             //down
             if(rom_config[1]<max_cic)
@@ -2566,8 +2568,10 @@ void alterRomConfig(int type, int mode){
             if(rom_config[1]==3)
                 rom_config[1]--;
         }
-    }//end cic
-    else if(type==2){//start save
+    //end cic
+    break;
+    case 2:
+    //start save
         if(mode==1){
             //down
             if(rom_config[2]<max_save)
@@ -2578,8 +2582,10 @@ void alterRomConfig(int type, int mode){
             if(rom_config[2]>min_save)
                 rom_config[2]--;
         }
-    }//end save
-    else if(type==3){//start tv
+    //end save
+    break;
+    case 3:
+    //start tv
         if(mode==1){
             //down
             if(rom_config[3]<max_tv)
@@ -2590,8 +2596,10 @@ void alterRomConfig(int type, int mode){
             if(rom_config[3]>min_tv)
                 rom_config[3]--;
         }
-    }//end tv
-    else if(type==4){//start cheat
+    //end tv
+    break;
+    case 4:
+    //start cheat
         if(mode==1){
             //down
             if(rom_config[4]<max_cheat)
@@ -2602,8 +2610,10 @@ void alterRomConfig(int type, int mode){
             if(rom_config[4]>min_cheat)
                 rom_config[4]--;
         }
-    }//end cheat
-    else if(type==5){//start chk sum
+    //end cheat
+    break;
+    case 5:
+    //start chk sum
         if(mode==1){
             //down
             if(rom_config[5]<max_chk_sum)
@@ -2614,8 +2624,10 @@ void alterRomConfig(int type, int mode){
             if(rom_config[5]>min_chk_sum)
                 rom_config[5]--;
         }
-    }//end chk sum
-    else if(type==6){ //start quality
+    //end chk sum
+    break;
+    case 6:
+    //start quality
         if(mode==1){
             //down
             if(rom_config[6]<max_quality)
@@ -2626,8 +2638,9 @@ void alterRomConfig(int type, int mode){
             if(rom_config[6]>min_quality)
                 rom_config[6]--;
         }
-    }
-    else if(type==7){ //start country
+    break;
+    case 7: 
+    //start country
         if(mode==1){
             //down
             if(rom_config[7]<max_country)
@@ -2638,6 +2651,7 @@ void alterRomConfig(int type, int mode){
             if(rom_config[7]>min_country)
                 rom_config[7]--;
         }
+        break;
     }
 
 }
@@ -3137,7 +3151,8 @@ int main(void) {
             struct controller_data keys_held = get_keys_held();
 
             if(keys.c[0].up || keys_held.c[0].up || keys_held.c[0].y > +25) {
-                if(input_mapping==1){
+                switch (input_mapping) {
+                case 1:
                     if(select_mode){
                         if(count!=0){
                             if(scroll_behaviour==1)
@@ -3163,14 +3178,14 @@ int main(void) {
                             display_show(disp);
                         }
                     }
-                }
-                else if(input_mapping==2){
-                }
-                else if(input_mapping==3){
+                break;
+                case 2:
+                break;
+                case 3:
                     //chr input screen
                     set=1;
-                }
-                else if(input_mapping==7){
+                break;
+                case 7:
                     while( !(disp = display_lock()) );
 
                     new_scroll_pos(&cursor, &page, MAX_LIST, count);
@@ -3181,8 +3196,8 @@ int main(void) {
                     display_show(disp);
                     input_mapping=7;
                     sleep(80);
-                }
-                else if(input_mapping==8){
+                break;
+                case 8:
                     while( !(disp = display_lock()) );
 
                     drawBg(disp); //background
@@ -3191,11 +3206,13 @@ int main(void) {
                     display_show(disp);
                     input_mapping=8;
                     sleep(80);
+                break;
                 }
             }
 
             if(keys.c[0].down || keys_held.c[0].down || keys_held.c[0].y < -25) {
-                if(input_mapping==1){
+                switch (input_mapping) {
+                case 1:
                     if(select_mode){
                         if(count!=0){
                             if(scroll_behaviour==1)
@@ -3219,14 +3236,14 @@ int main(void) {
                             display_show(disp);
                         }
                     }
-                }
-                else if(input_mapping==2){
-                }
-                else if(input_mapping==3){
+                break;
+                case 2:
+                break;
+                case 3:
                     //chr input screen
                     set=3;
-                }
-                else if(input_mapping==7){
+                break;
+                case 7:
                     while( !(disp = display_lock()) );
 
                     new_scroll_pos(&cursor, &page, MAX_LIST, count);
@@ -3239,8 +3256,8 @@ int main(void) {
                     display_show(disp);
                     input_mapping=7;
                     sleep(80);
-                }
-                else if(input_mapping==8){
+                break;
+                case 8:
                     while( !(disp = display_lock()) );
 
                     drawBg(disp);
@@ -3249,10 +3266,12 @@ int main(void) {
                     display_show(disp);
                     input_mapping=8;
                     sleep(80);
+                break;
                 }
             }
             else if(keys.c[0].left || keys_held.c[0].left || keys_held.c[0].x < -25) {
-                if(input_mapping==1){
+                switch (input_mapping) {
+                    case 1:
                     if(select_mode){
                         if(count!=0 && scroll_behaviour==0 && cursor-20>=0){
                             page-=20;
@@ -3267,14 +3286,14 @@ int main(void) {
 
                         display_show(disp);
                     }
-                }
-                else if(input_mapping==2){
-                }
-                else if(input_mapping==3){
+                break;
+                case 2:
+                break;
+                case 3:
                     //chr input screen
                     set=4;
-                }
-                else if(input_mapping==7){
+                break;
+                case 7:
                     while( !(disp = display_lock()) );
 
                     new_scroll_pos(&cursor, &page, MAX_LIST, count);
@@ -3287,6 +3306,7 @@ int main(void) {
                     display_show(disp);
                     input_mapping=7;
                     sleep(80);
+                break;
                 }
             }
             else if(keys.c[0].right || keys_held.c[0].right || keys_held.c[0].x > +25) {
@@ -3908,7 +3928,7 @@ int main(void) {
                     drawBoxNumber(disp,2);
                     display_show(disp);
 
-                    printText("ALT64: v0.1.8.6.1", 9, 8, disp);
+                    printText("ALT64: v0.1.8.6.1.1", 9, 8, disp);
                     printText(" ", 9, -1, disp);
                     printText("by Saturnu", 9, -1, disp);
                     printText("& JonesAlmighty", 9, -1, disp);
