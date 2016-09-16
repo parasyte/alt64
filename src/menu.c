@@ -365,9 +365,6 @@ int compare_int_reverse (const void *a, const void *b) {
     return *ib  - *ia;
 }
 
-void free_dir(direntry_t *dirz) {
-    if(dirz) { free(dirz); }
-}
 
 void new_scroll_pos(int *cursor, int *page, int max, int count) {
     /* Make sure windows too small can be calculated right */
@@ -592,22 +589,6 @@ void printText(char *msg, int x, int y, display_context_t dcon) {
     }
 }
 
-void lprintText(char *msg, int x, int y, display_context_t dcon) {
-    x=x+text_offset;
-
-    if (x != -1)
-        gCursorX = x;
-    if (y != -1)
-        gCursorY = y;
-
-    if (dcon)
-        graphics_draw_text(dcon, gCursorX*8, gCursorY*8, msg);
-
-    if (gCursorY > 29) {
-        gCursorY = 0;
-        gCursorX ++;
-    }
-}
 
 //background sprite
 void drawBg(display_context_t disp){
