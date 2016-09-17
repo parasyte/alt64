@@ -3778,14 +3778,11 @@ int main(void)
 
                         sprintf(extension, "%s", (pch + 1)); //0123456
 
-                        //load the rom using its extension
-                        switch (extension)
+                        //load the rom using its file extension
+                        if (strcmp(extension, "Z64") == 0 || strcmp(extension, "V64") == 0 || strcmp(extension, "N64") == 0)
                         {
-                        case "Z64":
-                        case "V64":
-                        case "N64":
                             while (!(disp = display_lock()))
-                            ;
+                                ;
                             clearScreen(disp);
                             u16 msg = 0;
                             sleep(300);
@@ -3803,11 +3800,11 @@ int main(void)
 
                             //rom loaded mapping
                             input_mapping = 4;
-                            break;
-                        case "GB": //gb
-                        case "GBC": //gbc rom
+                        }
+                        else if (strcmp(extension, "GB") == 0 || strcmp(extension, "GBC") == 0)
+                        {
                             while (!(disp = display_lock()))
-                            ;
+                                ;
                             clearScreen(disp);
                             u16 msg = 0;
                             sleep(300);
@@ -3820,10 +3817,11 @@ int main(void)
                             loadgbrom(disp, name_file);
 
                             display_show(disp);
-                            break;
-                        case "NES": //nes
+                        }
+                        else if (strcmp(extension, "NES") == 0)
+                        {
                             while (!(disp = display_lock()))
-                            ;
+                                ;
                             clearScreen(disp);
                             u16 msg = 0;
                             sleep(300);
@@ -3836,10 +3834,11 @@ int main(void)
                             loadnesrom(disp, name_file);
 
                             display_show(disp);
-                            break;
-                        case "GG": //gg
+                        }
+                        else if (strcmp(extension, "GG") == 0)
+                        {
                             while (!(disp = display_lock()))
-                            ;
+                                ;
                             clearScreen(disp);
                             u16 msg = 0;
                             sleep(300);
@@ -3852,10 +3851,11 @@ int main(void)
                             loadggrom(disp, name_file);
 
                             display_show(disp);
-                            break;
-                        case "MSX": //msx2
+                        }
+                        else if (strcmp(extension, "MSX") == 0)
+                        {
                             while (!(disp = display_lock()))
-                            ;
+                                ;
                             clearScreen(disp);
                             u16 msg = 0;
                             sleep(300);
@@ -3868,11 +3868,12 @@ int main(void)
                             loadmsx2rom(disp, name_file);
 
                             display_show(disp);
-                            break;
-                        case "MPK": //mempak
-                            break;
-                        default:
-                            break;
+                        }
+                        else if (strcmp(extension, "MPK") == 0)
+                        {
+                        }
+                        else
+                        {
                         }
                     }
                 }

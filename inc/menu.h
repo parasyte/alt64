@@ -39,7 +39,6 @@ void drawBox(short x, short y, short width, short height, display_context_t disp
 void drawBoxNumber(display_context_t disp, int box);
 
 void printText(char *msg, int x, int y, display_context_t dcon);
-void lprintText(char *msg, int x, int y, display_context_t dcon);
 void sleep(unsigned long int ms);
 void clearScreen(display_context_t disp);
 
