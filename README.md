@@ -136,4 +136,4 @@ $ git clone https://github.com/parasyte/alt64.git
 $ make
 ```
 
-If it all worked, you will find `OS64.v64` in the `alt64` top-level directory.
+If it all worked, you will find `OS64.v64` in the `alt64` bin directory.
