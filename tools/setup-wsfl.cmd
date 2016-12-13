@@ -48,8 +48,8 @@ if '%1'=='ELEV' (del "%vbsGetPrivileges%" 1>nul 2>nul  &  shift /1)
 
 lxrun /install /y
 bash -c "echo 'export N64_INST=/usr/local/libdragon' >> ~/.bashrc; source ~/.bashrc"
-bash -c "chmod +x ./setup-wsfl.sh"
-bash --verbose -c "source ./setup-wsfl.sh"
+bash -c "chmod +x ./setup-linux.sh"
+bash --verbose -c "source ./setup-linux.sh"
 
 ::bash
 
