@@ -9,7 +9,7 @@ originally written by saturnu, and released on the
 
 ## Building
 
-If you want to build the menu, you need an n64 toolchain. When using windows 10or Ubuntu, installation is totally automated through a script.
+If you want to build the menu, you need an n64 toolchain. When using windows 10 or Ubuntu, installation is totally automated through a script.
 
 ### Dependencies (installed automatically)
 * Windows 10 (Aniversary Update or above) / Ubuntu 16.04 (or above)
@@ -24,7 +24,7 @@ If you want to build the menu, you need an n64 toolchain. When using windows 10o
 
 Clone this `Altra64` repo to a directory of your choice.
 
-On Windows 10, browse to the tools directory and double click on ```setup-wsfl.cmd```
+On Windows 10, browse to the tools directory and double click on ```setup-wsfl.cmd```.
 On Ubuntu, browse to the tools directory and run the command ```$ chmod +x ./setup-linux.sh;source ./setup-linux.sh```
 
 
