@@ -9,7 +9,7 @@ originally written by saturnu, and released on the
 
 ## Building
 
-If you want to build the menu, you need an n64 toolchain. When using windows 10, installation is totally automated through a script.
+If you want to build the menu, you need an n64 toolchain. When using windows 10or Ubuntu, installation is totally automated through a script.
 
 ### Dependencies (installed automatically)
 * Windows 10 (Aniversary Update or above) / Ubuntu 16.04 (or above)
@@ -24,8 +24,8 @@ If you want to build the menu, you need an n64 toolchain. When using windows 10,
 
 Clone this `Altra64` repo to a directory of your choice.
 
-On Windows 10, browse to the tools directory and double click on setup-wsfl.cmd
-On Ubuntu, browse to the tools directory and run the command ```chmod +x ./setup-linux.sh;source ./setup-linux.sh```
+On Windows 10, browse to the tools directory and double click on ```setup-wsfl.cmd```
+On Ubuntu, browse to the tools directory and run the command ```$ chmod +x ./setup-linux.sh;source ./setup-linux.sh```
 
 
 ### Build `Altra64`
@@ -41,6 +41,7 @@ on linux
 ```
 $ make
 ```
+If it all worked, you will find `OS64.v64` in the `Altra64` bin directory.
 
 ### Debug Build `Altra64`
 To build the debug version of the Rom
@@ -54,6 +55,8 @@ on linux
 ```
 $ make debug
 ```
+If it all worked, you will find `OS64.v64` in the `Altra64` bin directory.
+
 
 ### Clean `Altra64`
 Finally, we can clean the build objects from the project
@@ -68,4 +71,4 @@ on linux
 $ make clean
 ```
 
-If it all worked, you will find `OS64.v64` in the `Altra64` bin directory.
+Enjoy!
