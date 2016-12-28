@@ -41,25 +41,12 @@ make tools
 make tools-install
 
 cd ..
-# install libmikmod
-git clone https://github.com/parasyte/libmikmod-n64.git
-cd libmikmod-n64
-mkdir build
+# install libmikmod (custom version)
+git clone https://github.com/networkfusion/libmikmod
+cd libmikmod/n64
 make
 make install
-
-cd ..
-# install libmad-64
-git clone https://github.com/parasyte/libmad-n64.git
-cd libmad-n64
-#$(N64_INST) converterd to $N64_INST below otherwise it will not run on WSFL
-export PATH=$PATH:$N64_INST/bin
-CFLAGS="-march=vr4300 -mtune=vr4300 -mno-extern-sdata" \
-LDFLAGS="-L$N64_INST/lib" LIBS="-lc -lnosys" \
-./configure --host=mips64-elf --disable-shared \
---prefix=$N64_INST --enable-speed --enable-fpm=mips
-make
-make install
+cd .. # we have are in a subfolder, this is not a duplicate...
 
 cd ..
 # install libyaml
@@ -76,10 +63,6 @@ make
 make install
 
 cd ..
-# Install menu code (perhaps this script should be called from it instead?
-# git clone https://github.com/networkfusion/alt64.git
-# cd alt64
-# make
 
 # Perform cleanup
 apt-get -y autoremove
