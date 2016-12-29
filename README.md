@@ -14,7 +14,7 @@ If you want to build the menu, you need an n64 toolchain. When using windows 10 
 ### Dependencies (installed automatically)
 * Windows 10 (Aniversary Update or above) / Ubuntu 16.04 (or above)
 * [libdragon](https://github.com/DragonMinded/libdragon)
-* [libmikmod-n64](https://github.com/parasyte/libmikmod-n64)
+* [libmikmod (with n64 driver)](https://github.com/networkfusion/libmikmod)
 * [libmad-n64](https://github.com/parasyte/libmad-n64)
 * [libyaml](http://pyyaml.org/wiki/LibYAML)
 
