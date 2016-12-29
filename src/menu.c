@@ -36,7 +36,7 @@
 #include "menu.h"
 
 //sound
-#include <mikmod.h>
+#include "sound.h"
 #include "mp3.h"
 
 //debug
@@ -2567,48 +2567,18 @@ void playSound(int snd)
 {
     //no thread support in libdragon yet, sounds pause the menu for a time :/
 
-    //maybe global
-    int v1;
-
-    static SAMPLE *add_sfx = NULL;
     if (snd == 1)
-        add_sfx = Sample_Load("rom://ed64_mono.wav");
+        sndPlaySFX("rom://ed64_mono.wav");
 
     if (snd == 2)
-        add_sfx = Sample_Load("rom://bamboo.wav");
+        sndPlaySFX("rom://bamboo.wav");
 
     if (snd == 3)
-        add_sfx = Sample_Load("rom://warning.wav");
+        sndPlaySFX("rom://warning.wav");
 
     if (snd == 4)
-        add_sfx = Sample_Load("rom://done.wav");
+        sndPlaySFX("rom://done.wav");
 
-    MikMod_SetNumVoices(-1, 2);
-
-    if (!add_sfx)
-    {
-        MikMod_Exit();
-    }
-    else
-    {
-        MikMod_EnableOutput();
-
-        audio_write_silence();
-        audio_write_silence();
-
-        v1 = Sample_Play(add_sfx, 0, 0);
-        Voice_SetVolume(v1, 100);
-
-        //maybe put update function into a int/vblank callback
-        for (int s = 0; s < 50; s++)
-        {
-            MikMod_Update();
-            sleep(10);
-        }
-
-        MikMod_DisableOutput();
-        Sample_Free(add_sfx);
-    }
 }
 
 //draws the next char at the text input screen
@@ -3355,21 +3325,11 @@ int main(void)
 
         if (sound_on)
         {
-            audio_init(44100, 2);
             //load soundsystem
+            audio_init(44100, 2);
+            sndInit();
+
             timer_init();
-
-            MikMod_RegisterAllDrivers();
-            MikMod_RegisterAllLoaders();
-
-            md_mode = 0;
-            md_mode |= DMODE_16BITS;
-            md_mode |= DMODE_SOFT_MUSIC;
-            md_mode |= DMODE_SOFT_SNDFX;
-
-            md_mixfreq = audio_get_frequency();
-
-            MikMod_Init("");
         }
 
         if (!fast_boot)
@@ -3378,6 +3338,9 @@ int main(void)
                 playSound(1);
 
             sleep(2000); //splash screen duration
+
+            //todo: if bgm is enabled, we should start it...
+            //sndPlayBGM("rom://bgm21.it");
         }
 
         border_color_1 = translate_color(border_color_1_s);
@@ -3434,6 +3397,8 @@ int main(void)
         //system main-loop with controller inputs-scan
         while (1)
         {
+            sndUpdate();
+
             if (playing == 1)
                 playing = update_mp3(buf_ptr, buf_size);
 
@@ -4329,8 +4294,9 @@ int main(void)
                     drawBoxNumber(disp, 2);
                     display_show(disp);
 
-                    printText("ALT64: v0.1.8.6.1.1", 9, 8, disp);
-                    printText(" ", 9, -1, disp);
+                    printText("Altra64: v0.1.8.6.1.2", 9, 8, disp);
+                    sprintf(firmware_str, "ED64 firmware: v%03x", evd_getFirmVersion());
+                    printText(firmware_str , 9, -1, disp);
                     printText("by Saturnu", 9, -1, disp);
                     printText("& JonesAlmighty", 9, -1, disp);
                     printText(" ", 9, -1, disp);
