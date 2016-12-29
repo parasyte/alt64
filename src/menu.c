@@ -428,7 +428,7 @@ void display_dir(direntry_t *list, int cursor, int page, int max, int count, dis
     uint32_t forecolor = 0;
     uint32_t forecolor_menu = 0;
     uint32_t backcolor;
-    backcolor = graphics_make_color(0x00, 0x00, 0x00, 0xFF);      //bg
+    backcolor = graphics_make_color(0x00, 0x00, 0x00, 0x00);      //bg
     forecolor_menu = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF); //fg
 
     graphics_set_color(list_font_color, backcolor);
@@ -2935,7 +2935,7 @@ void drawToplistBox(display_context_t disp, int line)
 
     uint32_t forecolor;
     uint32_t backcolor;
-    backcolor = graphics_make_color(0x00, 0x00, 0x00, 0xFF); //bg
+    backcolor = graphics_make_color(0x00, 0x00, 0x00, 0x00); //bg
     forecolor = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF); //fg
 
     for (int t = 0; t < 15; t++)
