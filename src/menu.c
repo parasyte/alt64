@@ -230,6 +230,10 @@ u8 sd_speed = 1;         // 1=25Mhz 2=50Mhz
 u8 hide_sysfolder = 0;
 char *background_image;
 
+//mp3
+int buf_size;
+char *buf_ptr;
+
 //toplist helper
 int list_pos_backup[3];
 char list_pwd_backup[256];
@@ -2578,7 +2582,6 @@ void playSound(int snd)
 
     if (snd == 4)
         sndPlaySFX("rom://done.wav");
-
 }
 
 //draws the next char at the text input screen
@@ -3244,6 +3247,163 @@ void drawSet4(display_context_t disp)
     graphics_draw_text(disp, 209, 100, "_");
 }
 
+void showAboutScreen(display_context_t disp)
+{
+    drawBoxNumber(disp, 2);
+    display_show(disp);
+
+    printText("Altra64: v0.1.8.6.1.2", 9, 8, disp);
+    sprintf(firmware_str, "ED64 firmware: v%03x", evd_getFirmVersion());
+    printText(firmware_str, 9, -1, disp);
+    printText("by Saturnu", 9, -1, disp);
+    printText("& JonesAlmighty", 9, -1, disp);
+    printText(" ", 9, -1, disp);
+    printText("Code engine by:", 9, -1, disp);
+    printText("Jay Oster", 9, -1, disp);
+    printText(" ", 9, -1, disp);
+    printText("thanks to:", 9, -1, disp);
+    printText("Krikzz", 9, -1, disp);
+    printText("Richard Weick", 9, -1, disp);
+    printText("ChillyWilly", 9, -1, disp);
+    printText("ShaunTaylor", 9, -1, disp);
+    printText("Conle", 9, -1, disp);
+
+    if (sound_on)
+        playSound(2);
+
+    //sleep(500);
+}
+
+void loadFile(display_context_t disp)
+{
+    char name_file[256];
+
+    if (strcmp(pwd, "/") == 0)
+        sprintf(name_file, "/%s", list[cursor].filename);
+    else
+        sprintf(name_file, "%s/%s", pwd, list[cursor].filename);
+
+    int ft = 0;
+    char _upper_name_file[256];
+
+    strcpy(_upper_name_file, name_file);
+
+    strhicase(_upper_name_file, strlen(_upper_name_file));
+    sprintf(_upper_name_file, "%s", _upper_name_file);
+
+    u8 extension[4];
+    u8 *pch;
+    pch = strrchr(_upper_name_file, '.'); //asd.n64
+
+    sprintf(extension, "%s", (pch + 1)); //0123456
+
+    if (!strcmp(extension, "GB"))
+        ft = 5;
+    if (!strcmp(extension, "GBC"))
+        ft = 6;
+    if (!strcmp(extension, "NES"))
+        ft = 7;
+    if (!strcmp(extension, "GG"))
+        ft = 8;
+    if (!strcmp(extension, "MSX"))
+        ft = 9;
+    if (!strcmp(extension, "MP3"))
+        ft = 10;
+    if (!strcmp(extension, "MPK"))
+        ft = 2;
+    if (!strcmp(extension, "Z64") || !strcmp(extension, "V64") || !strcmp(extension, "N64"))
+        ft = 1;
+
+    if (ft != 10 || ft != 2)
+    {
+        while (!(disp = display_lock()))
+            ;
+
+        clearScreen(disp);
+        u16 msg = 0;
+        sleep(300);
+        evd_ulockRegs();
+        sleep(300);
+        sprintf(rom_filename, "%s", list[cursor].filename);
+        display_show(disp);
+        select_mode = 9;
+    }
+    switch (ft)
+    {
+    case 1:
+        if (quick_boot) //write to the file
+        {
+            u8 resp = 0;
+            resp = fatCreateRecIfNotExist("/ED64/LASTROM.CFG", 0);
+            resp = fatOpenFileByeName("/ED64/LASTROM.CFG", 1); //512 bytes fix one cluster
+            static uint8_t lastrom_file_data[512] = {0};
+            scopy(name_file, lastrom_file_data);
+            fatWriteFile(&lastrom_file_data, 1);
+        }
+
+        //read rom_config data
+        readRomConfig(disp, rom_filename, name_file);
+
+        loadrom(disp, name_file, 1);
+        display_show(disp);
+
+        //rom loaded mapping
+        input_mapping = rom_loaded;
+        break;
+    case 2:
+        while (!(disp = display_lock()))
+            ;
+        clearScreen(disp); //part clear?
+        display_dir(list, cursor, page, MAX_LIST, count, disp);
+        display_show(disp);
+        drawShortInfoBox(disp, " L=Restore  R=Backup", 2);
+        input_mapping = mpk_choice;
+        sprintf(rom_filename, "%s", name_file);
+        break;
+    case 5:
+    case 6:
+        loadgbrom(disp, name_file);
+        display_show(disp);
+        break;
+    case 7:
+        loadnesrom(disp, name_file);
+        display_show(disp);
+        break;
+    case 8:
+        loadggrom(disp, name_file);
+        display_show(disp);
+        break;
+    case 9:
+        loadmsx2rom(disp, name_file);
+        display_show(disp);
+        break;
+    case 10:
+        buf_size = audio_get_buffer_length() * 4;
+        buf_ptr = malloc(buf_size);
+
+        while (!(disp = display_lock()))
+            ;
+        clearScreen(disp);
+        drawShortInfoBox(disp, "      playback", 0);
+
+        long long start = 0, end = 0, curr, pause = 0, samples;
+        int rate = 44100, last_rate = 44100, channels = 2;
+
+        audio_init(44100, 2);
+
+        start_mp3(name_file, &samples, &rate, &channels);
+        playing = 1;
+        select_mode = 9;
+
+        input_mapping = mp3; //mp3 stop
+
+        display_show(disp);
+        break;
+    default:
+        break;
+    }
+}
+
 //entry point
 int main(void)
 {
@@ -3319,9 +3479,6 @@ int main(void)
         }
         sleep(200);
 
-        //mp3
-        int buf_size;
-        char *buf_ptr;
 
         if (sound_on)
         {
@@ -3720,132 +3877,9 @@ int main(void)
                     }
                     else if (list[cursor].type != DT_DIR && empty == 0)
                     {
-                        char name_file[64];
-
-                        if (strcmp(pwd, "/") == 0)
-                            sprintf(name_file, "/%s", list[cursor].filename);
-                        else
-                            sprintf(name_file, "%s/%s", pwd, list[cursor].filename);
-
-                        /*filetype
-                         * 1 rom
-                         * 2 mempak
-                         * 3 background
-                         * 4 mp3
-                         */
-
-                        int ft = 0;
-                        char _upper_name_file[64];
-
-                        strcpy(_upper_name_file, name_file);
-
-                        strhicase(_upper_name_file, strlen(_upper_name_file));
-                        sprintf(_upper_name_file, "%s", _upper_name_file);
-
-                        u8 extension[4];
-                        u8 *pch;
-                        pch = strrchr(_upper_name_file, '.'); //asd.n64
-
-                        sprintf(extension, "%s", (pch + 1)); //0123456
-
-                        //load the rom using its file extension
-                        if (strcmp(extension, "Z64") == 0 || strcmp(extension, "V64") == 0 || strcmp(extension, "N64") == 0)
-                        {
-                            while (!(disp = display_lock()))
-                                ;
-                            clearScreen(disp);
-                            u16 msg = 0;
-                            sleep(300);
-                            evd_ulockRegs();
-                            sleep(300);
-                            sprintf(rom_filename, "%s", list[cursor].filename);
-                            display_show(disp);
-                            select_mode = 9;
-
-                            //read rom_config data
-                            readRomConfig(disp, rom_filename, name_file);
-                            loadrom(disp, name_file, 1);
-
-                            display_show(disp);
-
-                            //rom loaded mapping
-                            input_mapping = rom_loaded;
-                        }
-                        else if (strcmp(extension, "GB") == 0 || strcmp(extension, "GBC") == 0)
-                        {
-                            while (!(disp = display_lock()))
-                                ;
-                            clearScreen(disp);
-                            u16 msg = 0;
-                            sleep(300);
-                            evd_ulockRegs();
-                            sleep(300);
-                            sprintf(rom_filename, "%s", list[cursor].filename);
-                            display_show(disp);
-                            select_mode = 9;
-
-                            loadgbrom(disp, name_file);
-
-                            display_show(disp);
-                        }
-                        else if (strcmp(extension, "NES") == 0)
-                        {
-                            while (!(disp = display_lock()))
-                                ;
-                            clearScreen(disp);
-                            u16 msg = 0;
-                            sleep(300);
-                            evd_ulockRegs();
-                            sleep(300);
-                            sprintf(rom_filename, "%s", list[cursor].filename);
-                            display_show(disp);
-                            select_mode = 9;
-
-                            loadnesrom(disp, name_file);
-
-                            display_show(disp);
-                        }
-                        else if (strcmp(extension, "GG") == 0)
-                        {
-                            while (!(disp = display_lock()))
-                                ;
-                            clearScreen(disp);
-                            u16 msg = 0;
-                            sleep(300);
-                            evd_ulockRegs();
-                            sleep(300);
-                            sprintf(rom_filename, "%s", list[cursor].filename);
-                            display_show(disp);
-                            select_mode = 9;
-
-                            loadggrom(disp, name_file);
-
-                            display_show(disp);
-                        }
-                        else if (strcmp(extension, "MSX") == 0)
-                        {
-                            while (!(disp = display_lock()))
-                                ;
-                            clearScreen(disp);
-                            u16 msg = 0;
-                            sleep(300);
-                            evd_ulockRegs();
-                            sleep(300);
-                            sprintf(rom_filename, "%s", list[cursor].filename);
-                            display_show(disp);
-                            select_mode = 9;
-
-                            loadmsx2rom(disp, name_file);
-
-                            display_show(disp);
-                        }
-                        else if (strcmp(extension, "MPK") == 0)
-                        {
-                        }
-                        else
-                        {
-                        }
+                        loadFile(disp);
                     }
+                        
                 }
                 else if (input_mapping == mempak_menu)
                 {
@@ -4291,29 +4325,8 @@ int main(void)
                 {
                     input_mapping = unknown;
 
-                    drawBoxNumber(disp, 2);
-                    display_show(disp);
+                    showAboutScreen(disp);
 
-                    printText("Altra64: v0.1.8.6.1.2", 9, 8, disp);
-                    sprintf(firmware_str, "ED64 firmware: v%03x", evd_getFirmVersion());
-                    printText(firmware_str , 9, -1, disp);
-                    printText("by Saturnu", 9, -1, disp);
-                    printText("& JonesAlmighty", 9, -1, disp);
-                    printText(" ", 9, -1, disp);
-                    printText("Code engine by:", 9, -1, disp);
-                    printText("Jay Oster", 9, -1, disp);
-                    printText(" ", 9, -1, disp);
-                    printText("thanks to:", 9, -1, disp);
-                    printText("Krikzz", 9, -1, disp);
-                    printText("Richard Weick", 9, -1, disp);
-                    printText("ChillyWilly", 9, -1, disp);
-                    printText("ShaunTaylor", 9, -1, disp);
-                    printText("Conle", 9, -1, disp);
-
-                    if (sound_on)
-                        playSound(2);
-
-                    sleep(500);
                     input_mapping = abort_screen;
                 }
                 else if (input_mapping == mempak_menu)
@@ -4374,203 +4387,8 @@ int main(void)
                     } //mapping 1 and dir
                     else if (input_mapping == file_manager && list[cursor].type != DT_DIR && empty == 0)
                     { //open
-                        char name_file[256];
-
-                        if (strcmp(pwd, "/") == 0)
-                            sprintf(name_file, "/%s", list[cursor].filename);
-                        else
-                            sprintf(name_file, "%s/%s", pwd, list[cursor].filename);
-
-                        /*filetype
-                         * 1 rom
-                         * 2 mempak
-                         * 3 background
-                         * 4 mp3
-                         */
-
-                        int ft = 0;
-                        char _upper_name_file[256];
-
-                        strcpy(_upper_name_file, name_file);
-
-                        strhicase(_upper_name_file, strlen(_upper_name_file));
-                        sprintf(_upper_name_file, "%s", _upper_name_file);
-
-                        u8 extension[4];
-                        u8 *pch;
-                        pch = strrchr(_upper_name_file, '.'); //asd.n64
-
-                        sprintf(extension, "%s", (pch + 1)); //0123456
-
-                        if (!strcmp(extension, "GB"))
-                            ft = 5;
-                        if (!strcmp(extension, "GBC"))
-                            ft = 6;
-                        if (!strcmp(extension, "NES"))
-                            ft = 7;
-                        if (!strcmp(extension, "GG"))
-                            ft = 8;
-                        if (!strcmp(extension, "MSX"))
-                            ft = 9;
-                        if (!strcmp(extension, "MP3"))
-                            ft = 10;
-                        if (!strcmp(extension, "MPK"))
-                            ft = 2;
-                        if (!strcmp(extension, "Z64") || !strcmp(extension, "V64") || !strcmp(extension, "N64"))
-                            ft = 1;
-
-                        if (ft == 1)
-                        { //rom
-                            //load rom
-                            while (!(disp = display_lock()))
-                                ;
-
-                            clearScreen(disp);
-                            u16 msg = 0;
-                            sleep(300);
-                            evd_ulockRegs();
-                            sleep(300);
-                            sprintf(rom_filename, "%s", list[cursor].filename);
-
-                            if (quick_boot)
-                            {
-                                u8 resp = 0;
-                                resp = fatCreateRecIfNotExist("/ED64/LASTROM.CFG", 0);
-                                resp = fatOpenFileByeName("/ED64/LASTROM.CFG", 1); //512 bytes fix one cluster
-                                static uint8_t lastrom_file_data[512] = {0};
-                                scopy(name_file, lastrom_file_data);
-                                fatWriteFile(&lastrom_file_data, 1);
-                            }
-
-                            select_mode = 9;
-
-                            //read rom_config data
-                            readRomConfig(disp, rom_filename, name_file);
-
-                            loadrom(disp, name_file, 1);
-                            display_show(disp);
-
-                            //rom loaded mapping
-                            input_mapping = rom_loaded;
-                        }
-                        else if (ft == 5 || ft == 6)
-                        { //gb/gbc rom
-                            //load rom
-                            while (!(disp = display_lock()))
-                                ;
-
-                            clearScreen(disp);
-                            u16 msg = 0;
-                            sleep(300);
-                            evd_ulockRegs();
-                            sleep(300);
-                            sprintf(rom_filename, "%s", list[cursor].filename);
-                            display_show(disp);
-
-                            select_mode = 9;
-
-                            loadgbrom(disp, name_file);
-
-                            display_show(disp);
-                        }
-                        else if (ft == 2)
-                        { //mempak
-                            while (!(disp = display_lock()))
-                                ;
-                            clearScreen(disp); //part clear?
-                            display_dir(list, cursor, page, MAX_LIST, count, disp);
-
-                            display_show(disp);
-
-                            drawShortInfoBox(disp, " L=Restore  R=Backup", 2);
-                            input_mapping = mpk_choice;
-
-                            sprintf(rom_filename, "%s", name_file);
-                        }
-                        else if (ft == 7)
-                        { //nes
-                            //load rom
-                            while (!(disp = display_lock()))
-                                ;
-                            clearScreen(disp);
-                            u16 msg = 0;
-                            sleep(300);
-                            evd_ulockRegs();
-                            sleep(300);
-                            sprintf(rom_filename, "%s", list[cursor].filename);
-                            display_show(disp);
-
-                            select_mode = 9;
-
-                            loadnesrom(disp, name_file);
-
-                            display_show(disp);
-                        }
-                        else if (ft == 8)
-                        { //gg
-                            //load gg rom
-                            while (!(disp = display_lock()))
-                                ;
-
-                            clearScreen(disp);
-                            u16 msg = 0;
-                            sleep(300);
-                            evd_ulockRegs();
-                            sleep(300);
-                            sprintf(rom_filename, "%s", list[cursor].filename);
-                            display_show(disp);
-
-                            select_mode = 9;
-
-                            loadggrom(disp, name_file);
-
-                            display_show(disp);
-                        }
-                        else if (ft == 9)
-                        { //msx2
-                            //load msx2 rom
-                            while (!(disp = display_lock()))
-                                ;
-
-                            clearScreen(disp);
-                            u16 msg = 0;
-                            sleep(300);
-                            evd_ulockRegs();
-                            sleep(300);
-                            sprintf(rom_filename, "%s", list[cursor].filename);
-                            display_show(disp);
-
-                            select_mode = 9;
-
-                            loadmsx2rom(disp, name_file);
-
-                            display_show(disp);
-                        }
-                        else if (ft == 10)
-                        { //mp3
-                            //load mp3
-                            buf_size = audio_get_buffer_length() * 4;
-                            buf_ptr = malloc(buf_size);
-
-                            while (!(disp = display_lock()))
-                                ;
-                            clearScreen(disp);
-                            drawShortInfoBox(disp, "      playback", 0);
-
-                            long long start = 0, end = 0, curr, pause = 0, samples;
-                            int rate = 44100, last_rate = 44100, channels = 2;
-
-                            audio_init(44100, 2);
-
-                            start_mp3(name_file, &samples, &rate, &channels);
-                            playing = 1;
-                            select_mode = 9;
-
-                            input_mapping = mp3; //mp3 stop
-
-                            display_show(disp);
-                        }
-                    } //mapping and not dir
+                        loadFile(disp);
+                    }
                 }     //mapping 1 end
                 else if (input_mapping == mempak_menu)
                 {
