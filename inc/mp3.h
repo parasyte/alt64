@@ -2,8 +2,8 @@
 #ifndef _MP3_H_
 #define _MP3_H_
 
-void start_mp3(char *fname, long long *samples, int *rate, int *channels);
-void stop_mp3(void);
-int update_mp3(char *buf, int bytes);
+void mp3_Start(char *fname, long long *samples, int *rate, int *channels);
+void mp3_Stop(void);
+int mp3_Update(char *buf, int bytes);
 
 #endif // _MP3_H_

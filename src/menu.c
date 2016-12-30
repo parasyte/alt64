@@ -3391,7 +3391,7 @@ void loadFile(display_context_t disp)
 
         audio_init(44100, 2);
 
-        start_mp3(name_file, &samples, &rate, &channels);
+        mp3_Start(name_file, &samples, &rate, &channels);
         playing = 1;
         select_mode = 9;
 
@@ -3557,7 +3557,7 @@ int main(void)
             sndUpdate();
 
             if (playing == 1)
-                playing = update_mp3(buf_ptr, buf_size);
+                playing = mp3_Update(buf_ptr, buf_size);
 
             if (input_mapping == file_manager)
                 sleep(60);
@@ -4623,7 +4623,7 @@ int main(void)
                 {
                     //stop mp3
 
-                    stop_mp3();
+                    mp3_Stop();
                     playing = 0;
 
                     clearScreen(disp); //part clear?

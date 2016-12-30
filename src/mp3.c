@@ -359,7 +359,7 @@ static void MP3_GetInfo(long long *samples, int *rate) {
 }
 
 
-void start_mp3(char *fname, long long *samples, int *rate, int *channels) {
+void mp3_Start(char *fname, long long *samples, int *rate, int *channels) {
     sprintf(mp3Fd, "%s", fname);
 
     //if (mp3Fd[0]!=0)
@@ -378,7 +378,7 @@ void start_mp3(char *fname, long long *samples, int *rate, int *channels) {
     //*samples = 0;
 }
 
-void stop_mp3(void) {
+void mp3_Stop(void) {
     MP3_Exit();
     mp3File_fptr=0;
 /*
@@ -393,7 +393,7 @@ void stop_mp3(void) {
     */
 }
 
-int update_mp3(char *buf, int bytes) {
+int mp3_Update(char *buf, int bytes) {
     MP3_Callback(buf, bytes/4);
     return eos ? 0 : 1;
 }
