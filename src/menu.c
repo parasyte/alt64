@@ -130,10 +130,12 @@ int fat_initialized = 0;
 int exit_ok = 0;
 int boot_cic = 0;
 int boot_save = 0;
+
 int cursor_line = 0;
 int cursor_lastline = 0;
 u16 cursor_history[32];
 u16 cursor_history_pos = 0;
+
 u8 empty = 0;
 u8 playing = 0;
 u8 gb_load_y = 0;
@@ -1258,14 +1260,12 @@ void loadnesrom(display_context_t disp, u8 *rom_path)
 void loadrom(display_context_t disp, u8 *buff, int fast)
 {
     clearScreen(disp);
-
     display_show(disp);
 
     if (!fast)
         printText("Restoring:", 3, 4, disp);
 
-    sleep(10);
-    sleep(1000); //needless waiting :>
+    //sleep(1000); //needless waiting :>
 
     TRACE(disp, "timing done");
 
@@ -1589,7 +1589,7 @@ char TranslateNotes(char *bNote, char *Text)
 #pragma warning(disable : 4305 4309)
     char cReturn = 0x00;
     const char aSpecial[] = {0x21, 0x22, 0x23, 0x60, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x3A, 0x3D, 0x3F, 0x40, 0x74, 0xA9, 0xAE};
-//    { '!' , '\"', '#' , '`' , '*' , '+' , ',' , '-' , '.' , '/' , ':' , '=' , '?' , '>' , 'tm', '(r)','(c)' };
+                     //    { '!' , '\"', '#' , '`' , '*' , '+' , ',' , '-' , '.' , '/' , ':' , '=' , '?' , '>' , 'tm', '(r)','(c)' };
 #pragma warning(default : 4305 4309)
     int i = 16;
     do
@@ -2202,7 +2202,7 @@ void readSDcard(display_context_t disp, char *directory)
     //clear screen and print the directory name
     clearScreen(disp);
 
-    //creates string list of files and directorys
+    //creates string list of files and directories
     for (int i = 0; i < dir->size; i++)
     {
         char name_tmpl[32];
@@ -3279,8 +3279,6 @@ void showAboutScreen(display_context_t disp)
     printText("ChillyWilly", 9, -1, disp);
     printText("ShaunTaylor", 9, -1, disp);
     printText("Conle", 9, -1, disp);
-
-    sleep(500);
 }
 
 void loadFile(display_context_t disp)
@@ -4214,25 +4212,19 @@ void handleInput(display_context_t disp, sprite_t *contr)
         switch (input_mapping)
         {
         case file_manager:
-
-            input_mapping = unknown;
+            input_mapping = abort_screen;
 
             showAboutScreen(disp);
-
-            input_mapping = abort_screen;
             break;
 
         case mempak_menu:
+            input_mapping = abort_screen;
+            if (sound_on)
+                playSound(2);
 
             drawBoxNumber(disp, 4);
             display_show(disp);
             view_mpk(disp);
-
-            if (sound_on)
-                playSound(2);
-
-            sleep(500);
-            input_mapping = abort_screen;
             break;
 
         default:
@@ -4501,7 +4493,8 @@ void handleInput(display_context_t disp, sprite_t *contr)
         case mpk_quick_backup:
 
             //rom info screen
-
+            input_mapping = file_manager;
+            
             while (!(disp = display_lock()))
                 ;
 
@@ -4509,8 +4502,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
             display_dir(list, cursor, page, MAX_LIST, count, disp);
 
             display_show(disp);
-
-            input_mapping = file_manager;
             break;
 
         case toplist:

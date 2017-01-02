@@ -273,6 +273,7 @@ int getSRAM32(  uint8_t *buffer) {
     return getSRAM(buffer, SAVE_SIZE_SRAM);
 }
 
+//TODO: is this now 96k?
 int getSRAM128( uint8_t *buffer) {
     return getSRAM(buffer, SAVE_SIZE_SRAM128);
 }
