@@ -772,20 +772,20 @@ void simulate_boot(u32 cic_chip, u8 gBootCic, u32 *cheat_lists[2]) {
         ".byte  0x3F;"                  // NUS-CIC-6101
         ".byte  0x3F;"                  // NUS-CIC-6102
         ".byte  0x78;"                  // NUS-CIC-6103
-        ".byte  0x00;"                  // Unused
+        ".byte  0xAC;"                  // Unused NUS-CIC-5101 hacked to 4 0xAC seed
         ".byte  0x91;"                  // NUS-CIC-6105
         ".byte  0x85;"                  // NUS-CIC-6106
-        ".byte  0x00;"                  // Unused
+        ".byte  0xDD;"                  // NUS-CIC-5167
 
     "cic_patch_offsets:"
         ".byte  0x00;"                  // Unused
         ".byte  0x30;"                  // CIC-NUS-6101
         ".byte  0x2C;"                  // CIC-NUS-6102
         ".byte  0x20;"                  // CIC-NUS-6103
-        ".byte  0x00;"                  // Unused
+        ".byte  0x30;"                  // Unused NUS-CIC-5101 hacked to 4 same patch offset like 6101
         ".byte  0x8C;"                  // CIC-NUS-6105
         ".byte  0x60;"                  // CIC-NUS-6106
-        ".byte  0x00;"                  // Unused
+        ".byte  0x30;"                  // NUS-CIC-5167
 
     // These instructions are copied to RSP IMEM; we don't execute them.
     "imem_start:"

@@ -195,7 +195,7 @@ static resolution_t res = RESOLUTION_320x240;
 //background sprites
 sprite_t *loadPng(u8 *png_filename);
 sprite_t *background;  //background
-sprite_t *background0; //splash screen
+sprite_t *splashscreen; //splash screen
 
 //config file theme settings
 u32 border_color_1 = 0xFFFFFFFF; //hex 0xRRGGBBAA AA=transparenxy
@@ -2463,21 +2463,22 @@ int readCheatFile(char *filename, u32 *cheat_lists[2])
     return repeater; // Ok or repeater error
 }
 
-void timing(display_context_t disp)
-{
-    unsigned char tmp[32];
+//TODO: UNUSED CODE, WHAT IS IS FOR?
+// void timing(display_context_t disp)
+// {
+//     unsigned char tmp[32];
 
-    IO_WRITE(PI_STATUS_REG, 0x02);
+//     IO_WRITE(PI_STATUS_REG, 0x02);
 
-    u32 pi0 = IO_READ(PI_BSD_DOM1_LAT_REG);
-    u32 pi1 = IO_READ(PI_BSD_DOM1_PWD_REG);
-    u32 pi2 = IO_READ(PI_BSD_DOM1_PGS_REG);
-    u32 pi3 = IO_READ(PI_BSD_DOM1_RLS_REG);
+//     u32 pi0 = IO_READ(PI_BSD_DOM1_LAT_REG);
+//     u32 pi1 = IO_READ(PI_BSD_DOM1_PWD_REG);
+//     u32 pi2 = IO_READ(PI_BSD_DOM1_PGS_REG);
+//     u32 pi3 = IO_READ(PI_BSD_DOM1_RLS_REG);
 
-    printText("timing dom1:", 3, -1, disp);
-    sprintf(tmp, "lat=%x pwd=%x\npgs=%x rls=%x", pi0, pi1, pi2, pi3);
-    printText(tmp, 3, -1, disp);
-}
+//     printText("timing dom1:", 3, -1, disp);
+//     sprintf(tmp, "lat=%x pwd=%x\npgs=%x rls=%x", pi0, pi1, pi2, pi3);
+//     printText(tmp, 3, -1, disp);
+// }
 
 void bootRom(display_context_t disp, int silent)
 {
@@ -2620,8 +2621,10 @@ void drawTextInput(display_context_t disp, char *msg)
 void drawConfirmBox(display_context_t disp)
 {
     drawBoxNumber(disp, 5);
-
     display_show(disp);
+
+    if (sound_on)
+        playSound(3);
 
     printText(" ", 9, 9, disp);
     printText("Confirmation required:", 9, -1, disp);
@@ -2632,9 +2635,6 @@ void drawConfirmBox(display_context_t disp)
     printText("    C-UP Continue ", 9, -1, disp); //set mapping 3
     printText(" ", 9, -1, disp);
     printText("      B Cancel", 9, -1, disp);
-
-    if (sound_on)
-        playSound(3);
 
     sleep(500);
 }
@@ -3261,6 +3261,9 @@ void showAboutScreen(display_context_t disp)
     drawBoxNumber(disp, 2);
     display_show(disp);
 
+    if (sound_on)
+        playSound(2);
+
     printText("Altra64: v0.1.8.6.1.2", 9, 8, disp);
     sprintf(firmware_str, "ED64 firmware: v%03x", evd_getFirmVersion());
     printText(firmware_str, 9, -1, disp);
@@ -3277,10 +3280,7 @@ void showAboutScreen(display_context_t disp)
     printText("ShaunTaylor", 9, -1, disp);
     printText("Conle", 9, -1, disp);
 
-    if (sound_on)
-        playSound(2);
-
-    //sleep(500);
+    sleep(500);
 }
 
 void loadFile(display_context_t disp)
@@ -4613,9 +4613,10 @@ int main(void)
             //load soundsystem
             audio_init(44100, 2);
             sndInit();
-
-            timer_init();
         }
+
+        
+        timer_init();
 
         //background
         display_init(res, DEPTH_32_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE);
@@ -4626,31 +4627,15 @@ int main(void)
         //Grab a render buffer
         while (!(disp = display_lock()))
             ;
+        
         //backgrounds from ramfs/libdragonfs
 
         if (!fast_boot)
         {
-            background0 = read_sprite("rom://sprites/splash.sprite");
-            graphics_draw_sprite(disp, 0, 0, background0); //start-picture
+            splashscreen = read_sprite("rom://sprites/splash.sprite");
+            graphics_draw_sprite(disp, 0, 0, splashscreen); //start-picture
             display_show(disp);
-        }
 
-        char background_path[64];
-        sprintf(background_path, "/ED64/wallpaper/%s", background_image);
-        int found;
-        FatRecord rec_tmpf;
-        found = fatFindRecord(background_path, &rec_tmpf, 0);
-        if (found == 0)
-        {
-            background = loadPng(background_path);
-        }
-        else
-        {
-            background = read_sprite("rom://sprites/background.sprite");
-        }
-
-        if (!fast_boot)
-        {
             if (sound_on)
             {
                 playSound(1);
@@ -4660,9 +4645,21 @@ int main(void)
                     sleep(10);
                 }
             }
-
-            //sleep(2000); //splash screen duration
         }
+
+        char background_path[64];
+        sprintf(background_path, "/ED64/wallpaper/%s", background_image);
+
+        FatRecord rec_tmpf;
+        if (fatFindRecord(background_path, &rec_tmpf, 0) == 0)
+        {
+            background = loadPng(background_path);
+        }
+        else
+        {
+            background = read_sprite("rom://sprites/background.sprite");
+        }
+
 
         //todo: if bgm is enabled, we should start it...
         //sndPlayBGM("rom://bgm21.it");
