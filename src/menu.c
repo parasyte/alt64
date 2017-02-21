@@ -162,7 +162,7 @@ enum InputMap
 enum InputMap input_mapping = file_manager;
 
 //holds the string of the character input screen result
-int text_input_on = 0;
+//int text_input_on = 0;
 
 //char input vars
 int x, y, position, set;
@@ -172,7 +172,7 @@ uint32_t chr_forecolor;
 uint32_t chr_backcolor;
 
 //save type still set - save todo after reboot
-int save_reboot = 0;
+int save_after_reboot = 0;
 
 //cart id from rom header
 unsigned char cartID[4];
@@ -196,7 +196,7 @@ static resolution_t res = RESOLUTION_320x240;
 
 //background sprites
 sprite_t *loadPng(u8 *png_filename);
-sprite_t *background;  //background
+sprite_t *background;   //background
 sprite_t *splashscreen; //splash screen
 
 //config file theme settings
@@ -841,6 +841,20 @@ static int configHandler(void *user, const char *section, const char *name, cons
     return 1;
 }
 
+void updateFirmware(char *filename)
+{ //check that firmware exists on the disk? mainly because it has to be ripped from the official image and may not have been.
+    FatRecord rec_tmpf;
+    int ok = fatFindRecord(filename, &rec_tmpf, 0);
+    if (ok == 0)
+    {
+        int fpf = dfs_open(filename);
+        firmware = malloc(dfs_size(fpf));
+        dfs_read(firmware, 1, dfs_size(fpf), fpf);
+        dfs_close(fpf);
+        bi_load_firmware(firmware);
+    }
+}
+
 //everdrive init functions
 void configure()
 {
@@ -854,7 +868,7 @@ void configure()
     //REG_MAX_MSG
     evd_setCfgBit(ED_CFG_SDRAM_ON, 0);
     dma_read_s(buff, ROM_ADDR + 0x20, 16);
-    asm_date = memRomRead32(0x38);
+    asm_date = memRomRead32(0x38); //TODO: this should be displayed somewhere...
     evd_setCfgBit(ED_CFG_SDRAM_ON, 1);
 
     firm = evd_readReg(REG_VER); //TODO: why not just use evd_getFirmVersion()
@@ -876,13 +890,17 @@ void configure()
         {
             msg |= 1 << 14;
             evd_writeReg(REG_MAX_MSG, msg);
-            if (firm == 0x0214)
+            if (firm == 0x0214) //need to take into account different default firmware versions for each ED64 version
             {
-                int fpf = dfs_open("/firmware.bin");
-                firmware = malloc(dfs_size(fpf));
-                dfs_read(firmware, 1, dfs_size(fpf), fpf);
-                dfs_close(fpf);
-                bi_load_firmware(firmware);
+                updateFirmware("/firmware/firmware_v2.bin");
+            }
+            else if (firm == 0x0250)
+            {
+                updateFirmware("/firmware/firmware_v2_5.bin");
+            }
+            else if (firm == 0x0300)
+            {
+                updateFirmware("/firmware/firmware_v3.bin");
             }
 
             sleep(1);
@@ -893,7 +911,7 @@ void configure()
         evd_setCfgBit(ED_CFG_SDRAM_ON, 1);
     }
 
-    if (sd_mode)
+    if (sd_mode) //TODO: can this be moved before the firmware is loaded?
     {
         diskSetInterface(DISK_IFACE_SD);
     }
@@ -1365,18 +1383,18 @@ void loadrom(display_context_t disp, u8 *buff, int fast)
 
     else if (resp)
     {
-        sprintf(tmp, "resp: %i", resp);
+        sprintf(tmp, "Response: %i", resp);
         printText(tmp, 3, -1, disp);
     }
 
-    TRACE(disp, "enalbe sd_mode");
+    TRACE(disp, "Checking SD mode");
 
     resp = evd_isSDMode();
 
-    TRACEF(disp, "sdmode: %i", resp);
+    TRACEF(disp, "SD mode: %i", resp);
     TRACEF(disp, "Size: %i", file.sec_available);
-    TRACEF(disp, "f_sector: %i", file.sector);
-    TRACE(disp, "loading:");
+    TRACEF(disp, "File sector: %i", file.sector);
+    TRACE(disp, "Loading:");
 
     sleep(10);
 
@@ -1451,7 +1469,7 @@ int backupSaveData(display_context_t disp)
 
     FatRecord rec_tmpf;
 
-    printText("Saving Last Played Game State...", 3, 4, disp);
+    printText("Saving last game session...", 3, 4, disp);
 
     if (fatFindRecord(config_file_path, &rec_tmpf, 0) == 0)
     { //TODO: why does fatFindRecord return 0 for true?!
@@ -1494,7 +1512,7 @@ int backupSaveData(display_context_t disp)
                 {                                 //we are V3 and have had a hard reboot
                     evd_writeReg(REG_SAV_CFG, 1); //so we need to tell the save register it still has data.
                 }
-                save_reboot = 1;
+                save_after_reboot = 1;
             }
         }
         else
@@ -1520,7 +1538,7 @@ int backupSaveData(display_context_t disp)
     //}
 
     //reset with save request
-    if (save_reboot)
+    if (save_after_reboot)
     {
         printText("Copying RAM to SD card...", 3, -1, disp);
         if (saveTypeToSd(disp, rom_filename, save_format))
@@ -1589,7 +1607,7 @@ char TranslateNotes(char *bNote, char *Text)
 #pragma warning(disable : 4305 4309)
     char cReturn = 0x00;
     const char aSpecial[] = {0x21, 0x22, 0x23, 0x60, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x3A, 0x3D, 0x3F, 0x40, 0x74, 0xA9, 0xAE};
-                     //    { '!' , '\"', '#' , '`' , '*' , '+' , ',' , '-' , '.' , '/' , ':' , '=' , '?' , '>' , 'tm', '(r)','(c)' };
+//    { '!' , '\"', '#' , '`' , '*' , '+' , ',' , '-' , '.' , '/' , ':' , '=' , '?' , '>' , 'tm', '(r)','(c)' };
 #pragma warning(default : 4305 4309)
     int i = 16;
     do
@@ -1859,7 +1877,7 @@ void view_mpk(display_context_t disp)
         break;
 
     case ACCESSORY_RUMBLEPAK:
-        printText("rumblepak inserted", 11, -1, disp);
+        printText("RumblePak inserted", 11, -1, disp);
         break;
 
     default:
@@ -4494,7 +4512,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
 
             //rom info screen
             input_mapping = file_manager;
-            
+
             while (!(disp = display_lock()))
                 ;
 
@@ -4606,7 +4624,6 @@ int main(void)
             sndInit();
         }
 
-        
         timer_init();
 
         //background
@@ -4618,7 +4635,7 @@ int main(void)
         //Grab a render buffer
         while (!(disp = display_lock()))
             ;
-        
+
         //backgrounds from ramfs/libdragonfs
 
         if (!fast_boot)
@@ -4650,7 +4667,6 @@ int main(void)
         {
             background = read_sprite("rom://sprites/background.sprite");
         }
-
 
         //todo: if bgm is enabled, we should start it...
         //sndPlayBGM("rom://bgm21.it");
