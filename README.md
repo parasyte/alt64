@@ -24,7 +24,10 @@ If you want to build the menu, you need an n64 toolchain. When using windows 10 
 
 Clone this `Altra64` repo to a directory of your choice.
 
-On Windows 10, browse to the tools directory and double click on ```setup-wsfl.cmd```.
+On Windows 10:
+* Ensure that ["Windows Subsystem For Linux (Ubuntu)"](https://msdn.microsoft.com/en-gb/commandline/wsl/install_guide) is installed.
+* browse to the tools directory and double click on ```setup-wsfl.cmd```.
+
 On Ubuntu, browse to the tools directory and run the command ```$ chmod +x ./setup-linux.sh;source ./setup-linux.sh```
 
 
