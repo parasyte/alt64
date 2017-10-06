@@ -4,7 +4,7 @@
 // See LICENSE file in the project root for full license information.
 //
 
-include "types.h"
+#include "types.h"
 #include "everdrive.h"
 #include <libdragon.h>
 #include <stdio.h>
