@@ -1,9 +1,8 @@
-/* 
- * File:   types.h
- * Author: KRIK
- *
- * Created on 16 јпрель 2011 г., 2:24
- */
+//
+// Copyright (c) 2017 The Altra64 project contributors
+// Portions (c) 2011 KRIK
+// See LICENSE file in the project root for full license information.
+//
 
 #include <stdint.h>
 

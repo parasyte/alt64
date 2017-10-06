@@ -1,9 +1,8 @@
-/*
- * File:   everdrive.h
- * Author: KRIK
- *
- * Created on 22 јпрель 2011 г., 20:46
- */
+//
+// Copyright (c) 2017 The Altra64 project contributors
+// Portions (c) 2011 KRIK
+// See LICENSE file in the project root for full license information.
+//
 
 #ifndef _EVERDRIVE_H
 #define	_EVERDRIVE_H

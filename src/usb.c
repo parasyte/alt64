@@ -1,4 +1,8 @@
-
+//
+// Copyright (c) 2017 The Altra64 project contributors
+// Portions (c) 2013 saturnu (Alt64) based on libdragon, Neo64Menu, ED64IO, libn64-hkz, libmikmod
+// See LICENSE file in the project root for full license information.
+//
 
 #include "everdrive.h"
 #include "sys.h"

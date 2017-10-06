@@ -1,3 +1,8 @@
+::
+:: Copyright (c) 2017 The Altra64 project contributors
+:: See LICENSE file in the project root for full license information.
+::
+
 @echo off
 set "SystemPath=%SystemRoot%\\System32"
 IF EXIST %WINDIR%\\sysnative\\reg.exe (

@@ -1,9 +1,8 @@
-/*
- * ALT64 Menu v0.1.8.6 - 2013
- * a menu for the Everdrive64
- * based on libdragon, Neo64Menu, ED64IO, libn64-hkz, libmikmod
- * by saturnu
- */
+//
+// Copyright (c) 2017 The Altra64 project contributors
+// Portions (c) 2013 saturnu (Alt64) based on libdragon, Neo64Menu, ED64IO, libn64-hkz, libmikmod
+// See LICENSE file in the project root for full license information.
+//
 
 #include <stdio.h>
 #include <stdint.h>

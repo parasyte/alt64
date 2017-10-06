@@ -1,7 +1,11 @@
+//
+// Copyright (c) 2017 The Altra64 project contributors
+// Portions (c) 2011 @marekweb https://github.com/marekweb/datastructs-c
+// See LICENSE file in the project root for full license information.
+//
+
 /**
  * Hashtable implementation
- * (c) 2011 @marekweb
- *
  * Uses dynamic addressing with linear probing.
  */
 

@@ -1,9 +1,8 @@
-/* 
- * File:   disk.h
- * Author: krik
- *
- * Created on 2 Θώνό 2011 γ., 4:07
- */
+//
+// Copyright (c) 2017 The Altra64 project contributors
+// Portions (c) 2011 KRIK
+// See LICENSE file in the project root for full license information.
+//
 
 #ifndef _DISK_H
 #define	_DISK_H

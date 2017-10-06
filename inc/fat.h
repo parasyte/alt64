@@ -1,9 +1,8 @@
-/*
- * File:   fat.h
- * Author: krik
- *
- * Created on 22 Май 2011 г., 1:06
- */
+//
+// Copyright (c) 2017 The Altra64 project contributors
+// Portions (c) 2011 KRIK
+// See LICENSE file in the project root for full license information.
+//
 
 #ifndef _FAT_H
 #define	_FAT_H

@@ -1,9 +1,8 @@
-/* 
- * File:   errors.h
- * Author: KRIK
- *
- * Created on 14 Май 2011 г., 7:17
- */
+//
+// Copyright (c) 2017 The Altra64 project contributors
+// Portions (c) 2011 KRIK
+// See LICENSE file in the project root for full license information.
+//
 
 #ifndef _ERRORS_H
 #define	_ERRORS_H

@@ -1,9 +1,8 @@
-/* 
- * File:   tools.h
- * Author: KRIK
- *
- * Created on 16 јпрель 2011 г., 2:30
- */
+//
+// Copyright (c) 2017 The Altra64 project contributors
+// Portions (c) 2011 KRIK
+// See LICENSE file in the project root for full license information.
+//
 
 #ifndef _SYS_H
 #define	_SYS_H

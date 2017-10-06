@@ -1,3 +1,9 @@
+//
+// Copyright (c) 2017 The Altra64 project contributors
+// Portions (c) 2011 @marekweb https://github.com/marekweb/datastructs-c
+// See LICENSE file in the project root for full license information.
+//
+
 typedef struct hashtable hashtable;
 void hashtable_destroy(hashtable *t);
 typedef struct hashtable_entry hashtable_entry;
