@@ -2597,16 +2597,16 @@ void playSound(int snd)
     //no thread support in libdragon yet, sounds pause the menu for a time :/
 
     if (snd == 1)
-        sndPlaySFX("rom://ed64_mono.wav");
+        sndPlaySFX("rom://sounds/ed64_mono.wav");
 
     if (snd == 2)
-        sndPlaySFX("rom://bamboo.wav");
+        sndPlaySFX("rom://sounds/bamboo.wav");
 
     if (snd == 3)
-        sndPlaySFX("rom://warning.wav");
+        sndPlaySFX("rom://sounds/warning.wav");
 
     if (snd == 4)
-        sndPlaySFX("rom://done.wav");
+        sndPlaySFX("rom://sounds/done.wav");
 }
 
 //draws the next char at the text input screen
@@ -4669,7 +4669,7 @@ int main(void)
         }
 
         //todo: if bgm is enabled, we should start it...
-        //sndPlayBGM("rom://bgm21.it");
+        //sndPlayBGM("rom://sounds/bgm21.it");
 
         border_color_1 = translate_color(border_color_1_s);
         border_color_2 = translate_color(border_color_2_s);
