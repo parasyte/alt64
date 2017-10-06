@@ -4707,7 +4707,7 @@ int main(void)
         sprintf(input_text, "");
 
         //sprite for chr input
-        int fp = dfs_open("/n64controller.sprite");
+        int fp = dfs_open("/sprites/n64controller.sprite");
         sprite_t *contr = malloc(dfs_size(fp));
         dfs_read(contr, 1, dfs_size(fp), fp);
         dfs_close(fp);
