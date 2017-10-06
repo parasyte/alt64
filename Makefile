@@ -13,6 +13,7 @@ HEADERNAME = header.ed64
 HEADERTITLE = "EverDrive OS"
 
 SRCDIR = ./src
+INCDIR = ./inc
 RESDIR = ./res
 OBJDIR = ./obj
 BINDIR = ./bin
@@ -20,7 +21,7 @@ TOOLSDIR = ./tools
 
 LINK_FLAGS = -O1 -L$(ROOTDIR)/lib -L$(ROOTDIR)/mips64-elf/lib -ldragon -lmikmod -lmad -lyaml -lc -lm -ldragonsys -lnosys $(LIBS) -Tn64ld.x
 PROG_NAME = OS64
-CFLAGS = -std=gnu99 -march=vr4300 -mtune=vr4300 -O1 -I./inc -I$(ROOTDIR)/include -I$(ROOTDIR)/mips64-elf/include -lpthread -lrt -D_REENTRANT -DUSE_TRUETYPE $(SET_DEBUG)
+CFLAGS = -std=gnu99 -march=vr4300 -mtune=vr4300 -O1 -I$(INCDIR) -I$(ROOTDIR)/include -I$(ROOTDIR)/mips64-elf/include -lpthread -lrt -D_REENTRANT -DUSE_TRUETYPE $(SET_DEBUG)
 ASFLAGS = -mtune=vr4300 -march=vr4300
 CC = $(GCCN64PREFIX)gcc
 AS = $(GCCN64PREFIX)as
