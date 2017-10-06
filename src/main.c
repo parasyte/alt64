@@ -32,8 +32,8 @@
 #include "ini.h"
 #include "strlib.h"
 
-//menu header
-#include "menu.h"
+//main header
+#include "main.h"
 
 //sound
 #include "sound.h"
