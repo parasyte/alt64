@@ -21,11 +21,6 @@ void dma_read_sram(void *dest, u32 offset, u32 size);
 u8 getSaveType();
 u8 getCicType(u8 bios_cic);
 
-u16 strcon(u8 *str1, u8 *str2, u8 *dst, u16 max_len);
-u8 slen(u8 *str);
-u8 scopy(u8 *src, u8 *dst);
-
-u16 strContain(u8 *target, u8 *str);
 
 typedef struct SP_regs_s {
     u32 mem_addr;

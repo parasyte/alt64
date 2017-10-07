@@ -5,6 +5,9 @@
 //
 
 #ifndef STRLIB_H_
+
+#include "types.h"
+
 enum strtrim_mode_t {
     STRLIB_MODE_ALL       = 0, 
     STRLIB_MODE_RIGHT     = 0x01, 
@@ -27,4 +30,14 @@ char *triml(char *s);
 char *trimr(char *s);
 char *trim(char *s);
 char *strlibkill(char *s);
+
+void strhicase(u8 *str, u8 len);
+u16 strcon(u8 *str1, u8 *str2, u8 *dst, u16 max_len);
+u8 slen(u8 *str);
+u8 scopy(u8 *src, u8 *dst);
+
+u8 streq(u8 *str1, u8 *str2);
+u8 streql(u8 *str1, u8 *str2, u8 len);
+
+u16 strContain(u8 *target, u8 *str);
 #endif

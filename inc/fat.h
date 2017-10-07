@@ -118,10 +118,6 @@ u8 fatCreateRecIfNotExist(u8 *name, u8 is_dir);
 u8 fatGetFullName(u8 *name, u32 dir_entry, u32 rec_entry);
 u8 fatOpenDirByName(u8 *name);
 void fatInitRam();
-
-u8 streq(u8 *str1, u8 *str2);
-u8 streql(u8 *str1, u8 *str2, u8 len);
-u8 slen(u8 *str);
 void fatSortRecords();
 #endif	/* _FAT_H */
 

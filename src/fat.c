@@ -13,6 +13,7 @@
 #include "everdrive.h"
 #include "sys.h"
 #include <libdragon.h>
+#include "strlib.h"
 
 
 
@@ -39,7 +40,6 @@ u8 fatCacheApplyTable();
 u8 fatGetFreeRecord(FatRecord *dir_rec, u8 len);
 void fatMakeLfnBlock(u8 *name, u8 *lfn_block, u8 block_idx, u8 crc);
 u32 fatSectorToCluster(u32 sector);
-void strhicase(u8 *str, u8 len);
 u8 fatClearClusters(u32 cluster, u8 len);
 
 u8 fatReadCluster(void *dst);

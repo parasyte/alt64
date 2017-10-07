@@ -5,7 +5,6 @@
 //
 
 //protos maybe some aren't necessary any longer
-void strhicase(u8 *str, u8 len);
 void PI_DMAWait(void);
 void evd_writeReg(u8 reg, u16 val);
 void bootRom(display_context_t disp, int silent);
