@@ -159,7 +159,7 @@ static int MP3_SkipHdr(char* fd)
     mp3_seek(fd, offset, SEEK_SET);
 
     //now seek for a sync
-    while(1) {
+    for ( ;;) {
         offset = mp3_seek(fd, 0, SEEK_CUR);
         size = mp3_read(fd, buf, sizeof(buf));
 
@@ -333,7 +333,7 @@ static void MP3_GetInfo(long long *samples, int *rate) {
 
         mad_stream_buffer (&stream, localBuffer, red);
 
-        while (1) {
+        for ( ;; ) {
             if (mad_header_decode(&header, &stream) == -1) {
                 if (stream.buffer == NULL || stream.error == MAD_ERROR_BUFLEN) {
                     break;

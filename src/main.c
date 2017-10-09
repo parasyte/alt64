@@ -4712,7 +4712,7 @@ int main(void)
         dfs_close(fp);
 
         //system main-loop with controller inputs-scan
-        while (1)
+        for ( ;; )
         {
             if (sound_on)
                 sndUpdate();
@@ -4766,7 +4766,7 @@ int main(void)
     else
     {
         printf("Filesystem failed to start!\n");
-        while (1)
+        for ( ;; )
             ; //never leave!
     }
 }
