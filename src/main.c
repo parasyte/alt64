@@ -155,9 +155,7 @@ enum InputMap
     mpk_quick_backup,
     mp3,
     abort_screen,
-    unknown //not sure what this is doing!
 };
-
 enum InputMap input_mapping = file_manager;
 
 //holds the string of the character input screen result
@@ -170,10 +168,10 @@ unsigned char input_text[32];
 uint32_t chr_forecolor;
 uint32_t chr_backcolor;
 
-//save type still set - save todo after reboot
+//save type still set - save to do after reboot
 int save_after_reboot = 0;
 
-//cart id from rom header
+//cart id from the rom header
 unsigned char cartID[4];
 char curr_dirname[64];
 char pwd[64];
@@ -831,7 +829,6 @@ static int configHandler(void *user, const char *section, const char *name, cons
     {
         pconfig->name = strdup(value);
     }
-
     else
     {
         return 0; /* unknown section/name, error */
@@ -843,8 +840,7 @@ static int configHandler(void *user, const char *section, const char *name, cons
 void updateFirmware(char *filename)
 { //check that firmware exists on the disk? mainly because it has to be ripped from the official image and may not have been.
     FatRecord rec_tmpf;
-    int ok = fatFindRecord(filename, &rec_tmpf, 0);
-    if (ok == 0)
+    if (fatFindRecord(filename, &rec_tmpf, 0) == 0)
     {
         int fpf = dfs_open(filename);
         firmware = malloc(dfs_size(fpf));
@@ -890,7 +886,7 @@ void configure()
             msg |= 1 << 14;
             evd_writeReg(REG_MAX_MSG, msg);
             if (firm == 0x0214) //need to take into account different default firmware versions for each ED64 version
-            {
+            {//TODO: use a case statement instead
                 updateFirmware("/firmware/firmware_v2.bin");
             }
             else if (firm == 0x0250)
@@ -947,7 +943,7 @@ void romInfoScreen(display_context_t disp, u8 *buff, int silent)
 
     u8 resp = 0;
 
-    resp = fatOpenFileByeName(filename, 0); //err if not found ^^
+    resp = fatOpenFileByName(filename, 0); //err if not found ^^
 
     int mb = file.sec_available / 2048;
     int block_offset = 0;
@@ -1030,11 +1026,7 @@ void romInfoScreen(display_context_t disp, u8 *buff, int silent)
 
         sprintf(box_path, "/ED64/boxart/lowres/%c%c.png", headerdata[0x3C], headerdata[0x3D]);
 
-        int found;
-
-        found = fatFindRecord(box_path, &rec_tmpf, 0);
-
-        if (found != 0)
+        if (fatFindRecord(box_path, &rec_tmpf, 0) != 0)
         {
             //not found
             sprintf(box_path, "/ED64/boxart/lowres/00.png");
@@ -1071,7 +1063,7 @@ sprite_t *loadPng(u8 *png_filename)
     ok = fatFindRecord(filename, &rec_tmpf, 0);
 
     u8 resp = 0;
-    resp = fatOpenFileByeName(filename, 0);
+    resp = fatOpenFileByName(filename, 0);
 
     //filesize of the opend file -> is the readfile / 512
     int fsize = file.sec_available * 512;
@@ -1089,10 +1081,7 @@ void loadgbrom(display_context_t disp, u8 *buff)
 {
     FatRecord rec_tmpf;
 
-    u8 exist = 0;
-    exist = fatFindRecord("/ED64/gblite.z64", &rec_tmpf, 0); //filename already exists
-
-    if (exist == 0)
+    if (fatFindRecord("/ED64/gblite.z64", &rec_tmpf, 0) == 0) //filename already exists?
     {
         u8 gb_sram_file[64];
 
@@ -1102,7 +1091,7 @@ void loadgbrom(display_context_t disp, u8 *buff)
 
         resp = fatFindRecord(gb_sram_file, &rec_tmpf, 0); //filename already exists
         resp = fatCreateRecIfNotExist(gb_sram_file, 0);
-        resp = fatOpenFileByeName(gb_sram_file, 32768 / 512);
+        resp = fatOpenFileByName(gb_sram_file, 32768 / 512);
 
         static uint8_t sram_buffer[36928];
 
@@ -1126,7 +1115,7 @@ void loadgbrom(display_context_t disp, u8 *buff)
 void loadmsx2rom(display_context_t disp, u8 *rom_path)
 {
     //max 128kb rom
-    int max_ok = fatOpenFileByeName(rom_path, 0);
+    int max_ok = fatOpenFileByName(rom_path, 0);
     int fsize = file.sec_available * 512; //fsize in bytes
 
     if (fsize > 128 * 1024)
@@ -1145,22 +1134,18 @@ void loadmsx2rom(display_context_t disp, u8 *rom_path)
     }
 
     FatRecord rec_tmpf;
-
-    u8 exist = 0;
-    exist = fatFindRecord("/ED64/ultraMSX2.z64", &rec_tmpf, 0); //filename already exists
-
-    if (exist == 0)
+    if (fatFindRecord("/ED64/ultraMSX2.z64", &rec_tmpf, 0) == 0) //file exists?
     {
         u8 resp = 0;
         //load nes emulator
-        resp = fatOpenFileByeName("/ED64/ultraMSX2.z64", 0); //err if not found ^^
+        resp = fatOpenFileByName("/ED64/ultraMSX2.z64", 0); //err if not found ^^
 
         int fsize = 1024 * 1024;
         u8 buffer[fsize];
 
         //injecting in buffer... slow but working :/
         resp = fatReadFile(buffer, file.sec_available);
-        resp = fatOpenFileByeName(rom_path, 0); //err if not found ^^
+        resp = fatOpenFileByName(rom_path, 0); //err if not found ^^
         resp = fatReadFile(buffer + 0x2df48, file.sec_available);
         dma_write_s(buffer, 0xb0000000, fsize);
 
@@ -1179,7 +1164,7 @@ void loadmsx2rom(display_context_t disp, u8 *rom_path)
 void loadggrom(display_context_t disp, u8 *rom_path)
 {
     //max 512kb rom
-    int max_ok = fatOpenFileByeName(rom_path, 0);
+    int max_ok = fatOpenFileByName(rom_path, 0);
     int fsize = file.sec_available * 512; //fsize in bytes
 
     if (fsize > 512 * 1024)
@@ -1197,22 +1182,18 @@ void loadggrom(display_context_t disp, u8 *rom_path)
     }
 
     FatRecord rec_tmpf;
-
-    u8 exist = 0;
-    exist = fatFindRecord("/ED64/UltraSMS.z64", &rec_tmpf, 0); //filename already exists
-
-    if (exist == 0)
+    if (fatFindRecord("/ED64/UltraSMS.z64", &rec_tmpf, 0) == 0) //file exists?
     {
         u8 resp = 0;
         //load nes emulator
-        resp = fatOpenFileByeName("/ED64/UltraSMS.z64", 0); //err if not found ^^
+        resp = fatOpenFileByName("/ED64/UltraSMS.z64", 0); //err if not found ^^
 
         int fsize = 1024 * 1024;
         u8 buffer[fsize];
 
         //injecting in buffer... slow but working :/
         resp = fatReadFile(buffer, file.sec_available);
-        resp = fatOpenFileByeName(rom_path, 0); //err if not found ^^
+        resp = fatOpenFileByName(rom_path, 0); //err if not found ^^
         resp = fatReadFile(buffer + 0x1b410, file.sec_available);
         dma_write_s(buffer, 0xb0000000, fsize);
 
@@ -1237,9 +1218,7 @@ void rom_load_y(void)
     sprintf(gb_sram_file, "%c%c%c%c%c%c%c", 'O', 'S', '6', '4', 'P', '/', 'O');
     sprintf(gb_sram_file2, "%s%c%c%c%c%c%c%c%c", gb_sram_file, 'S', '6', '4', 'P', '.', 'v', '6', '4');
 
-    u8 exist = 0;
-    exist = fatFindRecord(gb_sram_file2, &rec_tmpf, 0); //filename already exists
-    if (exist == 0)
+    if (fatFindRecord(gb_sram_file2, &rec_tmpf, 0) == 0) //filename already exists?
     {
         gb_load_y = 1;
     }
@@ -1249,18 +1228,15 @@ void loadnesrom(display_context_t disp, u8 *rom_path)
 {
     FatRecord rec_tmpf;
 
-    u8 exist = 0;
-    exist = fatFindRecord("/ED64/neon64bu.rom", &rec_tmpf, 0); //filename already exists
-
-    if (exist == 0)
+    if (fatFindRecord("/ED64/neon64bu.rom", &rec_tmpf, 0) == 0) //filename already exists?
     {
         u8 resp = 0;
         //load nes emulator
-        resp = fatOpenFileByeName("/ED64/neon64bu.rom", 0); //err if not found ^^
+        resp = fatOpenFileByName("/ED64/neon64bu.rom", 0); //err if not found ^^
         resp = diskRead(file.sector, (void *)0xb0000000, file.sec_available);
 
         //load nes rom
-        resp = fatOpenFileByeName(rom_path, 0); //err if not found ^^
+        resp = fatOpenFileByName(rom_path, 0); //err if not found ^^
         resp = diskRead(file.sector, (void *)0xb0200000, file.sec_available);
 
         boot_cic = 2;  //cic 6102
@@ -1304,7 +1280,7 @@ void loadrom(display_context_t disp, u8 *buff, int fast)
 
     u8 resp = 0;
 
-    resp = fatOpenFileByeName(filename, 0); //err if not found ^^
+    resp = fatOpenFileByName(filename, 0); //err if not found ^^
 
     TRACE(disp, "opened");
 
@@ -1470,13 +1446,11 @@ int backupSaveData(display_context_t disp)
 
     printText("Saving last game session...", 3, 4, disp);
 
-    if (fatFindRecord(config_file_path, &rec_tmpf, 0) == 0)
-    { //TODO: why does fatFindRecord return 0 for true?!
-        //found
-
+    if (fatFindRecord(config_file_path, &rec_tmpf, 0) == 0) //file exists?
+    {
         //file to cfg_data buffer
         u8 resp = 0;
-        fatOpenFileByeName(config_file_path, 0);
+        fatOpenFileByName(config_file_path, 0);
         fatReadFile(&cfg_data, 1);
 
         //split in save type and cart-id
@@ -1492,7 +1466,7 @@ int backupSaveData(display_context_t disp)
 
             u8 tmp[32];
 
-            resp = fatOpenFileByeName(config_file_path, 1); //if sector is set filemode=WR writeable
+            resp = fatOpenFileByName(config_file_path, 1); //if sector is set filemode=WR writeable
 
             TRACEF(disp, "FAT_OpenFileByName returned: %i", resp);
 
@@ -1572,7 +1546,7 @@ void file_to_mpk(display_context_t disp, u8 *filename)
     ok = fatFindRecord(filename, &rec_tmpf, 0);
 
     u8 resp = 0;
-    resp = fatOpenFileByeName(filename, 0);
+    resp = fatOpenFileByName(filename, 0);
 
     u8 *pch;
     pch = strrchr(filename, '.');
@@ -1681,7 +1655,7 @@ void view_mpk_file(display_context_t disp, char *mpk_filename)
     ok = fatFindRecord(mpk_filename, &rec_tmpf, 0);
 
     u8 resp = 0;
-    resp = fatOpenFileByeName(mpk_filename, 0);
+    resp = fatOpenFileByName(mpk_filename, 0);
 
     u8 *pch;
     pch = strrchr(mpk_filename, '.');
@@ -1918,7 +1892,7 @@ void mpk_to_file(display_context_t disp, char *mpk_filename, int quick)
 
     u8 resp = 0;
     resp = fatCreateRecIfNotExist(buff, 0);
-    resp = fatOpenFileByeName(buff, 32768 / 512);
+    resp = fatOpenFileByName(buff, 32768 / 512);
 
     controller_init();
 
@@ -1968,9 +1942,9 @@ int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
     if (found == 0)
     {
         u8 resp = 0;
-        resp = fatOpenFileByeName(fname, 0);
+        resp = fatOpenFileByName(fname, 0);
 
-        TRACEF(disp, "fatOpenFileByeName returned: %i", resp);
+        TRACEF(disp, "fatOpenFileByName returned: %i", resp);
 
         resp = fatReadFile(cartsave_data, size / 512);
 
@@ -2035,9 +2009,9 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
     }
 
     //open file with stype size
-    resp = fatOpenFileByeName(fname, size / 512);
+    resp = fatOpenFileByName(fname, size / 512);
 
-    TRACEF(disp, "fatOpenFileByeName returned: %i", resp); //100 not exist
+    TRACEF(disp, "fatOpenFileByName returned: %i", resp); //100 not exist
 
     //for savegame
     uint8_t cartsave_data[size];
@@ -2085,7 +2059,7 @@ int readConfigFile(void)
     ok = fatFindRecord(filename, &rec_tmpf, 0);
 
     u8 resp = 0;
-    resp = fatOpenFileByeName(filename, 0);
+    resp = fatOpenFileByName(filename, 0);
 
     //filesize of the opend file -> is the readfile / 512
     int fsize = file.sec_available * 512;
@@ -2185,7 +2159,7 @@ void readSDcard(display_context_t disp, char *directory)
             sprintf(rom_cfg_file, "/ED64/CFG/%s", frec->name);
 
             static uint8_t cfg_file_data[512] = {0};
-            cresp = fatOpenFileByeName(rom_cfg_file, 0); //512 bytes fix one cluster
+            cresp = fatOpenFileByName(rom_cfg_file, 0); //512 bytes fix one cluster
             cresp = fatReadFile(&cfg_file_data, 1);
 
             colorlist[i][0] = (char)cfg_file_data[5];     //color
@@ -2312,14 +2286,14 @@ int readCheatFile(char *filename, u32 *cheat_lists[2])
     yaml_parser_initialize(&parser);
 
     FatRecord rec_tmpf;
-    int ok = fatFindRecord(filename, &rec_tmpf, 0);
-    if (ok != 0)
+
+    if (fatFindRecord(filename, &rec_tmpf, 0) != 0)
     {
         return -1; //err file not found
     }
 
     u8 resp = 0;
-    resp = fatOpenFileByeName(filename, 0);
+    resp = fatOpenFileByName(filename, 0);
 
     //filesize of the opend file -> is the readfile / 512
     int fsize = file.sec_available * 512;
@@ -2512,7 +2486,7 @@ void bootRom(display_context_t disp, int silent)
             sprintf(cfg_file, "/ED64/%s/LAST.CRT", save_path);
 
             resp = fatCreateRecIfNotExist(cfg_file, 0);
-            resp = fatOpenFileByeName(cfg_file, 1); //512 bytes fix one cluster
+            resp = fatOpenFileByName(cfg_file, 1); //512 bytes fix one cluster
 
             static uint8_t cfg_file_data[512] = {0};
             cfg_file_data[0] = boot_save;
@@ -2683,7 +2657,6 @@ void drawShortInfoBox(display_context_t disp, char *text, u8 mode)
 
 void readRomConfig(display_context_t disp, char *short_filename, char *full_filename)
 {
-    u8 found = 0;
     char cfg_filename[128];
     sprintf(rom_filename, "%s", short_filename);
     rom_filename[strlen(rom_filename) - 4] = '\0'; // cut extension
@@ -2692,13 +2665,12 @@ void readRomConfig(display_context_t disp, char *short_filename, char *full_file
     uint8_t rom_cfg_data[512];
 
     FatRecord rec_tmpf;
-    found = fatFindRecord(cfg_filename, &rec_tmpf, 0);
 
-    if (found == 0)
+    if (fatFindRecord(cfg_filename, &rec_tmpf, 0) == 0)
     {
         //read rom-config
         u8 resp = 0;
-        resp = fatOpenFileByeName(cfg_filename, 0);
+        resp = fatOpenFileByName(cfg_filename, 0);
         resp = fatReadFile(&rom_cfg_data, 1);
 
         rom_config[1] = rom_cfg_data[0];
@@ -2908,7 +2880,7 @@ void drawToplistBox(display_context_t disp, int line)
 
             static uint8_t cfg_file_data[512] = {0};
 
-            resp = fatOpenFileByeName(rom_cfg_file, 0); //512 bytes fix one cluster
+            resp = fatOpenFileByName(rom_cfg_file, 0); //512 bytes fix one cluster
             resp = fatReadFile(&cfg_file_data, 1);
 
             toplist[i][0] = (char)cfg_file_data[5];     //quality
@@ -3359,7 +3331,7 @@ void loadFile(display_context_t disp)
         {
             u8 resp = 0;
             resp = fatCreateRecIfNotExist("/ED64/LASTROM.CFG", 0);
-            resp = fatOpenFileByeName("/ED64/LASTROM.CFG", 1); //512 bytes fix one cluster
+            resp = fatOpenFileByName("/ED64/LASTROM.CFG", 1); //512 bytes fix one cluster
             static uint8_t lastrom_file_data[512] = {0};
             scopy(name_file, lastrom_file_data);
             fatWriteFile(&lastrom_file_data, 1);
@@ -3702,7 +3674,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 if (fatFindRecord("/ED64/LASTROM.CFG", &rec_last, 0) == 0)
                 {
                     u8 resp = 0;
-                    resp = fatOpenFileByeName("/ED64/LASTROM.CFG", 0);
+                    resp = fatOpenFileByName("/ED64/LASTROM.CFG", 0);
                     resp = fatReadFile(&lastrom_cfg_data, 1);
 
                     u8 *short_s;
@@ -4089,9 +4061,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
         switch (input_mapping)
         {
         case file_manager:
-
-            input_mapping = unknown;
-
             scopy(pwd, list_pwd_backup);
             while (!(disp = display_lock()))
                 ;
@@ -4169,8 +4138,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 if (ft == 1)
                 { //rom
                     //load rom
-                    input_mapping = unknown;
-
                     drawBoxNumber(disp, 3); //rominfo
 
                     u16 msg = 0;
@@ -4343,7 +4310,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
             sprintf(rom_cfg_file, "/ED64/CFG/%s.CFG", rom_filename);
 
             resp = fatCreateRecIfNotExist(rom_cfg_file, 0);
-            resp = fatOpenFileByeName(rom_cfg_file, 1); //512 bytes fix one cluster
+            resp = fatOpenFileByName(rom_cfg_file, 1); //512 bytes fix one cluster
 
             static uint8_t cfg_file_data[512] = {0};
             cfg_file_data[0] = rom_config[1]; //cic

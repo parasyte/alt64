@@ -71,7 +71,7 @@ static int mp3_seek(char* fd, int offset, int whence) {
 static int mp3_size(char* fd) {
     FatRecord rec_tmpf;
     u8 resp=0;
-    resp = fatOpenFileByeName(fd, 0); //err if not found ^^
+    resp = fatOpenFileByName(fd, 0); //err if not found ^^
 
     int fsize =  file.sec_available*512; //fsize in bytes
     mp3File_fsize = fsize;
@@ -83,7 +83,7 @@ static void _f_read(char* fname, unsigned char *readBuffer, int size){
 /*
     FatRecord rec_tmpf;
     u8 resp=0;
-    resp = fatOpenFileByeName(fname, 0); //err if not found ^^
+    resp = fatOpenFileByName(fname, 0); //err if not found ^^
 
     int fsize =  file.sec_available*512; //fsize in bytes
     mp3File_fsize = fsize;

@@ -662,7 +662,7 @@ u8 fatGetNextCluster(u32 *cluster) {
 
 }
 
-u8 fatOpenFileByeName(u8 *name, u32 wr_sectors) { //TODO: spelling mistake
+u8 fatOpenFileByName(u8 *name, u32 wr_sectors) {
 
     //u16 i;
     u8 resp;
@@ -679,7 +679,7 @@ u8 fatOpenFileByeName(u8 *name, u32 wr_sectors) { //TODO: spelling mistake
     return 0;
 }
 
-u8 fatFindRecord(u8 *name, FatRecord *rec, u8 is_dir) {
+u8 fatFindRecord(u8 *name, FatRecord *rec, u8 is_dir) { //TODO: why does this return 0 for TRUE????
 
     u8 resp;
     u8 *sub_name_ptr;

@@ -109,7 +109,7 @@ u8 fatWriteFile(void *src, u32 sectors);
 u8 fatReadFile(void *dst, u32 sectors);
 u8 fatReadPartialFile(void *dst, u32 sectors, int b_offset);
 u8 fatCreateRecord(u8 *name, u8 is_dir, u8 check_exist);
-u8 fatOpenFileByeName(u8 *name, u32 wr_sectors);
+u8 fatOpenFileByName(u8 *name, u32 wr_sectors);
 u8 fatFindRecord(u8 *name, FatRecord *rec, u8 is_dir);
 u8 fatOpenFile(FatRecord *rec, u32 wr_sectors);
 
