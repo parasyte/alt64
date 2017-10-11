@@ -45,6 +45,7 @@
 
 #include "mem.h"
 #include "chksum64.h"
+#include "version.h"
 
 #ifdef USE_TRUETYPE
 #define STB_TRUETYPE_IMPLEMENTATION
@@ -118,7 +119,6 @@ extern uint32_t __width;
 extern uint32_t __height;
 extern void *__safe_buffer[];
 
-char firmware_str[64];
 int firm_found = 0;
 char rom_config[10];
 
@@ -3244,22 +3244,27 @@ void drawSet4(display_context_t disp)
 
 void showAboutScreen(display_context_t disp)
 {
+    char version_str[32];
+    char firmware_str[32];
+
     drawBoxNumber(disp, 2);
     display_show(disp);
 
     if (sound_on)
         playSound(2);
 
-    printText("Altra64: v0.1.8.6.1.2", 9, 8, disp);
+    
+    sprintf(version_str, "Altra64: v%s", Altra64_GetVersionString());
+    printText(version_str, 9, 8, disp);
     sprintf(firmware_str, "ED64 firmware: v%03x", evd_getFirmVersion());
     printText(firmware_str, 9, -1, disp);
-    printText("by Saturnu", 9, -1, disp);
-    printText("& JonesAlmighty", 9, -1, disp);
+    printText("by JonesAlmighty", 9, -1, disp);
     printText(" ", 9, -1, disp);
-    printText("Code engine by:", 9, -1, disp);
+    printText("Based on ALT64", 9, -1, disp);
+    printText("By Saturnu", 9, -1, disp);
+    printText(" ", 9, -1, disp);
+    printText("credits to:", 9, -1, disp);
     printText("Jay Oster", 9, -1, disp);
-    printText(" ", 9, -1, disp);
-    printText("thanks to:", 9, -1, disp);
     printText("Krikzz", 9, -1, disp);
     printText("Richard Weick", 9, -1, disp);
     printText("ChillyWilly", 9, -1, disp);
@@ -3290,22 +3295,23 @@ void loadFile(display_context_t disp)
 
     sprintf(extension, "%s", (pch + 1)); //0123456
 
+
+    if (!strcmp(extension, "Z64") || !strcmp(extension, "V64") || !strcmp(extension, "N64")) //TODO: an enum would be better
+        ft = 1;
+    else if (!strcmp(extension, "MPK"))
+        ft = 2;
     if (!strcmp(extension, "GB"))
         ft = 5;
-    if (!strcmp(extension, "GBC"))
+    else if (!strcmp(extension, "GBC"))
         ft = 6;
-    if (!strcmp(extension, "NES"))
+    else if (!strcmp(extension, "NES"))
         ft = 7;
-    if (!strcmp(extension, "GG"))
+    else if (!strcmp(extension, "GG"))
         ft = 8;
-    if (!strcmp(extension, "MSX"))
+    else if (!strcmp(extension, "MSX"))
         ft = 9;
-    if (!strcmp(extension, "MP3"))
+    else if (!strcmp(extension, "MP3"))
         ft = 10;
-    if (!strcmp(extension, "MPK"))
-        ft = 2;
-    if (!strcmp(extension, "Z64") || !strcmp(extension, "V64") || !strcmp(extension, "N64"))
-        ft = 1;
 
     if (ft != 10 || ft != 2)
     {
