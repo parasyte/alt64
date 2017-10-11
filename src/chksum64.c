@@ -23,6 +23,7 @@
 #include <libdragon.h>
 
 #include "sys.h"
+#include "chksum64.h"
 
 
 #define BUFSIZE 0x8000

@@ -44,10 +44,13 @@
 #include <yaml.h>
 
 #include "mem.h"
+#include "chksum64.h"
 
 #ifdef USE_TRUETYPE
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
+
+#define MAX_LIST 20
 
 struct glyph
 {

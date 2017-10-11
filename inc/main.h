@@ -6,19 +6,16 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-//TODO: some of these should probably be includes not protos in main
+//TODO: these should probably be static not protos in main
 void bootRom(display_context_t disp, int silent);
 void loadrom(display_context_t disp, u8 *buff, int fast);
 
 void readSDcard(display_context_t disp, char *directory);
 int saveTypeToSd(display_context_t disp, char* save_filename ,int type);
 
-void checksum_sdram(void);
-
 void drawShortInfoBox(display_context_t disp, char* text, u8 mode);
 void drawTextInput(display_context_t disp,char *msg);
 
-#define MAX_LIST        20
 
 //#define ishexchar(c) (((c >= '0') && (c <= '9')) || ((c >= 'A') && (c <= 'F')) || ((c >= 'a') && (c <= 'f')))
 
