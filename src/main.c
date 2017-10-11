@@ -4085,11 +4085,11 @@ void handleInput(display_context_t disp, sprite_t *contr)
             //chr input screen
             if (set == 1)
                 drawInputAdd(disp, "F"); //P X )
-            if (set == 2)
+            else if (set == 2)
                 drawInputAdd(disp, "M");
-            if (set == 3)
+            else if (set == 3)
                 drawInputAdd(disp, "T");
-            if (set == 4)
+            else if (set == 4)
                 drawInputAdd(disp, "-"); //GR Set4
             break;
 
@@ -4114,14 +4114,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 else
                     sprintf(name_file, "%s/%s", pwd, list[cursor].filename);
 
-                /*filetype
-                         * 1 rom
-                         * 2 mempak
-                         * 3 background
-                         * 4 mp3
-                         */
-
-                int ft = 0;
                 char _upper_name_file[64];
 
                 strcpy(_upper_name_file, name_file);
@@ -4133,12 +4125,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 pch = strrchr(_upper_name_file, '.');
                 sprintf(extension, "%s", (pch + 1));
 
-                if (!strcmp(extension, "MPK"))
-                    ft = 2;
                 if (!strcmp(extension, "Z64") || !strcmp(extension, "V64") || !strcmp(extension, "N64"))
-                    ft = 1;
-
-                if (ft == 1)
                 { //rom
                     //load rom
                     drawBoxNumber(disp, 3); //rominfo
@@ -4156,7 +4143,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
                     sleep(500);
                     input_mapping = abort_screen;
                 }
-                if (ft == 2)
+                else if (!strcmp(extension, "MPK"))
                 { //mpk file
                     drawBoxNumber(disp, 4);
                     display_show(disp);
@@ -4185,11 +4172,11 @@ void handleInput(display_context_t disp, sprite_t *contr)
             //chr input screen
             if (set == 1)
                 drawInputAdd(disp, "C"); //P X )
-            if (set == 2)
+            else if (set == 2)
                 drawInputAdd(disp, "J");
-            if (set == 3)
+            else if (set == 3)
                 drawInputAdd(disp, "Q");
-            if (set == 4)
+            else if (set == 4)
                 drawInputAdd(disp, "X");
             break;
         }
@@ -4283,11 +4270,11 @@ void handleInput(display_context_t disp, sprite_t *contr)
             //chr input screen
             if (set == 1)
                 drawInputAdd(disp, "G"); //P X )
-            if (set == 2)
+            else if (set == 2)
                 drawInputAdd(disp, "N");
-            if (set == 3)
+            else if (set == 3)
                 drawInputAdd(disp, "U");
-            if (set == 4)
+            else if (set == 4)
                 drawInputAdd(disp, "_");
             break;
         }
@@ -4465,11 +4452,11 @@ void handleInput(display_context_t disp, sprite_t *contr)
             /* Lazy switching */
             if (set == 1)
                 drawInputAdd(disp, "E"); //P X )
-            if (set == 2)
+            else if (set == 2)
                 drawInputAdd(disp, "L");
-            if (set == 3)
+            else if (set == 3)
                 drawInputAdd(disp, "S");
-            if (set == 4)
+            else if (set == 4)
                 drawInputAdd(disp, "Z");
             break;
 
