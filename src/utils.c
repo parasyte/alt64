@@ -26,7 +26,7 @@ static volatile struct _PI_regs_s * const _PI_regs = (struct _PI_regs_s *)0xa460
 
 int get_cic_save(char *cartid, int *cic, int *save) {
     // variables
-    int NUM_CARTS = 137;
+    int NUM_CARTS = 138;
     int i;
 
     //data arrays
@@ -99,17 +99,17 @@ int get_cic_save(char *cartid, int *cic, int *save) {
         "TN", "TP", "VL", "VY", "W2", "W4", "WL", "WR", "WU", "WX", "XO", "YS",
         "YW", "ZL", "ZS", "AB", "BN", "CG", "CX", "CZ", "D6", "DR", "DZ", "OH",
         "TB", "TC", "VB", "WI", "4W", "AG", "AY", "DA", "D2", "3D", "F2", "SI",
-        "HP", "EV", "MG", "GU", "SA", "VP", "A2", "WC"
+        "HP", "EV", "MG", "GU", "SA", "VP", "A2", "WC", "GF"
     };
 
-    // Banjo-Tooie (B7) -> if not using Ultra CIC set to sram, because the crack converts ek16 (4) -> sram (1)
+    // Banjo-Tooie (B7) -> if not using Ultra CIC set to sram, because the crack converts ek16/eep (4) -> sram (1)
     int saveTypes[] = {
         2, 1, 5, 1, 3, 1, 4, 3, 3, 3, 3, 3, 3, 5, 3, 5, 3, 3, 3, 4, 5, 4, 4, 3,
         3, 3, 3, 4, 3, 3, 4, 3, 3, 1, 3, 3, 3, 3, 3, 3, 5, 5, 3, 3, 3, 3, 1, 3,
         5, 3, 3, 3, 5, 4, 1, 3, 3, 3, 5, 3, 3, 4, 3, 4, 3, 3, 4, 4, 1, 5, 5, 4,
         5, 3, 5, 5, 5, 5, 3, 3, 1, 1, 3, 4, 3, 3, 3, 3, 5, 3, 3, 3, 5, 1, 3, 3,
         3, 3, 3, 3, 1, 5, 3, 3, 3, 1, 3, 4, 1, 1, 5, 3, 3, 3, 3, 4, 1, 3, 1, 3,
-        3, 3, 1, 1, 3, 3, 1, 1, 4, 4, 4, 5, 3, 4, 3, 3, 3, 1, 1, 3
+        3, 3, 1, 1, 3, 3, 1, 1, 4, 4, 4, 5, 3, 4, 3, 3, 3, 1, 1, 3, 3
     };
 
     // Banjo-Tooie (B7) -> if not using Ultra CIC set to 2 instead of 5
@@ -119,7 +119,7 @@ int get_cic_save(char *cartid, int *cic, int *save) {
         3, 2, 2, 2, 2, 2, 2, 2, 5, 2, 3, 2, 2, 2, 2, 3, 2, 2, 3, 3, 2, 3, 3, 5,
         3, 2, 3, 2, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2,
         2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 2, 5, 5, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
     };
 
     // search for cartid
