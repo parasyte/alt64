@@ -4,16 +4,11 @@
 // See LICENSE file in the project root for full license information.
 //
 
-//#include <stdio.h>
-//#include <stdlib.h>
 #include <string.h>
-//#include <stdint.h>
-//#include <malloc.h>
 #include <libdragon.h>
-//#include <n64sys.h>
+
 #include "everdrive.h"
 #include "sys.h"
-
 #include "types.h"
 #include "utils.h"
 #include "sram.h"
@@ -107,19 +102,9 @@ int get_cic_save(char *cartid, int *cic, int *save) {
         "HP", "EV", "MG", "GU", "SA", "VP", "A2", "WC"
     };
 
-    /*
+    // Banjo-Tooie (B7) -> if not using Ultra CIC set to sram, because the crack converts ek16 (4) -> sram (1)
     int saveTypes[] = {
-        5, 1, 6, 5, 5, 5, 5, 5, 5, 4, 5, 4, 5, 5, 5, 6, 4, 6, 6, 5, 5, 5, 5, 6,
-        5, 5, 6, 5, 5, 1, 5, 5, 5, 5, 5, 5, 4, 4, 5, 5, 5, 5, 1, 5, 4, 5, 5, 5,
-        4, 6, 1, 5, 5, 5, 4, 5, 5, 6, 5, 6, 5, 5, 6, 6, 1, 4, 4, 6, 4, 5, 4, 4,
-        4, 4, 5, 5, 1, 1, 5, 6, 5, 5, 5, 5, 4, 5, 5, 5, 4, 1, 5, 5, 5, 5, 5, 5,
-        1, 4, 5, 5, 5, 1, 5, 6, 1, 1, 4, 5, 5, 5, 5, 6, 1, 5, 1, 5, 5, 5, 1, 1,
-        5, 5, 1, 1, 6, 6, 6, 4, 5, 6, 5, 5, 5, 1, 1, 5
-    };
-    */
-    // Banjo-Tooie B7 -> set to sram 'cause crk converts ek16->sram
-    int saveTypes[] = {
-        2, 1, 5, 1, 3, 1, 1, 3, 3, 3, 3, 3, 3, 5, 3, 5, 3, 3, 3, 4, 5, 4, 4, 3,
+        2, 1, 5, 1, 3, 1, 4, 3, 3, 3, 3, 3, 3, 5, 3, 5, 3, 3, 3, 4, 5, 4, 4, 3,
         3, 3, 3, 4, 3, 3, 4, 3, 3, 1, 3, 3, 3, 3, 3, 3, 5, 5, 3, 3, 3, 3, 1, 3,
         5, 3, 3, 3, 5, 4, 1, 3, 3, 3, 5, 3, 3, 4, 3, 4, 3, 3, 4, 4, 1, 5, 5, 4,
         5, 3, 5, 5, 5, 5, 3, 3, 1, 1, 3, 4, 3, 3, 3, 3, 5, 3, 3, 3, 5, 1, 3, 3,
@@ -127,9 +112,9 @@ int get_cic_save(char *cartid, int *cic, int *save) {
         3, 3, 1, 1, 3, 3, 1, 1, 4, 4, 4, 5, 3, 4, 3, 3, 3, 1, 1, 3
     };
 
-    //bt cic to 2 pos6 was 5
+    // Banjo-Tooie (B7) -> if not using Ultra CIC set to 2 instead of 5
     int cicTypes[] = {
-        2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 6, 5, 5, 5, 2,
+        2, 2, 2, 2, 2, 3, 5, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 6, 5, 5, 5, 2,
         2, 3, 2, 2, 2, 2, 5, 2, 1, 6, 2, 2, 2, 2, 2, 2, 5, 5, 2, 2, 3, 2, 3, 2,
         3, 2, 2, 2, 2, 2, 2, 2, 5, 2, 3, 2, 2, 2, 2, 3, 2, 2, 3, 3, 2, 3, 3, 5,
         3, 2, 3, 2, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2,
