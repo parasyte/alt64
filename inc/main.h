@@ -3,6 +3,8 @@
 // Portions (c) 2013 saturnu (Alt64) based on libdragon, Neo64Menu, ED64IO, libn64-hkz, libmikmod
 // See LICENSE file in the project root for full license information.
 //
+#ifndef MAIN_H
+#define MAIN_H
 
 //TODO: some of these should probably be includes not protos in main
 void bootRom(display_context_t disp, int silent);
@@ -39,3 +41,5 @@ void drawTextInput(display_context_t disp,char *msg);
  * @return An aligned address guaranteed to be >= the unaligned address
  */
 //#define ALIGN_16BYTE(x)     ((void *)(((uint32_t)(x)+15) & 0xFFFFFFF0))
+
+#endif

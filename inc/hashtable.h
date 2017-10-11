@@ -4,6 +4,9 @@
 // See LICENSE file in the project root for full license information.
 //
 
+#ifndef _HASHTABLE_H
+#define	_HASHTABLE_H
+
 typedef struct hashtable hashtable;
 void hashtable_destroy(hashtable *t);
 typedef struct hashtable_entry hashtable_entry;
@@ -24,3 +27,5 @@ struct hashtable_entry {
 	char* key;
 	void* value;
 };
+
+#endif

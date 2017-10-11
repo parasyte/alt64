@@ -4,6 +4,9 @@
 // See LICENSE file in the project root for full license information.
 //
 
+#ifndef _SRAM_H
+#define	_SRAM_H
+
 #include <stdlib.h>
 #include <stdint.h>
 #include "types.h"
@@ -35,3 +38,5 @@ void *safe_malloc(size_t size);
 void safe_free(void *ptr);
 void *safe_memset(void *s, int c, size_t n);
 void *safe_memcpy(void *dest, const void *src, size_t n);
+
+#endif

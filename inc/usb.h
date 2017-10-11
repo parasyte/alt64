@@ -4,12 +4,11 @@
 // See LICENSE file in the project root for full license information.
 //
 
-#ifndef _FIFO_H
-#define	_FIFO_H
+#ifndef _USB_H
+#define	_USB_H
 
 #include "types.h"
 u8 usbListener();
 
 
-#endif	/* _FIFO_H */
-
+#endif	/* _USB_H */

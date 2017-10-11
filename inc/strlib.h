@@ -4,7 +4,8 @@
 // See LICENSE file in the project root for full license information.
 //
 
-#ifndef STRLIB_H_
+#ifndef _STRLIB_H
+#define	_STRLIB_H
 
 #include "types.h"
 
@@ -40,4 +41,5 @@ u8 streq(u8 *str1, u8 *str2);
 u8 streql(u8 *str1, u8 *str2, u8 len);
 
 u16 strContain(u8 *target, u8 *str);
+
 #endif

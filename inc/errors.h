@@ -65,5 +65,5 @@
 
 #define SD_INIT_ERROR 80
 
-#endif	/* _ERRORS_H */
 
+#endif	/* _ERRORS_H */

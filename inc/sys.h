@@ -6,6 +6,7 @@
 
 #ifndef _SYS_H
 #define	_SYS_H
+
 #include "types.h"
 #include "utils.h"
 #include <libdragon.h>
@@ -51,5 +52,5 @@ typedef struct {
 
 extern Options_st options;
 extern u32 asm_date;
-#endif	/* _TOOLS_H */
 
+#endif	/* _SYS_H */

@@ -119,5 +119,6 @@ u8 fatGetFullName(u8 *name, u32 dir_entry, u32 rec_entry);
 u8 fatOpenDirByName(u8 *name);
 void fatInitRam();
 void fatSortRecords();
-#endif	/* _FAT_H */
 
+
+#endif	/* _FAT_H */

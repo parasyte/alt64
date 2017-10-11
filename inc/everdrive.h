@@ -121,5 +121,6 @@ u8 evd_mmcOpenRead(u32 addr);
 u8 evd_mmcReadNextBlock(void *dat);
 void evd_mmcCloseRW();
  */
-#endif	/* _EVERDRIVE_H */
 
+
+#endif	/* _EVERDRIVE_H */

@@ -4,6 +4,9 @@
 // See LICENSE file in the project root for full license information.
 //
 
+#ifndef _ROM_H
+#define	_ROM_H
+
 /*
  *
 0000h              (1 byte): initial PI_BSB_DOM1_LAT_REG value (0x80)
@@ -160,3 +163,5 @@ void swap_header(unsigned char* header, int loadlength);
 
 u8 getCicType(u8 bios_cic);
 int get_cic(unsigned char *buffer);
+
+#endif

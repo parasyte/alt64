@@ -3,6 +3,9 @@
 // See LICENSE file in the project root for full license information.
 //
 
+#ifndef _DEBUG_H
+#define	_DEBUG_H
+
 #ifdef DEBUG
     #define TRACEF(disp, text, ...)    dbg_printf(disp, text, __VA_ARGS__);
     #define TRACE(disp, text)   printText(text, 3, -1, disp);
@@ -28,3 +31,6 @@ void dbg_printf(display_context_t disp, const char *fmt, ...)
     sprintf(tmp, "%s", buf);
     printText(tmp, 3, -1, disp);
 }
+
+
+#endif

@@ -4,6 +4,9 @@
 // See LICENSE file in the project root for full license information.
 //
 
+
+#ifndef _UTILS_H
+#define	_UTILS_H
 // rom.h
 // rom tools - header inspect
 #include <stdint.h>
@@ -67,3 +70,5 @@ int setSRAM128(  uint8_t *buffer);
 int setEeprom4k(  uint8_t *buffer);
 int setEeprom16k( uint8_t *buffer);
 int setFlashRAM(  uint8_t *buffer);
+
+#endif
