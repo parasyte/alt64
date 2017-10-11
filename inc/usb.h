@@ -7,7 +7,7 @@
 #ifndef _USB_H
 #define	_USB_H
 
-#include "types.h"
+//#include "types.h"
 u8 usbListener();
 
 

@@ -6,8 +6,6 @@
 
 #include "everdrive.h"
 #include "sys.h"
-#include "types.h"
-#include <libdragon.h>
 #include "rom.h"
 
 u8 cmdTest();

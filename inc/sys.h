@@ -8,8 +8,6 @@
 #define	_SYS_H
 
 #include "types.h"
-#include "utils.h"
-#include <libdragon.h>
 
 
 void dma_read_s(void * ram_address, unsigned long pi_address, unsigned long len);

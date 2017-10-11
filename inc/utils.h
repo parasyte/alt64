@@ -9,9 +9,9 @@
 #define	_UTILS_H
 // rom.h
 // rom tools - header inspect
-#include <stdint.h>
-#include <libdragon.h>
-#include "rom.h"
+//#include <stdint.h>
+//#include <libdragon.h>
+//#include "rom.h"
 
 
 
@@ -34,13 +34,9 @@
     })
 #endif
 
-sprite_t *loadImage32DFS(char *fname);
-sprite_t *loadImageDFS(char *fname);
-sprite_t *loadImage32(u8 *tbuf, int size);
-void drawImage(display_context_t dcon, sprite_t *sprite);
+
 void _sync_bus(void);
 void _data_cache_invalidate_all(void);
-void printText(char *msg, int x, int y, display_context_t dcon);
 
 // End ...
 

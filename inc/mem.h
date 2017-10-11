@@ -7,8 +7,6 @@
 #ifndef _MEM_H
 #define	_MEM_H
 
-#include "types.h"
-
 #define SPI_SPEED_INIT 2
 #define SPI_SPEED_25 1
 #define SPI_SPEED_50 0

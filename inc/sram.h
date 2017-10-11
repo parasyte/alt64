@@ -8,7 +8,6 @@
 #define	_SRAM_H
 
 #include <stdlib.h>
-#include <stdint.h>
 #include "types.h"
 
 void data_cache_hit_writeback_invalidate(volatile void *, unsigned long);

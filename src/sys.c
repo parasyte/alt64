@@ -8,10 +8,11 @@
 #include <dma.h>
 #include <n64sys.h>
 #include "sys.h"
-#include "types.h"
-#include "everdrive.h"
-#include "errors.h"
-#include "usb.h"
+//#include "types.h"
+//#include "everdrive.h"
+//#include "errors.h"
+//#include "usb.h"
+#include "rom.h"
 
 
 u32 asm_date;

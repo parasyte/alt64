@@ -4,13 +4,12 @@
 // See LICENSE file in the project root for full license information.
 //
 
-#include "types.h"
 #include "everdrive.h"
 #include "sys.h"
-
-u8 spi_dma;
 #include "errors.h"
 #include "mem.h"
+
+u8 spi_dma;
 
 u8 memSpiReadDma(void *dst, u16 slen);
 u8 memSpiReadPio(void *dst, u16 slen);

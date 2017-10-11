@@ -46,6 +46,8 @@
 #include "mem.h"
 #include "chksum64.h"
 #include "version.h"
+#include "image.h"
+#include "rom.h"
 
 #ifdef USE_TRUETYPE
 #define STB_TRUETYPE_IMPLEMENTATION

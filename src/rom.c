@@ -7,6 +7,7 @@
 #include "sram.h"
 #include "everdrive.h"
 #include "sys.h"
+#include "rom.h"
 
 void pif_boot()
 {

@@ -5,12 +5,12 @@
 //
 
 #include <malloc.h>
-#include <stdint.h>
 #include <string.h>
+
 #include "sys.h"
-#include "types.h"
 #include "utils.h"
 #include "sram.h"
+#include "rom.h"
 
 
 void PI_Init(void) {

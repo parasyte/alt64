@@ -4,14 +4,11 @@
 // See LICENSE file in the project root for full license information.
 //
 
-#include <console.h>
-
 #include "disk.h"
 #include "mem.h"
 #include "everdrive.h"
 #include "errors.h"
 #include "sys.h"
-#include "usb.h"
 
 #define CMD0  0x40    // software reset
 #define CMD1  0x41    // brings card out of idle state

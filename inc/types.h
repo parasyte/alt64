@@ -4,10 +4,10 @@
 // See LICENSE file in the project root for full license information.
 //
 
-#include <stdint.h>
-
 #ifndef _TYPES_H
 #define	_TYPES_H
+
+#include <stdint.h>
 
 #define u8 unsigned char
 #define u16 unsigned short

@@ -8,8 +8,6 @@
 #define	_FAT_H
 
 #include "types.h"
-#include "errors.h"
-
 
 
 

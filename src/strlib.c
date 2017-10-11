@@ -5,6 +5,7 @@
 //
 
 #include "strlib.h"
+#include "types.h"
 
 char *strcpytrim(char *d, // destination
                  char *s, // source
