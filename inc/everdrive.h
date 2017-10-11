@@ -75,6 +75,7 @@ u8 evd_SPI(u8 dat);
 void evd_mmcSetDmaSwap(u8 state);
 u8 evd_mmcReadToCart(u32 cart_addr, u32 len);
 
+void evd_ulockRegs(void);
 void evd_lockRegs();
 u16 evd_readReg(u8 reg);
 void evd_writeReg(u8 reg, u16 val);

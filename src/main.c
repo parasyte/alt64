@@ -18,7 +18,6 @@
 #include "types.h"
 #include "sys.h"
 #include "everdrive.h"
-#include "everdrive.h"
 
 //filesystem
 #include "disk.h"
@@ -43,6 +42,8 @@
 
 // YAML parser
 #include <yaml.h>
+
+#include "mem.h"
 
 #ifdef USE_TRUETYPE
 #define STB_TRUETYPE_IMPLEMENTATION
@@ -853,9 +854,7 @@ void updateFirmware(char *filename)
 //everdrive init functions
 void configure()
 {
-    u16 tv;
     u16 msg = 0;
-    u16 sd_mode = 0;
     u8 buff[16];
     u16 firm;
 
@@ -867,11 +866,6 @@ void configure()
     evd_setCfgBit(ED_CFG_SDRAM_ON, 1);
 
     firm = evd_readReg(REG_VER); //TODO: why not just use evd_getFirmVersion()
-
-    if (streql("ED64 SD boot", buff, 12) && firm >= 0x0116)
-    {
-        sd_mode = 1;
-    }
 
     if (firm >= 0x0200)
     {
@@ -906,7 +900,7 @@ void configure()
         evd_setCfgBit(ED_CFG_SDRAM_ON, 1);
     }
 
-    if (sd_mode) //TODO: can this be moved before the firmware is loaded?
+    if (streql("ED64 SD boot", buff, 12) && firm >= 0x0116) //TODO: can this be moved before the firmware is loaded?
     {
         diskSetInterface(DISK_IFACE_SD);
     }
@@ -1580,7 +1574,7 @@ char TranslateNotes(char *bNote, char *Text)
 #pragma warning(disable : 4305 4309)
     char cReturn = 0x00;
     const char aSpecial[] = {0x21, 0x22, 0x23, 0x60, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x3A, 0x3D, 0x3F, 0x40, 0x74, 0xA9, 0xAE};
-//    { '!' , '\"', '#' , '`' , '*' , '+' , ',' , '-' , '.' , '/' , ':' , '=' , '?' , '>' , 'tm', '(r)','(c)' };
+                        //  { '!' , '\"', '#' , '`' , '*' , '+' , ',' , '-' , '.' , '/' , ':' , '=' , '?' , '>' , 'tm', '(r)','(c)' };
 #pragma warning(default : 4305 4309)
     int i = 16;
     do

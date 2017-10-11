@@ -123,6 +123,8 @@ void dma_write_sram(void* src, u32 offset, u32 size) {
 
 }
 
+
+//TODO: look at https://github.com/mamedev/mame/blob/master/3rdparty/zlib/crc32.c
 #define DO1(buf) crc = crc_table[((int)crc ^ (*buf++)) & 0xff] ^ (crc >> 8);
 #define DO2(buf)  DO1(buf); DO1(buf);
 #define DO4(buf)  DO2(buf); DO2(buf);
