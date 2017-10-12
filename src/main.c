@@ -3810,7 +3810,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
         {
         case file_manager:
             showAboutScreen(disp);
-            input_mapping = abort_screen;
+            input_mapping = none;
             break;
 
         case mempak_menu:
