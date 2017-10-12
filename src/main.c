@@ -4462,24 +4462,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 drawInputAdd(disp, "Z");
             break;
 
-        case abort_screen:
-        case mpk_format:
-        case mpk_restore:
-        case rom_config_box:
-        case mpk_quick_backup:
-
-            //rom info screen
-            input_mapping = file_manager;
-
-            while (!(disp = display_lock()))
-                ;
-
-            clearScreen(disp); //part clear?
-            display_dir(list, cursor, page, MAX_LIST, count, disp);
-
-            display_show(disp);
-            break;
-
         case toplist:
 
             //leave toplist
@@ -4522,6 +4504,16 @@ void handleInput(display_context_t disp, sprite_t *contr)
             break;
 
         default:
+            while (!(disp = display_lock()))
+                ;
+            
+            clearScreen(disp); //part clear?
+            display_dir(list, cursor, page, MAX_LIST, count, disp);
+            
+            display_show(disp);
+
+            //rom info screen
+            input_mapping = file_manager;
             break;
         }
     } //key b
