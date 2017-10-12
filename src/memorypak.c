@@ -10,7 +10,7 @@
 #include "types.h"
 #include "memorypak.h"
 #include "fat.h"
-#include "main.h"
+#include "menu.h"
 #include "mem.h"
 #include "strlib.h"
 #include "sys.h"

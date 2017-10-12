@@ -37,18 +37,16 @@
 #include "sound.h"
 #include "mp3.h"
 
-//debug
-#include "debug.h"
-
 // YAML parser
 #include <yaml.h>
 
+#include "debug.h"
 #include "mem.h"
 #include "chksum64.h"
-#include "version.h"
 #include "image.h"
 #include "rom.h"
 #include "memorypak.h"
+#include "menu.h"
 
 #ifdef USE_TRUETYPE
 #define STB_TRUETYPE_IMPLEMENTATION
@@ -223,7 +221,6 @@ char *save_path;
 
 u8 sound_on = 0;
 u8 page_display = 0;
-int text_offset = 0;
 u8 tv_mode = 0; // 1=ntsc 2=pal 3=mpal 0=default automatic
 u8 quick_boot = 0;
 u8 enable_colored_list = 0;
@@ -243,9 +240,6 @@ int list_pos_backup[3];
 char list_pwd_backup[256];
 
 char dirz[512] = "rom://";
-
-short int gCursorX;
-short int gCursorY;
 
 int count = 0;
 int page = 0;
@@ -631,26 +625,6 @@ void display_dir(direntry_t *list, int cursor, int page, int max, int count, dis
         }
     }
     graphics_set_color(forecolor_menu, backcolor);
-}
-
-void printText(char *msg, int x, int y, display_context_t dcon)
-{
-    x = x + text_offset;
-
-    if (x != -1)
-        gCursorX = x;
-    if (y != -1)
-        gCursorY = y;
-
-    if (dcon)
-        graphics_draw_text(dcon, gCursorX * 8, gCursorY * 8, msg);
-
-    gCursorY++;
-    if (gCursorY > 29)
-    {
-        gCursorY = 0;
-        gCursorX++;
-    }
 }
 
 //background sprite
@@ -2867,32 +2841,13 @@ void drawSet4(display_context_t disp)
 
 void showAboutScreen(display_context_t disp)
 {
-    char version_str[32];
-    char firmware_str[32];
-
     drawBoxNumber(disp, 2);
     display_show(disp);
 
     if (sound_on)
         playSound(2);
 
-    
-    sprintf(version_str, "Altra64: v%s", Altra64_GetVersionString());
-    printText(version_str, 9, 8, disp);
-    sprintf(firmware_str, "ED64 firmware: v%03x", evd_getFirmVersion());
-    printText(firmware_str, 9, -1, disp);
-    printText("by JonesAlmighty", 9, -1, disp);
-    printText(" ", 9, -1, disp);
-    printText("Based on ALT64", 9, -1, disp);
-    printText("By Saturnu", 9, -1, disp);
-    printText(" ", 9, -1, disp);
-    printText("credits to:", 9, -1, disp);
-    printText("Jay Oster", 9, -1, disp);
-    printText("Krikzz", 9, -1, disp);
-    printText("Richard Weick", 9, -1, disp);
-    printText("ChillyWilly", 9, -1, disp);
-    printText("ShaunTaylor", 9, -1, disp);
-    printText("Conle", 9, -1, disp);
+    menu_about(disp);
 }
 
 void loadFile(display_context_t disp)

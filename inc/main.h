@@ -16,8 +16,6 @@ int saveTypeToSd(display_context_t disp, char* save_filename ,int type);
 void drawShortInfoBox(display_context_t disp, char* text, u8 mode);
 void drawTextInput(display_context_t disp,char *msg);
 
-void printText(char *msg, int x, int y, display_context_t dcon);
-
 //#define ishexchar(c) (((c >= '0') && (c <= '9')) || ((c >= 'A') && (c <= 'F')) || ((c >= 'a') && (c <= 'f')))
 
 /**
