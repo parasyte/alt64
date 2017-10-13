@@ -95,7 +95,8 @@ int get_cic(unsigned char *buffer) {
         return 5;
     case 0x86015f8f:
         return 6;
+    //case 0x86015f8f: TODO: need to find the correct number
+        //return 5167; 64dd
     }
-
     return 2;
 }
