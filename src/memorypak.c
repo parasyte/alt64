@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "memorypak.h"
-#include "fat.h"
+#include "fat_old.h"
 #include "menu.h"
 #include "mem.h"
 #include "strlib.h"

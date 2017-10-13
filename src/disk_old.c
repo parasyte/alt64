@@ -4,7 +4,7 @@
 // See LICENSE file in the project root for full license information.
 //
 
-#include "disk.h"
+#include "disk_old.h"
 #include "mem.h"
 #include "everdrive.h"
 #include "errors.h"

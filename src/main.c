@@ -20,8 +20,8 @@
 #include "everdrive.h"
 
 //filesystem
-#include "disk.h"
-#include "fat.h"
+#include "disk_old.h"
+#include "fat_old.h"
 
 //utils
 #include "utils.h"

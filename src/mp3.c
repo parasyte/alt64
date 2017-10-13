@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <mad.h>
-#include "fat.h"
+#include "fat_old.h"
 #include "mp3.h"
 
 #include <libdragon.h>

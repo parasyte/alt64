@@ -7,8 +7,8 @@
 #include <malloc.h>
 #include <libdragon.h>
 
-#include "fat.h"
-#include "disk.h"
+#include "fat_old.h"
+#include "disk_old.h"
 #include "mem.h"
 #include "everdrive.h"
 #include "strlib.h"
