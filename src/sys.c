@@ -17,13 +17,6 @@ Options_st options;
 
 u32 native_tv_mode;
 
-#define CIC_6101 1
-#define CIC_6102 2
-#define CIC_6103 3
-#define CIC_6104 4
-#define CIC_6105 5
-#define CIC_6106 6
-
 void dma_read_s(void * ram_address, unsigned long pi_address, unsigned long len) {
 
     u32 buff[256];

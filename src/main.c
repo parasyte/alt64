@@ -982,7 +982,7 @@ void romInfoScreen(display_context_t disp, u8 *buff, int silent)
             printText(save_type_str, 11, -1, disp);
 
         unsigned char cic_type_str[12];
-        sprintf(cic_type_str, "CIC: CIC-610%i", cic);
+        sprintf(cic_type_str, "CIC: CIC-610%i", cic); //TODO: need to take into account DD and Aleck CIC
         if (silent != 1)
             printText(cic_type_str, 11, -1, disp);
 
@@ -1121,7 +1121,7 @@ void loadmsx2rom(display_context_t disp, u8 *rom_path)
         resp = fatReadFile(buffer + 0x2df48, file.sec_available);
         dma_write_s(buffer, 0xb0000000, fsize);
 
-        boot_cic = 2;  //cic 6102
+        boot_cic = CIC_6102;
         boot_save = 0; //save off/cpak
         force_tv = 0;  //no force
         cheats_on = 0; //cheats off
@@ -1169,7 +1169,7 @@ void loadggrom(display_context_t disp, u8 *rom_path)
         resp = fatReadFile(buffer + 0x1b410, file.sec_available);
         dma_write_s(buffer, 0xb0000000, fsize);
 
-        boot_cic = 2;  //cic 6102
+        boot_cic = CIC_6102;
         boot_save = 0; //save off/cpak
         force_tv = 0;  //no force
         cheats_on = 0; //cheats off
@@ -1211,7 +1211,7 @@ void loadnesrom(display_context_t disp, u8 *rom_path)
         resp = fatOpenFileByName(rom_path, 0); //err if not found ^^
         resp = diskRead(file.sector, (void *)0xb0200000, file.sec_available);
 
-        boot_cic = 2;  //cic 6102
+        boot_cic = CIC_6102;
         boot_save = 0; //save off/cpak
         force_tv = 0;  //no force
         cheats_on = 0; //cheats off
@@ -1328,7 +1328,7 @@ void loadrom(display_context_t disp, u8 *buff, int fast)
     if (gbload == 1)
         boot_save = 1;
 
-    else if (resp) //todo: if response is certain ones we should show the error and stop the boot...
+    else if (resp) //TODO: if response is certain ones we should show the error and stop the boot...
     {
         sprintf(tmp, "Response: %i", resp);
         printText(tmp, 3, -1, disp);
@@ -2296,7 +2296,7 @@ void alterRomConfig(int type, int mode)
 
     //cic
     u8 min_cic = 0;
-    u8 max_cic = 5;
+    u8 max_cic = 6;
 
     //save
     u8 min_save = 0;
@@ -2629,13 +2629,16 @@ void drawRomConfigBox(display_context_t disp, int line)
         printText("     CIC: 6103", 9, -1, disp);
         break;
     case 3:
-        printText("     CIC: 6104", 9, -1, disp);
-        break; //do i really need 6104 in that list? :D
+        printText("     CIC: 5101", 9, -1, disp);
+        break;
     case 4:
         printText("     CIC: 6105", 9, -1, disp);
         break;
     case 5:
         printText("     CIC: 6106", 9, -1, disp);
+        break;
+    case 6:
+        printText("     CIC: 5167", 9, -1, disp);
         break;
     default:
         break;
