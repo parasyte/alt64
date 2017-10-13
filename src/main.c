@@ -2051,7 +2051,7 @@ int readCheatFile(char *filename, u32 *cheat_lists[2])
     return repeater; // Ok or repeater error
 }
 
-//TODO: UNUSED CODE, WHAT IS IS FOR?
+//TODO: UNUSED CODE, WHAT IS IS FOR? BattleTanx??? but where to insert it???
 // void timing(display_context_t disp)
 // {
 //     unsigned char tmp[32];
