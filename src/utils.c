@@ -13,6 +13,7 @@
 #include "utils.h"
 #include "sram.h"
 #include "rom.h"
+#include "cic.h"
 
 
 extern short int gCheats;               /* 0 = off, 1 = select, 2 = all */
@@ -433,13 +434,6 @@ void restoreTiming(void) {
     IO_WRITE(PI_BSD_DOM2_RLS_REG, 0x03);
 }
 
-
-//#define CIC_6101 1
-//#define CIC_6102 2
-//#define CIC_6103 3
-//#define CIC_6104 4
-//#define CIC_6105 5
-//#define CIC_6106 6
 
 #define ROM         ((vu32 *)0xB0000000)
 #define EXE_START   0xB0001000

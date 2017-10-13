@@ -8,6 +8,7 @@
 #include "everdrive.h"
 #include "sys.h"
 #include "rom.h"
+#include "cic.h"
 
 void pif_boot()
 {
@@ -75,28 +76,4 @@ u8 getCicType(u8 bios_cic) {
     }
 
     return cic_chip;
-}
-
-
-
-int get_cic(unsigned char *buffer) {
-    unsigned int crc;
-    // figure out the CIC
-    crc = CRC_Calculate(0, buffer, 1000);
-    switch(crc) {
-    case 0x303faac9:
-    case 0xf0da3d50:
-        return 1;
-    case 0xf3106101:
-        return 2;
-    case 0xe7cd9d51:
-        return 3;
-    case 0x7ae65c9:
-        return 5;
-    case 0x86015f8f:
-        return 6;
-    //case 0x86015f8f: TODO: need to find the correct number
-        //return 5167; 64dd
-    }
-    return 2;
 }

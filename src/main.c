@@ -47,6 +47,7 @@
 #include "rom.h"
 #include "memorypak.h"
 #include "menu.h"
+#include "cic.h"
 
 #ifdef USE_TRUETYPE
 #define STB_TRUETYPE_IMPLEMENTATION
@@ -2331,15 +2332,11 @@ void alterRomConfig(int type, int mode)
             //down
             if (rom_config[1] < max_cic)
                 rom_config[1]++;
-            if (rom_config[1] == 3)
-                rom_config[1]++;
         }
         else if (mode == 2)
         {
             //up
             if (rom_config[1] > min_cic)
-                rom_config[1]--;
-            if (rom_config[1] == 3)
                 rom_config[1]--;
         }
         //end cic

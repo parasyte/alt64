@@ -19,8 +19,6 @@ void dma_write_sram(void* src, u32 offset, u32 size);
 void dma_read_sram(void *dest, u32 offset, u32 size);
 u8 getSaveType();
 
-unsigned int CRC_Calculate(unsigned int crc, unsigned char* buf, unsigned int len);
-
 
 typedef struct SP_regs_s {
     u32 mem_addr;
