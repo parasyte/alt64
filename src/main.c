@@ -1328,10 +1328,11 @@ void loadrom(display_context_t disp, u8 *buff, int fast)
     if (gbload == 1)
         boot_save = 1;
 
-    else if (resp)
+    else if (resp) //todo: if response is certain ones we should show the error and stop the boot...
     {
         sprintf(tmp, "Response: %i", resp);
         printText(tmp, 3, -1, disp);
+        sleep(2000);
     }
 
     TRACE(disp, "Checking SD mode");
