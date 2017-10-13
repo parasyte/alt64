@@ -1793,7 +1793,8 @@ void readSDcard(display_context_t disp, char *directory)
         char name_tmpl[32];
         rec = dir->rec[i];
 
-        if (strcmp(rec->name, "ED64") == 0 && hide_sysfolder == 1)
+        //TODO: this could be just an if statement...
+        if (strcmp(rec->name, "System Volume Information") == 0 || (strcmp(rec->name, "ED64") == 0 && hide_sysfolder == 1))
         {
             //don't add
         }
