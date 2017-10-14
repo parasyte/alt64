@@ -1433,17 +1433,17 @@ int backupSaveData(display_context_t disp)
 {
     //backup cart-save on sd after reboot
     u8 config_file_path[32];
-    int save_format;
-
     sprintf(config_file_path, "/ED64/%s/LAST.CRT", save_path);
-    uint8_t cfg_data[512]; //TODO: this should be a strut
+
+    int save_format;
+    uint8_t cfg_data[512]; //TODO: this should be a strut?
 
     FatRecord rec_tmpf;
 
-    printText("Saving last game session...", 3, 4, disp);
-
     if (fatFindRecord(config_file_path, &rec_tmpf, 0) == 0) //file exists?
     {
+        printText("updating last played game record...", 3, 4, disp);
+
         //file to cfg_data buffer
         u8 resp = 0;
         fatOpenFileByName(config_file_path, 0);
@@ -1459,8 +1459,6 @@ int backupSaveData(display_context_t disp)
         {
             //set savetype to off
             cfg_data[0] = 0;
-
-            u8 tmp[32];
 
             resp = fatOpenFileByName(config_file_path, 1); //if sector is set filemode=WR writeable
 
@@ -1509,7 +1507,7 @@ int backupSaveData(display_context_t disp)
     //reset with save request
     if (save_after_reboot)
     {
-        printText("Copying RAM to SD card...", 3, -1, disp);
+        printText("Copying save RAM to SD card...", 3, -1, disp);
         if (saveTypeToSd(disp, rom_filename, save_format))
         {
             printText("Operation completed sucessfully...", 3, -1, disp);
@@ -1522,7 +1520,7 @@ int backupSaveData(display_context_t disp)
     else
     {
         TRACE(disp, "no reset - save request");
-        printText("...ready", 3, -1, disp);
+        printText("...done", 3, -1, disp);
 
         sleep(300);
     }
@@ -1531,47 +1529,41 @@ int backupSaveData(display_context_t disp)
 }
 
 //before boot_simulation
-//writes a cart-save from a file to the fpga/cart
+//write a cart-save from a file to the fpga/cart
 int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
 {
     rom_load_y();
 
-    u8 tmp[32];
     u8 fname[128];
-    u8 found = 0;
-
-    int size;
-    size = saveTypeToSize(stype); // int byte
-
     sprintf(fname, "/ED64/%s/%s.%s", save_path, rom_name, saveTypeToExtension(stype, ext_type));
-
+    
+    int size = saveTypeToSize(stype); // int byte
     uint8_t cartsave_data[size];
 
-    //if (debug) {
-    TRACE(disp, fname);
-    //sleep(2000);
-    //}
+    FRESULT result;
+    FIL file;
+    UINT bytesread;
+    result = f_open(&file, fname, FA_READ);
 
-    FatRecord rec_tmpf;
-    found = fatFindRecord(fname, &rec_tmpf, 0);
-
-    TRACEF(disp, "fatFindRecord returned: %i", found);
-
-    if (found == 0)
+    if (result == FR_OK)
     {
-        u8 resp = 0;
-        resp = fatOpenFileByName(fname, 0);
+        int fsize = f_size(&file);
 
-        TRACEF(disp, "fatOpenFileByName returned: %i", resp);
+        result =
+        f_read (
+            &file,          /* [IN] File object */
+            &cartsave_data, /* [OUT] Buffer to store read data */
+            size,           /* [IN] Number of bytes to read */
+            &bytesread      /* [OUT] Number of bytes read */
+        );
 
-        resp = fatReadFile(cartsave_data, size / 512);
-
-        TRACEF(disp, "fatReadFile returned: %i", resp);
+        result = f_close(&file);
     }
     else
     {
-        printText("no savegame found", 3, -1, disp);
-        //todo clear memory area
+        printText("no save found", 3, -1, disp);
+        sleep(1000);
+        //todo: clear memory area
 
         return 0;
     }
@@ -1580,13 +1572,11 @@ int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
     {
         if (pushSaveToCart(stype, cartsave_data))
         {
-
-            printText("save upload done...", 3, -1, disp);
+            printText("transferred save data...", 3, -1, disp);
         }
         else
         {
-
-            printText("pushSaveToCart error", 3, -1, disp);
+            printText("error transfering save data", 3, -1, disp);
         }
     }
 
@@ -1663,59 +1653,65 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
 }
 
 //check out the userfriendly ini file for config-information
-
 int readConfigFile(void)
 {
-    //var file readin
-    u8 tmp[32];
     u8 filename[32];
-    u8 ok = 0;
-
-    //config filename
     sprintf(filename, "/ED64/ALT64.INI");
-    FatRecord rec_tmpf;
-    ok = fatFindRecord(filename, &rec_tmpf, 0);
+    
+    FRESULT result;
+    FIL file;
+    UINT bytesread;
+    result = f_open(&file, filename, FA_READ);
 
-    u8 resp = 0;
-    resp = fatOpenFileByName(filename, 0);
-
-    //filesize of the opend file -> is the readfile / 512
-    int fsize = file.sec_available * 512;
-    char config_rawdata[fsize];
-
-    resp = fatReadFile(&config_rawdata, fsize / 512); //1 cluster
-    configuration config;
-
-    if (ini_parse_str(config_rawdata, configHandler, &config) < 0)
+    if (result == FR_OK)
     {
-        return 0;
-    }
-    else
-    {
-        border_color_1_s = config.border_color_1;
-        border_color_2_s = config.border_color_2;
-        box_color_s = config.box_color;
-        selection_color_s = config.selection_color;
-        selection_font_color_s = config.selection_font_color;
-        list_font_color_s = config.list_font_color;
-        list_dir_font_color_s = config.list_dir_font_color;
+        int fsize = f_size(&file);
 
-        mempak_path = config.mempak_path;
-        save_path = config.save_path;
-        sound_on = config.sound_on;
-        page_display = config.page_display;
-        tv_mode = config.tv_mode;
-        quick_boot = config.quick_boot;
-        enable_colored_list = config.enable_colored_list;
-        ext_type = config.ext_type;
-        cd_behaviour = config.cd_behaviour;
-        scroll_behaviour = config.scroll_behaviour;
-        text_offset = config.text_offset;
-        hide_sysfolder = config.hide_sysfolder;
-        sd_speed = config.sd_speed;
-        background_image = config.background_image;
+        char config_rawdata[fsize];
 
-        return 1;
+        result =
+        f_read (
+            &file,        /* [IN] File object */
+            &config_rawdata,  /* [OUT] Buffer to store read data */
+            fsize,         /* [IN] Number of bytes to read */
+            &bytesread    /* [OUT] Number of bytes read */
+        );
+
+        result = f_close(&file);
+    
+        configuration config;
+
+        if (ini_parse_str(config_rawdata, configHandler, &config) < 0)
+        {
+            return 0;
+        }
+        else
+        {
+            border_color_1_s = config.border_color_1;
+            border_color_2_s = config.border_color_2;
+            box_color_s = config.box_color;
+            selection_color_s = config.selection_color;
+            selection_font_color_s = config.selection_font_color;
+            list_font_color_s = config.list_font_color;
+            list_dir_font_color_s = config.list_dir_font_color;
+
+            mempak_path = config.mempak_path;
+            save_path = config.save_path;
+            sound_on = config.sound_on;
+            page_display = config.page_display;
+            tv_mode = config.tv_mode;
+            quick_boot = config.quick_boot;
+            enable_colored_list = config.enable_colored_list;
+            ext_type = config.ext_type;
+            cd_behaviour = config.cd_behaviour;
+            scroll_behaviour = config.scroll_behaviour;
+            text_offset = config.text_offset;
+            hide_sysfolder = config.hide_sysfolder;
+            sd_speed = config.sd_speed;
+            background_image = config.background_image;
+
+            return 1;
+        }
     }
 }
 
@@ -3283,23 +3279,33 @@ void handleInput(display_context_t disp, sprite_t *contr)
             //quick boot
             if (quick_boot)
             {
-                FatRecord rec_last;
                 uint8_t lastrom_cfg_data[512];
 
-                if (fatFindRecord("/ED64/LASTROM.CFG", &rec_last, 0) == 0)
+                FRESULT result;
+                FIL file;
+                UINT bytesread;
+                result = f_open(&file, "/ED64/LASTROM.CFG", FA_READ);
+            
+                if (result == FR_OK)
                 {
-                    u8 resp = 0;
-                    resp = fatOpenFileByName("/ED64/LASTROM.CFG", 0);
-                    resp = fatReadFile(&lastrom_cfg_data, 1);
+                    int fsize = f_size(&file);
+                       
+                    result =
+                    f_read (
+                        &file,        /* [IN] File object */
+                        &lastrom_cfg_data,  /* [OUT] Buffer to store read data */
+                        fsize,         /* [IN] Number of bytes to read */
+                        &bytesread    /* [OUT] Number of bytes read */
+                    );
+            
+                    result = f_close(&file);
 
-                    u8 *short_s;
-                    short_s = strrchr(lastrom_cfg_data, '/');
+                    u8 *short_s = strrchr(lastrom_cfg_data, '/');
 
                     while (!(disp = display_lock()))
                         ;
                     clearScreen(disp);
 
-                    sleep(100);
                     evd_ulockRegs();
                     sleep(100);
 
@@ -3310,7 +3316,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
                     loadrom(disp, lastrom_cfg_data, 1);
                     display_show(disp);
                 }
-                //nothing else :>
 
                 drawShortInfoBox(disp, "    rom not found", 0);
             }
