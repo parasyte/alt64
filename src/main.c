@@ -1109,99 +1109,150 @@ void loadgbrom(display_context_t disp, u8 *buff)
 
 void loadmsx2rom(display_context_t disp, u8 *rom_path)
 {
-    //max 128kb rom
-    int max_ok = fatOpenFileByName(rom_path, 0);
-    int fsize = file.sec_available * 512; //fsize in bytes
 
-    if (fsize > 128 * 1024)
+    FRESULT romresult;
+    FIL romfile;
+    UINT rombytesread;
+    romresult = f_open(&romfile, rom_path, FA_READ);
+
+    if (romresult == FR_OK)
     {
-        //error
+        int romfsize = f_size(&romfile);
 
-        drawShortInfoBox(disp, "  error: rom > 128kB", 1);
-        input_mapping = abort_screen;
+        //max 128KB rom
+        if (romfsize > 128 * 1024)
+        {
+            //error
 
-        return;
-    }
-    else
-    {
-        drawShortInfoBox(disp, " loading please wait", 0);
-        input_mapping = none; //disable all
-    }
+            drawShortInfoBox(disp, "  error: rom > 128KB", 1);
+            input_mapping = abort_screen;
 
-    FatRecord rec_tmpf;
-    if (fatFindRecord("/ED64/ultraMSX2.z64", &rec_tmpf, 0) == 0) //file exists?
-    {
-        u8 resp = 0;
-        //load nes emulator
-        resp = fatOpenFileByName("/ED64/ultraMSX2.z64", 0); //err if not found ^^
+            return;
+        }
+        else
+        {
+            drawShortInfoBox(disp, " loading please wait", 0);
 
-        int fsize = 1024 * 1024;
-        u8 buffer[fsize];
+            FRESULT result;
+            FIL file;
+            UINT bytesread;
+            result = f_open(&file, "/ED64/ultraMSX2.z64", FA_READ);
+        
+            if (result == FR_OK)
+            {
+                int fsize = f_size(&file);
 
-        //injecting in buffer... slow but working :/
-        resp = fatReadFile(buffer, file.sec_available);
-        resp = fatOpenFileByName(rom_path, 0); //err if not found ^^
-        resp = fatReadFile(buffer + 0x2df48, file.sec_available);
-        dma_write_s(buffer, 0xb0000000, fsize);
+                u8 buffer[romfsize + fsize];
+                
+                result =
+                f_read (
+                    &file,        /* [IN] File object */
+                    &buffer,      /* [OUT] Buffer to store read data */
+                    fsize,        /* [IN] Number of bytes to read */
+                    &bytesread    /* [OUT] Number of bytes read */
+                );
+        
+                result = f_close(&file);
+            
 
-        boot_cic = CIC_6102;
-        boot_save = 0; //save off/cpak
-        force_tv = 0;  //no force
-        cheats_on = 0; //cheats off
-        checksum_fix_on = 0;
+                romresult =
+                f_read (
+                    &romfile,           /* [IN] File object */
+                    &buffer + 0x2df48,  /* [OUT] Buffer to store read data */ //TODO: why is the offset this particular number
+                    romfsize,           /* [IN] Number of bytes to read */
+                    &rombytesread       /* [OUT] Number of bytes read */
+                );
 
-        checksum_sdram();
+                result = f_close(&romfile);
 
-        bootRom(disp, 1);
+
+                dma_write_s(buffer, 0xb0000000, fsize);
+            
+                boot_cic = CIC_6102;
+                boot_save = 0; //save off/cpak
+                force_tv = 0;  //no force
+                cheats_on = 0; //cheats off
+                checksum_fix_on = 0;
+            
+                checksum_sdram();
+                bootRom(disp, 1);
+            }
+        }
     }
 }
 
-void loadggrom(display_context_t disp, u8 *rom_path)
+void loadggrom(display_context_t disp, u8 *rom_path) //TODO: this could be merged with MSX
 {
-    //max 512kb rom
-    int max_ok = fatOpenFileByName(rom_path, 0);
-    int fsize = file.sec_available * 512; //fsize in bytes
 
-    if (fsize > 512 * 1024)
+    FRESULT romresult;
+    FIL romfile;
+    UINT rombytesread;
+    romresult = f_open(&romfile, rom_path, FA_READ);
+
+    if (romresult == FR_OK)
     {
-        //error
-        drawShortInfoBox(disp, "  error: rom > 512kB", 1);
-        input_mapping = abort_screen;
+        int romfsize = f_size(&romfile);
 
-        return;
-    }
-    else
-    {
-        drawShortInfoBox(disp, " loading please wait", 0);
-        input_mapping = none; //disable all
-    }
+        //max 512KB rom
+        if (romfsize > 512 * 1024)
+        {
+            //error
 
-    FatRecord rec_tmpf;
-    if (fatFindRecord("/ED64/UltraSMS.z64", &rec_tmpf, 0) == 0) //file exists?
-    {
-        u8 resp = 0;
-        //load nes emulator
-        resp = fatOpenFileByName("/ED64/UltraSMS.z64", 0); //err if not found ^^
+            drawShortInfoBox(disp, "  error: rom > 512KB", 1);
+            input_mapping = abort_screen;
 
-        int fsize = 1024 * 1024;
-        u8 buffer[fsize];
+            return;
+        }
+        else
+        {
+            drawShortInfoBox(disp, " loading please wait", 0);
 
-        //injecting in buffer... slow but working :/
-        resp = fatReadFile(buffer, file.sec_available);
-        resp = fatOpenFileByName(rom_path, 0); //err if not found ^^
-        resp = fatReadFile(buffer + 0x1b410, file.sec_available);
-        dma_write_s(buffer, 0xb0000000, fsize);
+            FRESULT result;
+            FIL file;
+            UINT bytesread;
+            result = f_open(&file, "/ED64/UltraSMS.z64", FA_READ);
+        
+            if (result == FR_OK)
+            {
+                int fsize = f_size(&file);
 
-        boot_cic = CIC_6102;
-        boot_save = 0; //save off/cpak
-        force_tv = 0;  //no force
-        cheats_on = 0; //cheats off
-        checksum_fix_on = 0;
+                u8 buffer[romfsize + fsize];
+                
+                result =
+                f_read (
+                    &file,        /* [IN] File object */
+                    &buffer,      /* [OUT] Buffer to store read data */
+                    fsize,        /* [IN] Number of bytes to read */
+                    &bytesread    /* [OUT] Number of bytes read */
+                );
+        
+                result = f_close(&file);
+            
 
-        checksum_sdram();
+                romresult =
+                f_read (
+                    &romfile,           /* [IN] File object */
+                    &buffer + 0x1b410,  /* [OUT] Buffer to store read data */ //TODO: why is the offset this particular number
+                    romfsize,           /* [IN] Number of bytes to read */
+                    &rombytesread       /* [OUT] Number of bytes read */
+                );
 
-        bootRom(disp, 1);
-    }
+                result = f_close(&romfile);
+
+
+                dma_write_s(buffer, 0xb0000000, fsize);
+            
+                boot_cic = CIC_6102;
+                boot_save = 0; //save off/cpak
+                force_tv = 0;  //no force
+                cheats_on = 0; //cheats off
+                checksum_fix_on = 0;
+            
+                checksum_sdram();
+                bootRom(disp, 1);
+            }
+        }
+    }   
 }
 
 void rom_load_y(void)
