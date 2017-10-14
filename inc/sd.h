@@ -4,16 +4,17 @@
 // See LICENSE file in the project root for full license information.
 //
 
-#ifndef _DISK_H
-#define	_DISK_H
+#ifndef _SD_H
+#define	_SD_H
 
 #include "types.h"
 
-u8 diskGetInterface();
-u8 diskInit();
-u8 diskRead(u32 saddr, void *buff, u16 slen);
-u8 diskWrite(u32 saddr, u8 *buff, u16 slen);
-void diskSetInterface(u32 interface);
+u8 sdGetInterface();
+u8 sdInit();
+u8 sdRead(u32 sector, u8 *buff, u16 count);
+u8 sdWrite(u32 sector, const u8 *buff, u16 count);
+
+void sdSetInterface(u32 interface);
 
 
 

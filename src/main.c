@@ -20,7 +20,7 @@
 #include "everdrive.h"
 
 //filesystem
-#include "disk_old.h"
+#include "sd.h"
 #include "fat_old.h"
 
 //utils
@@ -881,11 +881,11 @@ void configure()
 
     if (streql("ED64 SD boot", buff, 12) && firm >= 0x0116) //TODO: can this be moved before the firmware is loaded?
     {
-        diskSetInterface(DISK_IFACE_SD);
+        sdSetInterface(DISK_IFACE_SD);
     }
     else
     {
-        diskSetInterface(DISK_IFACE_SPI);
+        sdSetInterface(DISK_IFACE_SPI);
     }
     memSpiSetDma(0);
 }
@@ -1206,11 +1206,11 @@ void loadnesrom(display_context_t disp, u8 *rom_path)
         u8 resp = 0;
         //load nes emulator
         resp = fatOpenFileByName("/ED64/neon64bu.rom", 0); //err if not found ^^
-        resp = diskRead(file.sector, (void *)0xb0000000, file.sec_available);
+        resp = sdRead(file.sector, (void *)0xb0000000, file.sec_available);
 
         //load nes rom
         resp = fatOpenFileByName(rom_path, 0); //err if not found ^^
-        resp = diskRead(file.sector, (void *)0xb0200000, file.sec_available);
+        resp = sdRead(file.sector, (void *)0xb0200000, file.sec_available);
 
         boot_cic = CIC_6102;
         boot_save = 0; //save off/cpak
@@ -1370,12 +1370,12 @@ void loadrom(display_context_t disp, u8 *buff, int fast)
 
     if (mb <= 32)
     {
-        resp = diskRead(begin_sector, (void *)0xb0000000, file_sectors); //2048 cluster 1Mb
+        resp = sdRead(begin_sector, (void *)0xb0000000, file_sectors); //2048 cluster 1Mb
     }
     else
     {
-        resp = diskRead(begin_sector, (void *)0xb0000000, lower_half);
-        resp = diskRead(begin_sector + lower_half, (void *)0xb2000000, file_sectors - lower_half);
+        resp = sdRead(begin_sector, (void *)0xb0000000, lower_half);
+        resp = sdRead(begin_sector + lower_half, (void *)0xb2000000, file_sectors - lower_half);
     }
 
     if (resp)

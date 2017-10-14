@@ -8,7 +8,7 @@
 #include <libdragon.h>
 
 #include "fat_old.h"
-#include "disk_old.h"
+#include "sd.h"
 #include "mem.h"
 #include "everdrive.h"
 #include "strlib.h"
@@ -163,7 +163,7 @@ u8 fatInit() {
     u8 resp;
 
     u32 reserved_sectors;
-    resp = diskInit();
+    resp = sdInit();
     if (resp)return resp;
     fat_cache->data_sec_idx = 0xffffffff;
     fat_cache->table_sec_idx = 0xffffffff;
@@ -578,12 +578,12 @@ u8 fatCacheLoadData(u32 sector, u8 save_befor_load) {
     if (fat_cache->data_sec_idx == sector)return 0;
 
     if (save_befor_load) {
-        resp = diskWrite(fat_cache->data_sec_idx, fat_cache->data_sector, 1);
+        resp = sdWrite(fat_cache->data_sec_idx, fat_cache->data_sector, 1);
     }
     fat_cache->data_sec_idx = sector;
 
 					//addr=addr*512, buff, lenght 1
-    resp = diskRead(fat_cache->data_sec_idx, fat_cache->data_sector, 1);
+    resp = sdRead(fat_cache->data_sec_idx, fat_cache->data_sector, 1);
 
     //console_printf("c: %u\n", cache->buff_sector);
     //joyWait();
@@ -594,7 +594,7 @@ u8 fatCacheLoadData(u32 sector, u8 save_befor_load) {
 
 u8 fatCacheSaveData() {
 
-    return diskWrite(fat_cache->data_sec_idx, fat_cache->data_sector, 1);
+    return sdWrite(fat_cache->data_sec_idx, fat_cache->data_sector, 1);
 }
 
 u8 fatCacheLoadTable(u32 sector, u8 save_before_load) {
@@ -610,7 +610,7 @@ u8 fatCacheLoadTable(u32 sector, u8 save_before_load) {
 
     fat_cache->table_sec_idx = sector;
 
-    resp = diskRead(fat_cache->table_sec_idx, fat_cache->table_sector, 1);
+    resp = sdRead(fat_cache->table_sec_idx, fat_cache->table_sector, 1);
 
     return resp;
 
@@ -620,9 +620,9 @@ u8 fatCacheApplyTable() {
 
     u8 resp;
 
-    resp = diskWrite(fat_cache->table_sec_idx, fat_cache->table_sector, 1);
+    resp = sdWrite(fat_cache->table_sec_idx, fat_cache->table_sector, 1);
     if (resp)return resp;
-    resp = diskWrite(fat_cache->table_sec_idx + current_fat.sectors_per_fat, fat_cache->table_sector, 1);
+    resp = sdWrite(fat_cache->table_sec_idx + current_fat.sectors_per_fat, fat_cache->table_sector, 1);
 
     table_changed = 0;
     return resp;
@@ -930,7 +930,7 @@ u8 fatCreateRecord(u8 *name, u8 is_dir, u8 check_exist) {
 
         //ocuppy function may destroy cache buff data
         if (lfn_blocks != 0) {
-            resp = diskWrite(fat_cache->data_sec_idx, fat_cache->data_sector, 1);
+            resp = sdWrite(fat_cache->data_sec_idx, fat_cache->data_sector, 1);
             if (resp)return resp;
         }
         cluster = 0;
@@ -1150,7 +1150,7 @@ u8 fatCreateRecord2(u8 *name, u8 is_dir, u8 check_exist) {
 
         //ocuppy function may destroy cache buff data
         if (lfn_blocks != 0) {
-            resp = diskWrite(fat_cache->data_sec_idx, fat_cache->data_sector, 1);
+            resp = sdWrite(fat_cache->data_sec_idx, fat_cache->data_sector, 1);
             if (resp)return resp;
         }
         cluster = 0;
@@ -1174,7 +1174,7 @@ u8 fatCreateRecord2(u8 *name, u8 is_dir, u8 check_exist) {
 
     memcopy(&hdr, &fat_cache->data_sector[rec.hdr_idx * 32], 32);
 
-    resp = diskWrite(fat_cache->data_sec_idx, fat_cache->data_sector, 1);
+    resp = sdWrite(fat_cache->data_sec_idx, fat_cache->data_sector, 1);
     if (resp)return resp;
 
     if (is_dir) {
@@ -1341,7 +1341,7 @@ u8 fatClearClusters(u32 cluster, u8 len) {
     while (len--) {
         fat_cache->data_sec_idx = fatClusterToSector(cluster++);
         for (i = 0; i < current_fat.cluster_size; i++) {
-            resp = diskWrite(fat_cache->data_sec_idx++, fat_cache->data_sector, 1);
+            resp = sdWrite(fat_cache->data_sec_idx++, fat_cache->data_sector, 1);
 
             if (resp)return resp;
         }
@@ -1371,8 +1371,8 @@ u8 fatOccupyClusters(u32 *base_cluster, u16 len) {
 
 
         //memcopy(current_cache->table_frame, occupy_buff, 512);
-        resp = diskRead(current_fat.fat_entry + fat_table_sector, (void *) ROM_ADDR, 32);
-        //resp = diskRead(current_fat.fat_entry + fat_table_sector, occupy_buff, 1);
+        resp = sdRead(current_fat.fat_entry + fat_table_sector, (void *) ROM_ADDR, 32);
+        //resp = sdRead(current_fat.fat_entry + fat_table_sector, occupy_buff, 1);
         if (resp)return resp;
         dma_read(occupy_buff, ROM_ADDR, 32 * 512);
 
@@ -1559,7 +1559,7 @@ u8 fatWriteFile(void *src, u32 sectors) {
 
             //console_printf("len: %d\n", len);
             //joyWait();
-            resp = diskWrite(file.sector, ptr8, len);
+            resp = sdWrite(file.sector, ptr8, len);
             if (resp)return resp;
             ptr8 += 512 * len;
             resp = fatSkipSectors(len);
@@ -1592,7 +1592,7 @@ u8 fatReadFile(void *dst, u32 sectors) {
             len = current_fat.cluster_size - file.in_cluster_ptr;
             if (len > sectors)len = sectors;
 
-            resp = diskRead(file.sector, dst, len);
+            resp = sdRead(file.sector, dst, len);
 
             if (resp)return resp;
             dst += 512 * len;
@@ -1688,9 +1688,9 @@ u8 fatMultiClustRW(void *buff, u32 max_sectors, u32 *readrd_sectors, u16 write) 
     *readrd_sectors = len;
 
     if (write) {
-        resp = diskWrite(begin_sect, buff, len);
+        resp = sdWrite(begin_sect, buff, len);
     } else {
-        resp = diskRead(begin_sect, buff, len);
+        resp = sdRead(begin_sect, buff, len);
     }
 
     return resp;
@@ -1718,7 +1718,7 @@ u8 fatReadCluster(void *dst) {
     u8 resp;
     if (file.mode != FILE_MODE_RD)return FAT_ERR_FILE_MODE;
 
-    resp = diskRead(file.sector, dst, current_fat.cluster_size);
+    resp = sdRead(file.sector, dst, current_fat.cluster_size);
     if (resp)return resp;
     dst += current_fat.cluster_byte_size;
     resp = fatGetNextCluster(&file.cluster);

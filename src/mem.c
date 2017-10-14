@@ -110,7 +110,7 @@ u8 memSpiReadDma(void *dst, u16 slen) {
     return resp;
 }
 
-u8 memSpiWrite(void *src) {
+u8 memSpiWrite(const void *src) {
 
     u16 i;
 
