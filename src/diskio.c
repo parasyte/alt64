@@ -253,33 +253,48 @@ DRESULT disk_ioctl (
 )
 {
 	DRESULT res;
-	int result;
+	// int result;
 
-	switch (pdrv) {
-	case DEV_RAM :
+	// switch (pdrv) {
+	// case DEV_RAM :
 
-		// Process of the command for the RAM drive
+	// 	// Process of the command for the RAM drive
 
-		return res;
+	// 	return res;
 
-	case DEV_MMC :
+	// case DEV_MMC :
 
-		// Process of the command for the MMC/SD card
+	// 	// Process of the command for the MMC/SD card
 
-		return res;
+	// 	return res;
 
-	case DEV_USB :
+	// case DEV_USB :
 
-		// Process of the command the USB drive
+	// 	// Process of the command the USB drive
 
-		return res;
-	}
+	// 	return res;
+	// }
+
+	switch (cmd) {
+		case CTRL_SYNC:
+			return RES_OK;
+		case GET_SECTOR_SIZE:
+			*(WORD*)buff = 512;
+			return RES_OK;
+		case GET_SECTOR_COUNT:
+			//*(DWORD*)buff = sdGetSectors();
+			return RES_OK;
+		case GET_BLOCK_SIZE:
+			//*(DWORD*)buff = sdGetBlockSize();
+			return RES_OK;
+		}
 
 	return RES_PARERR;
 }
 
 DWORD get_fattime (void)
 {
+	//TODO: can we use the V3 RTC?
 	return 0;
 }
 

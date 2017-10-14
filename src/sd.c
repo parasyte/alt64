@@ -12,28 +12,32 @@
 #include "errors.h"
 #include "sys.h"
 
-#define CMD0  0x40    // software reset
-#define CMD1  0x41    // brings card out of idle state
-#define CMD8  0x48    // Reserved
-#define CMD12 0x4C    // stop transmission on multiple block read
-#define CMD17 0x51    // read single block
-#define CMD18 0x52    // read multiple block
-#define CMD58 0x7A    // reads the OCR register
-#define CMD55 0x77
-#define CMD41 0x69
-#define CMD24 0x58    // writes a single block
-#define CMD25 0x59    // writes a multi block
-#define	ACMD41 0x69
-#define	ACMD6 0x46
+#define CMD0  (0x40+0)      // GO_IDLE_STATE, Software reset.
+#define CMD1  (0x40+1)      // SEND_OP_COND, Initiate initialization process.
+#define CMD2  (0x40+2)      //read cid
+#define CMD3  (0x40+3)      //read rca
+#define CMD6  (0x40+6)
+#define CMD7  (0x40+7)
+#define CMD8  (0x40+8)      // SEND_IF_COND, For only SDC V2. Check voltage range.
+#define CMD9  (0x40+9)      // SEND_CSD, Read CSD register.
+#define CMD10 (0x40+10)     // SEND_CID, Read CID register.
+#define CMD12 (0x40+12)     // STOP_TRANSMISSION, Stop to read data.
+#define ACMD13  (0xC0+13)   // SD_STATUS (SDC)
+#define CMD16 (0x40+16)     // SET_BLOCKLEN, Change R/W block size.
+#define CMD17 (0x40+17)     // READ_SINGLE_BLOCK, Read a block.
+#define CMD18 (0x40+18)     // READ_MULTIPLE_BLOCK, Read multiple blocks.
+#define ACMD23  (0xC0+23)   // SET_WR_BLK_ERASE_COUNT (SDC)
+#define CMD24 (0x40+24)     // WRITE_BLOCK, Write a block.
+#define CMD25 (0x40+25)     // WRITE_MULTIPLE_BLOCK, Write multiple blocks.
+#define CMD41 (0x40+41)     // SEND_OP_COND (ACMD)
+#define ACMD41  (0xC0+41)   // SEND_OP_COND (SDC)
+#define CMD55 (0x40+55)     // APP_CMD, Leading command of ACMD<n> command.
+#define CMD58 (0x40+58)     // READ_OCR, Read OCR.
+
 #define SD_V2 2
 #define SD_HC 1
 
 
-#define CMD2 0x42 //read cid
-#define CMD3 0x43 //read rca
-#define CMD7 0x47
-#define CMD9 0x49
-#define CMD6 0x46
 
 #define R1 1
 #define R2 2

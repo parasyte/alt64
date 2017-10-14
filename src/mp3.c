@@ -7,11 +7,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <mad.h>
-#include "fat_old.h"
-#include "mp3.h"
-
 #include <libdragon.h>
+#include <mad.h>
+#include "mp3.h"
+#include "ff.h"
+
 
 static struct mad_stream Stream;
 static struct mad_header Header;
@@ -68,13 +68,11 @@ static int mp3_seek(char* fd, int offset, int whence) {
 }
 
 static int mp3_size(char* fd) {
-    FatRecord rec_tmpf;
-    u8 resp=0;
-    resp = fatOpenFileByName(fd, 0); //err if not found ^^
-
-    int fsize =  file.sec_available*512; //fsize in bytes
-    mp3File_fsize = fsize;
-    //todo filesize
+    FRESULT result;
+    FILINFO fno;
+    //TODO: error
+    result = f_stat (fd, &fno);
+    mp3File_fsize = fno.fsize;
     return mp3File_fsize;
 }
 
@@ -96,6 +94,37 @@ static void _f_read(char* fname, unsigned char *readBuffer, int size){
     }
     //dma_write_s(buffer, 0xb0000000, fsize);
 */
+
+    mp3_size(fname);
+
+    FRESULT result;
+    FIL file;
+    UINT bytesread;
+    result = f_open(&file, fname, FA_READ);
+
+    if (result == FR_OK)
+    {
+        int fsize = f_size(&file);
+
+        if ( fsize > size)
+        {
+            //todo: set the read pointer
+            //readBuffer+mp3File_fptr
+        }
+
+        result =
+        f_read (
+            &file,        /* [IN] File object */
+            &readBuffer,  /* [OUT] Buffer to store read data */
+            size,         /* [IN] Number of bytes to read */
+            &bytesread    /* [OUT] Number of bytes read */
+        );
+
+        result = f_close(&file);
+
+        mp3File_fptr+=size;
+        //dma_write_s(buffer, 0xb0000000, fsize);
+    }
 }
 
 static int mp3_read(char* fd, unsigned char *ptr, int size)

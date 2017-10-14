@@ -21,8 +21,8 @@
 
 //filesystem
 #include "sd.h"
+#include "ff.h"
 #include "fat_old.h"
-
 //utils
 #include "utils.h"
 
@@ -143,6 +143,8 @@ u16 cursor_history_pos = 0;
 u8 empty = 0;
 u8 playing = 0;
 u8 gb_load_y = 0;
+
+FATFS *fs;
 
 //start with filebrowser menu key settings
 enum InputMap
@@ -899,155 +901,175 @@ void clearScreen(display_context_t disp)
 
 void romInfoScreen(display_context_t disp, u8 *buff, int silent)
 {
-    if (silent != 1)
-        sleep(10);
-
-    u8 tmp[32];
     u8 filename[64];
-    u8 ok = 0;
-
     sprintf(filename, "%s", buff);
+    
     int swapped = 0;
 
-    FatRecord rec_tmpf;
-    //not needed any longer :>
-    //file IS there, it's selected at this point
-    ok = fatFindRecord(filename, &rec_tmpf, 0);
-
-    u8 resp = 0;
-
-    resp = fatOpenFileByName(filename, 0); //err if not found ^^
-
-    int mb = file.sec_available / 2048;
-    int block_offset = 0;
-    u32 cart_buff_offset = 0;
-    u32 begin_sector = file.sector;
-
-    //filesize -> readfile / 512
+    FRESULT result;
+  
     int fsize = 512;                 //rom-headersize 4096 but the bootcode is not needed
     unsigned char headerdata[fsize]; //1*512
 
-    resp = fatReadFile(&headerdata, fsize / 512); //1 cluster
+    FIL file;
+    UINT bytesread;
+    result = f_open(&file, filename, FA_READ);
 
-    int sw_type = is_valid_rom(headerdata);
-
-    if (sw_type != 0)
+    if (result == FR_OK)
     {
-        swapped = 1;
-        swap_header(headerdata, 512);
-    }
+        int fsizeMB = f_size(&file) / 1048576; //Bytes in a MB
 
-    //char 32-51 name
-    unsigned char rom_name[32];
+        result =
+        f_read (
+            &file,        /* [IN] File object */
+            &headerdata,  /* [OUT] Buffer to store read data */
+            fsize,        /* [IN] Number of bytes to read */
+            &bytesread    /* [OUT] Number of bytes read */
+        );
 
-    for (int u = 0; u < 19; u++)
-    {
-        if (u != 0)
-            sprintf(rom_name, "%s%c", rom_name, headerdata[32 + u]);
-        else
-            sprintf(rom_name, "%c", headerdata[32 + u]);
-    }
-    //trim right spaces
-    //romname=trimmed rom name for filename
-    sprintf(rom_name, "%s", trim(rom_name));
+        result = f_close(&file);
 
-    if (silent != 1)
-        printText(rom_name, 11, 19, disp);
+        int sw_type = is_valid_rom(headerdata);
 
-    sprintf(rom_name, "Size: %iMb", mb);
-
-    if (silent != 1)
-        printText(rom_name, 11, -1, disp);
-
-    //unique cart id for gametype
-    unsigned char cartID_str[12];
-    sprintf(cartID_str, "ID: %c%c%c%c", headerdata[0x3B], headerdata[0x3C], headerdata[0x3D], headerdata[0x3E]);
-
-    if (silent != 1)
-        printText(cartID_str, 11, -1, disp);
-
-    int cic, save;
-
-    cic = get_cic(&headerdata[0x40]);
-
-    unsigned char cartID_short[4];
-    sprintf(cartID_short, "%c%c\0", headerdata[0x3C], headerdata[0x3D]);
-
-    if (get_cic_save(cartID_short, &cic, &save))
-    {
-        if (silent != 1)
-            printText("found in db", 11, -1, disp);
-        unsigned char save_type_str[12];
-        sprintf(save_type_str, "Save: %s", saveTypeToExtension(save, ext_type));
-        if (silent != 1)
-            printText(save_type_str, 11, -1, disp);
-
-        unsigned char cic_type_str[12];
-        sprintf(cic_type_str, "CIC: CIC-610%i", cic); //TODO: need to take into account DD and Aleck CIC
-        if (silent != 1)
-            printText(cic_type_str, 11, -1, disp);
-
-        //thanks for the db :>
-        //cart was found, use CIC and SaveRAM type
-    }
-
-    if (silent != 1)
-    {
-        char box_path[32];
-
-        sprite_t *n64cover;
-
-        sprintf(box_path, "/ED64/boxart/lowres/%c%c.png", headerdata[0x3C], headerdata[0x3D]);
-
-        if (fatFindRecord(box_path, &rec_tmpf, 0) != 0)
+        if (sw_type != 0)
         {
-            //not found
-            sprintf(box_path, "/ED64/boxart/lowres/00.png");
+            swapped = 1;
+            swap_header(headerdata, 512);
         }
 
-        n64cover = loadPng(box_path);
-        graphics_draw_sprite(disp, 81, 32, n64cover);
-        display_show(disp);
-    }
-    else
-    {
-        rom_config[1] = cic - 1;
-        rom_config[2] = save;
-        rom_config[3] = 0; //tv force off
-        rom_config[4] = 0; //cheat off
-        rom_config[5] = 0; //chk_sum off
-        rom_config[6] = 0; //rating
-        rom_config[7] = 0; //country
-        rom_config[8] = 0; //reserved
-        rom_config[9] = 0; //reserved
+        if (silent != 1)
+        {
+            //char 32-51 name
+            unsigned char rom_name[32];
+
+            for (int u = 0; u < 19; u++)
+            {
+                if (u != 0)
+                    sprintf(rom_name, "%s%c", rom_name, headerdata[32 + u]);
+                else
+                    sprintf(rom_name, "%c", headerdata[32 + u]);
+            }
+
+            //rom name
+            sprintf(rom_name, "%s", trim(rom_name));
+            printText(rom_name, 11, 19, disp);
+
+            //rom size
+            sprintf(rom_name, "Size: %iMB", fsizeMB);
+            printText(rom_name, 11, -1, disp);
+        
+
+            //unique cart id for gametype
+            unsigned char cartID_str[12];
+            sprintf(cartID_str, "ID: %c%c%c%c", headerdata[0x3B], headerdata[0x3C], headerdata[0x3D], headerdata[0x3E]);
+            printText(cartID_str, 11, -1, disp);
+        }
+
+        int cic, save;
+
+        cic = get_cic(&headerdata[0x40]);
+
+        unsigned char cartID_short[4];
+        sprintf(cartID_short, "%c%c\0", headerdata[0x3C], headerdata[0x3D]);
+
+        if (get_cic_save(cartID_short, &cic, &save))
+        {
+            if (silent != 1)
+            {
+                printText("found in db", 11, -1, disp);
+                unsigned char save_type_str[12];
+                sprintf(save_type_str, "Save: %s", saveTypeToExtension(save, ext_type));
+                printText(save_type_str, 11, -1, disp);
+
+                unsigned char cic_type_str[12];
+
+                switch (cic)
+                {
+                    case 4:
+                    sprintf(cic_type_str, "CIC: CIC-5101", cic);
+                    break;
+                    case 7:
+                    sprintf(cic_type_str, "CIC: CIC-5167", cic);
+                    break;
+                    default:
+                    sprintf(cic_type_str, "CIC: CIC-610%i", cic);
+                    break;
+                }
+
+                printText(cic_type_str, 11, -1, disp);
+            }
+            //thanks for the db :>
+            //cart was found, use CIC and SaveRAM type
+        }
+
+        if (silent != 1)
+        {
+            char box_path[32];
+
+            sprite_t *n64cover;
+
+            sprintf(box_path, "/ED64/boxart/lowres/%c%c.png", headerdata[0x3C], headerdata[0x3D]);
+
+            FILINFO fnoba;
+            result = f_stat (box_path, &fnoba);
+
+            if (result != FR_OK)
+            {
+                //not found
+                sprintf(box_path, "/ED64/boxart/lowres/00.png");
+            }
+
+            n64cover = loadPng(box_path);
+            graphics_draw_sprite(disp, 81, 32, n64cover);
+            display_show(disp);
+        }
+        else
+        {
+            rom_config[1] = cic - 1;
+            rom_config[2] = save;
+            rom_config[3] = 0; //tv force off
+            rom_config[4] = 0; //cheat off
+            rom_config[5] = 0; //chk_sum off
+            rom_config[6] = 0; //rating
+            rom_config[7] = 0; //country
+            rom_config[8] = 0; //reserved
+            rom_config[9] = 0; //reserved
+        }
     }
 }
 
 sprite_t *loadPng(u8 *png_filename)
 {
-    u8 *filename;
-    u8 ok = 0;
-
-    filename = (u8 *)malloc(slen(png_filename));
-    //config filename
-
+    u8 *filename = (u8 *)malloc(slen(png_filename));
     sprintf(filename, "%s", png_filename);
-    FatRecord rec_tmpf;
-    ok = fatFindRecord(filename, &rec_tmpf, 0);
 
-    u8 resp = 0;
-    resp = fatOpenFileByName(filename, 0);
+    FRESULT result;
+    FIL file;
+    UINT bytesread;
+    result = f_open(&file, filename, FA_READ);
 
-    //filesize of the opend file -> is the readfile / 512
-    int fsize = file.sec_available * 512;
+    if (result == FR_OK)
+    {
+        int fsize = f_size(&file);
+        u8 png_rawdata[fsize];
 
-    u8 png_rawdata[fsize];
+        result =
+        f_read (
+            &file,        /* [IN] File object */
+            &png_rawdata,  /* [OUT] Buffer to store read data */
+            fsize,        /* [IN] Number of bytes to read */
+            &bytesread    /* [OUT] Number of bytes read */
+        );
 
-    resp = fatReadFile(&png_rawdata, fsize / 512); //1 cluster
+        result = f_close(&file);
 
-    return loadImage32(png_rawdata, fsize);
+        free(filename);
+        return loadImage32(png_rawdata, fsize);
+    }
 
-    free(filename);
+    return 0;
+
+
 }
 
 void loadgbrom(display_context_t disp, u8 *buff)
@@ -1723,6 +1745,13 @@ void initFilesystem(void)
     evd_ulockRegs();
     sleep(1000);
 
+    fs = malloc(sizeof (FATFS));           /* Get work area for the volume */
+    FRESULT result = f_mount(fs,"",1);
+    if(result != FR_OK)
+    {
+        //printText("mount error", 11, -1, disp);
+    }
+
     fatInitRam();
     fatInit();
     fat_initialized = 1;
@@ -2157,6 +2186,9 @@ void bootRom(display_context_t disp, int silent)
 
         graphics_fill_screen(disp, 0x000000FF);
         display_show(disp);
+
+        f_mount(0, "", 0);                     /* Unmount the default drive */
+        free(fs);                              /* Here the work area can be discarded */
 
         simulate_boot(boot_cic, bios_cic, cheat_lists); // boot_cic
     }
@@ -4294,6 +4326,8 @@ int main(void)
     else
     {
         printf("Filesystem failed to start!\n");
+        f_mount(0, "", 0);                     /* Unmount the default drive */
+        free(fs);                              /* Here the work area can be discarded */
         for ( ;; )
             ; //never leave!
     }
