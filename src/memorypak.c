@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "memorypak.h"
+#include "ff.h"
 #include "fat_old.h"
 #include "menu.h"
 #include "mem.h"
@@ -91,185 +92,221 @@ char ___CountBlocks(char *bMemPakBinary, char *aNoteSizes)
 //old method to write a file to the mempak at controller 1
 void file_to_mpk(display_context_t disp, u8 *filename)
 {
-    u8 tmp[32];
     u8 buff[64];
-    u8 ok = 0;
 
     printText(filename, 9, -1, disp);
-    FatRecord rec_tmpf;
-    ok = fatFindRecord(filename, &rec_tmpf, 0);
+    
+    
+    FRESULT result;
+    FIL file;
+    UINT bytesread;
+    result = f_open(&file, filename, FA_READ);
 
-    u8 resp = 0;
-    resp = fatOpenFileByName(filename, 0);
-
-    u8 *pch;
-    pch = strrchr(filename, '.');
-    sprintf(buff, "%s", (pch + 2));
-
-    if (strcmp(buff, "64") == 0)
+    if (result == FR_OK)
     {
-        printText("Dexdrive format", 9, -1, disp);
-        printText("skip header", 9, -1, disp);
+        //int fsize = f_size(&file);
 
-        static uint8_t mempak_data_buff[36928];
-        resp = fatReadFile(&mempak_data_buff, 36928 / 512);
+        u8 *pch;
+        pch = strrchr(filename, '.');
+        sprintf(buff, "%s", (pch + 2));
 
-        memcpy(&mempak_data, mempak_data_buff + 4160, 32768);
-    }
-    else
-    {
-        printText("Z64 format", 9, -1, disp);
-        resp = fatReadFile(&mempak_data, 32768 / 512);
-    }
+        if (strcmp(buff, "64") == 0)
+        {
+            printText("Dexdrive format", 9, -1, disp);
+            printText("skip header", 9, -1, disp);
 
-    int err = 0;
-    for (int j = 0; j < 128; j++)
-    {
-        err |= write_mempak_sector(0, j, &mempak_data[j * MEMPAK_BLOCK_SIZE]);
+            static uint8_t mempak_data_buff[36928];
+
+            result =
+            f_read (
+                &file,        /* [IN] File object */
+                &mempak_data_buff,  /* [OUT] Buffer to store read data */
+                36928,         /* [IN] Number of bytes to read */
+                &bytesread    /* [OUT] Number of bytes read */
+            );
+
+            memcpy(&mempak_data, mempak_data_buff + 4160, 32768);
+        }
+        else
+        {
+            printText("Z64 format", 9, -1, disp);
+            result =
+            f_read (
+                &file,        /* [IN] File object */
+                &mempak_data,  /* [OUT] Buffer to store read data */
+                32768,         /* [IN] Number of bytes to read */
+                &bytesread    /* [OUT] Number of bytes read */
+            );
+        }
+        result = f_close(&file);
+
+        int err = 0;
+        for (int j = 0; j < 128; j++)
+        {
+            err |= write_mempak_sector(0, j, &mempak_data[j * MEMPAK_BLOCK_SIZE]);
+        }
     }
 }
 
 void view_mpk_file(display_context_t disp, char *mpk_filename)
 {
-    u8 tmp[32];
     u8 buff[64];
-    u8 ok = 0;
 
-    FatRecord rec_tmpf;
-    ok = fatFindRecord(mpk_filename, &rec_tmpf, 0);
+    FRESULT result;
+    FIL file;
+    UINT bytesread;
+    result = f_open(&file, mpk_filename, FA_READ);
 
-    u8 resp = 0;
-    resp = fatOpenFileByName(mpk_filename, 0);
-
-    u8 *pch;
-    pch = strrchr(mpk_filename, '.');
-    sprintf(buff, "%s", (pch + 2));
-
-    if (strcmp(buff, "64") == 0)
+    if (result == FR_OK)
     {
-        static uint8_t mempak_data_buff[36928];
-        resp = fatReadFile(&mempak_data_buff, 36928 / 512);
-        memcpy(&mempak_data, mempak_data_buff + 4160, 32768);
-    }
-    else
-    {
-        resp = fatReadFile(&mempak_data, 32768 / 512);
-    }
+        //int fsize = f_size(&file);
 
-    printText("File content:", 11, 5, disp);
-    printText("   ", 11, -1, disp);
+        u8 *pch;
+        pch = strrchr(mpk_filename, '.');
+        sprintf(buff, "%s", (pch + 2));
 
-    int notes_c = 0;
-
-    char szBuffer[40],
-        cAppendix;
-    int bFirstChar;
-
-    int i = 0,
-        nNotes = 0,
-        iSum = 0,
-        iRemainingBlocks;
-
-    char aNoteSizes[16];
-
-    for (i = 0x10A; i < 0x200; i++)
-        iSum += mempak_data[i];
-
-    if (((iSum % 256) == mempak_data[0x101]))
-    {
-        iRemainingBlocks = ___CountBlocks(mempak_data, aNoteSizes);
-
-        if (iRemainingBlocks <= 123)
+        if (strcmp(buff, "64") == 0) //DEXDRIVE format
         {
-            for (notes_c = 0; notes_c < 16; notes_c++)
+            static uint8_t mempak_data_buff[36928];
+
+            result =
+            f_read (
+                &file,        /* [IN] File object */
+                &mempak_data_buff,  /* [OUT] Buffer to store read data */
+                36928,         /* [IN] Number of bytes to read */
+                &bytesread    /* [OUT] Number of bytes read */
+            );
+
+            memcpy(&mempak_data, mempak_data_buff + 4160, 32768);
+        }
+        else //Z64 format
+        {
+            result =
+            f_read (
+                &file,        /* [IN] File object */
+                &mempak_data,  /* [OUT] Buffer to store read data */
+                32768,         /* [IN] Number of bytes to read */
+                &bytesread    /* [OUT] Number of bytes read */
+            );
+        }
+          
+        result = f_close(&file);
+
+        printText("File content:", 11, 5, disp);
+        printText("   ", 11, -1, disp);
+
+        int notes_c = 0;
+
+        char szBuffer[40],
+            cAppendix;
+        int bFirstChar;
+
+        int i = 0,
+            nNotes = 0,
+            iSum = 0,
+            iRemainingBlocks;
+
+        char aNoteSizes[16];
+
+        for (i = 0x10A; i < 0x200; i++)
+            iSum += mempak_data[i];
+
+        if (((iSum % 256) == mempak_data[0x101]))
+        {
+            iRemainingBlocks = ___CountBlocks(mempak_data, aNoteSizes);
+
+            if (iRemainingBlocks <= 123)
             {
-                if (mempak_data[0x300 + (notes_c * 32)] ||
-                    mempak_data[0x301 + (notes_c * 32)] ||
-                    mempak_data[0x302 + (notes_c * 32)])
+                for (notes_c = 0; notes_c < 16; notes_c++)
                 {
-                    cAppendix = ___TranslateNotes(&mempak_data[0x300 + (notes_c * 32)], szBuffer);
-
-                    if (cAppendix != '\0')
-                        sprintf(szBuffer, "%s. %c", szBuffer, cAppendix);
-
-                    bFirstChar = 1;
-                    for (i = 0; i < (int)strlen(szBuffer); i++)
+                    if (mempak_data[0x300 + (notes_c * 32)] ||
+                        mempak_data[0x301 + (notes_c * 32)] ||
+                        mempak_data[0x302 + (notes_c * 32)])
                     {
-                        if (szBuffer[i] == ' ')
-                            bFirstChar = 1;
-                        else
+                        cAppendix = ___TranslateNotes(&mempak_data[0x300 + (notes_c * 32)], szBuffer);
+
+                        if (cAppendix != '\0')
+                            sprintf(szBuffer, "%s. %c", szBuffer, cAppendix);
+
+                        bFirstChar = 1;
+                        for (i = 0; i < (int)strlen(szBuffer); i++)
                         {
-                            if (bFirstChar && (szBuffer[i] >= 'a') && (szBuffer[i] <= 'z'))
+                            if (szBuffer[i] == ' ')
+                                bFirstChar = 1;
+                            else
                             {
-                                bFirstChar = 0;
-                                szBuffer[i] -= 0x20;
+                                if (bFirstChar && (szBuffer[i] >= 'a') && (szBuffer[i] <= 'z'))
+                                {
+                                    bFirstChar = 0;
+                                    szBuffer[i] -= 0x20;
+                                }
                             }
                         }
-                    }
-                    printText(szBuffer, 11, -1, disp);
+                        printText(szBuffer, 11, -1, disp);
 
-                    switch (mempak_data[0x303 + (notes_c * 32)])
-                    {
-                    case 0x00:
-                        sprintf(szBuffer, "None");
-                        break;
-                    case 0x37:
-                        sprintf(szBuffer, "Beta");
-                        break;
-                    case 0x41:
-                        sprintf(szBuffer, "NTSC");
-                        break;
-                    case 0x44:
-                        sprintf(szBuffer, "Germany");
-                        break;
-                    case 0x45:
-                        sprintf(szBuffer, "USA");
-                        break;
-                    case 0x46:
-                        sprintf(szBuffer, "France");
-                        break;
-                    case 0x49:
-                        sprintf(szBuffer, "Italy");
-                        break;
-                    case 0x4A:
-                        sprintf(szBuffer, "Japan");
-                        break;
-                    case 0x50:
-                        sprintf(szBuffer, "Europe");
-                        break;
-                    case 0x53:
-                        sprintf(szBuffer, "Spain");
-                        break;
-                    case 0x55:
-                        sprintf(szBuffer, "Australia");
-                        break;
-                    case 0x58:
-                    case 0x59:
-                        sprintf(szBuffer, "PAL");
-                        break;
-                    default:
-                        sprintf(szBuffer, "Unknown(%02X)", mempak_data[0x303 + (notes_c * 32)]);
-                    }
+                        switch (mempak_data[0x303 + (notes_c * 32)])
+                        {
+                        case 0x00:
+                            sprintf(szBuffer, "None");
+                            break;
+                        case 0x37:
+                            sprintf(szBuffer, "Beta");
+                            break;
+                        case 0x41:
+                            sprintf(szBuffer, "NTSC");
+                            break;
+                        case 0x44:
+                            sprintf(szBuffer, "Germany");
+                            break;
+                        case 0x45:
+                            sprintf(szBuffer, "USA");
+                            break;
+                        case 0x46:
+                            sprintf(szBuffer, "France");
+                            break;
+                        case 0x49:
+                            sprintf(szBuffer, "Italy");
+                            break;
+                        case 0x4A:
+                            sprintf(szBuffer, "Japan");
+                            break;
+                        case 0x50:
+                            sprintf(szBuffer, "Europe");
+                            break;
+                        case 0x53:
+                            sprintf(szBuffer, "Spain");
+                            break;
+                        case 0x55:
+                            sprintf(szBuffer, "Australia");
+                            break;
+                        case 0x58:
+                        case 0x59:
+                            sprintf(szBuffer, "PAL");
+                            break;
+                        default:
+                            sprintf(szBuffer, "Unknown(%02X)", mempak_data[0x303 + (notes_c * 32)]);
+                        }
 
-                    sprintf(szBuffer, "%i", aNoteSizes[notes_c]);
-                    nNotes++;
+                        sprintf(szBuffer, "%i", aNoteSizes[notes_c]);
+                        nNotes++;
+                    }
                 }
             }
+
+            int free_c = 0;
+            for (free_c = nNotes; free_c < 16; free_c++)
+                printText("[free]", 11, -1, disp);
+
+            char buff[512];
+            printText("   ", 11, -1, disp);
+            printText("Free space:", 11, -1, disp);
+            sprintf(buff, "%i blocks", iRemainingBlocks);
+            printText(buff, 11, -1, disp);
         }
-
-        int free_c = 0;
-        for (free_c = nNotes; free_c < 16; free_c++)
-            printText("[free]", 11, -1, disp);
-
-        char buff[512];
-        printText("   ", 11, -1, disp);
-        printText("Free space:", 11, -1, disp);
-        sprintf(buff, "%i blocks", iRemainingBlocks);
-        printText(buff, 11, -1, disp);
-    }
-    else
-    {
-        printText("empty", 11, -1, disp);
+        else
+        {
+            printText("empty", 11, -1, disp);
+        }    
     }
 }
 
