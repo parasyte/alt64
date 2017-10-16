@@ -1301,182 +1301,202 @@ void loadrom(display_context_t disp, u8 *buff, int fast)
     clearScreen(disp);
     display_show(disp);
 
-    if (!fast)
-        printText("Restoring:", 3, 4, disp);
-
-    //sleep(1000); //needless waiting :>
+    printText("Loading ROM, Please wait:", 3, 4, disp);
 
     TRACE(disp, "timing done");
 
-    u8 tmp[32];
     u8 filename[64];
-    u8 ok = 0;
-
     sprintf(filename, "%s", buff);
-    int swapped = 0;
+    
+    FRESULT result;
+    FIL file;
+    UINT bytesread = 0;
+    result = f_open(&file, filename, FA_READ);
 
-    TRACE(disp, buff);
-
-    FatRecord rec_tmpf;
-    //not needed any longer :>
-    //file IS there, it's selected at this point
-    ok = fatFindRecord(filename, &rec_tmpf, 0);
-
-    TRACE(disp, "found");
-
-    u8 resp = 0;
-
-    resp = fatOpenFileByName(filename, 0); //err if not found ^^
-
-    TRACE(disp, "opened");
-
-    int mb = file.sec_available / 2048;
-    int file_sectors = file.sec_available;
-    int block_offset = 0;
-    u32 cart_buff_offset = 0;
-    u32 begin_sector = file.sector;
-
-    //filesize -> readfile / 512
-    int fsize = 512;                 //rom-headersize 4096 but the bootcode is not needed
-    unsigned char headerdata[fsize]; //1*512
-
-    resp = fatReadFile(&headerdata, fsize / 512); //1 cluster
-
-    int sw_type = is_valid_rom(headerdata);
-
-    if (sw_type != 0)
+    if (result == FR_OK)
     {
-        if (!fast)
-            printText("byteswapped file", 3, -1, disp);
+        int swapped = 0;
+        int headerfsize = 512; //rom-headersize 4096 but the bootcode is not needed
+        unsigned char headerdata[headerfsize]; //1*512
+        int fsize = f_size(&file);
+        int fsizeMB = fsize /1048576; //Bytes in a MB
 
-        swapped = 1;
-        swap_header(headerdata, 512);
-    }
+        result =
+        f_read (
+            &file,        /* [IN] File object */
+            &headerdata,  /* [OUT] Buffer to store read data */
+            headerfsize,        /* [IN] Number of bytes to read */
+            &bytesread    /* [OUT] Number of bytes read */
+        );
 
-    //char 32-51 name
-    unsigned char rom_name[32];
+        result = f_close(&file);
 
-    for (int u = 0; u < 19; u++)
-    {
-        if (u != 0)
-            sprintf(rom_name, "%s%c", rom_name, headerdata[32 + u]);
+        int sw_type = is_valid_rom(headerdata);
+
+        if (sw_type != 0)
+        {
+            swapped = 1;
+            swap_header(headerdata, 512);
+        }
+
+        if (fast != 1)
+        {
+            //char 32-51 name
+            unsigned char rom_name[32];
+
+            for (int u = 0; u < 19; u++)
+            {
+                if (u != 0)
+                    sprintf(rom_name, "%s%c", rom_name, headerdata[32 + u]);
+                else
+                    sprintf(rom_name, "%c", headerdata[32 + u]);
+            }
+
+            //rom name
+            sprintf(rom_name, "%s", trim(rom_name));
+            printText(rom_name, 3, -1, disp);
+
+            //rom size
+            sprintf(rom_name, "Size: %iMB", fsizeMB);
+            printText(rom_name, 3, -1, disp);
+        
+
+            //unique cart id for gametype
+            unsigned char cartID_str[12];
+            sprintf(cartID_str, "ID: %c%c%c%c", headerdata[0x3B], headerdata[0x3C], headerdata[0x3D], headerdata[0x3E]);
+            printText(cartID_str, 3, -1, disp);
+        }
+
+        int cic, save;
+
+        cic = get_cic(&headerdata[0x40]);
+
+        unsigned char cartID_short[4];
+        sprintf(cartID_short, "%c%c\0", headerdata[0x3C], headerdata[0x3D]);
+
+        if (get_cic_save(cartID_short, &cic, &save))
+        {
+            if (fast != 1)
+            {
+                printText("found in db", 3, -1, disp);
+                unsigned char save_type_str[12];
+                sprintf(save_type_str, "Save: %s", saveTypeToExtension(save, ext_type));
+                printText(save_type_str, 3, -1, disp);
+
+                unsigned char cic_type_str[12];
+
+                switch (cic)
+                {
+                    case 4:
+                    sprintf(cic_type_str, "CIC: CIC-5101", cic);
+                    break;
+                    case 7:
+                    sprintf(cic_type_str, "CIC: CIC-5167", cic);
+                    break;
+                    default:
+                    sprintf(cic_type_str, "CIC: CIC-610%i", cic);
+                    break;
+                }
+
+                printText(cic_type_str, 3, -1, disp);
+            }
+            //thanks for the db :>
+            //cart was found, use CIC and SaveRAM type
+        }
+
+        //new rom_config
+        boot_cic = rom_config[1] + 1;
+        boot_save = rom_config[2];
+        force_tv = rom_config[3];
+        cheats_on = rom_config[4];
+        checksum_fix_on = rom_config[5];
+        boot_country = rom_config[7]; //boot_block
+
+        if (gbload == 1)
+            boot_save = 1;
+
+        // TRACE(disp, "Checking SD mode");
+
+        // int resp = evd_isSDMode();
+
+        // TRACEF(disp, "SD mode: %i", resp);
+        // TRACE(disp, "Loading:");
+
+        if (swapped == 1)
+        {
+            while (evd_isDmaBusy())
+                ;
+            sleep(400); //Is this necessary?
+            evd_mmcSetDmaSwap(1);
+
+            TRACE(disp, "swapping on");
+        }
+
+        bytesread = 0;
+        result = f_open(&file, filename, FA_READ);
+        if (fsizeMB <= 32)
+        {
+            result =
+            f_read (
+                &file,        /* [IN] File object */
+                (void *)0xb0000000,  /* [OUT] Buffer to store read data */
+                fsize,        /* [IN] Number of bytes to read */
+                &bytesread    /* [OUT] Number of bytes read */
+            );
+        }
         else
-            sprintf(rom_name, "%c", headerdata[32 + u]);
-    }
-    //trim right spaces
-    //romname=trimmed rom name for filename
-    sprintf(rom_name, "%s", trim(rom_name));
+        {
+            result =
+            f_read (
+                &file,        /* [IN] File object */
+                (void *)0xb0000000,  /* [OUT] Buffer to store read data */
+                32 * 1048576,        /* [IN] Number of bytes to read */
+                &bytesread    /* [OUT] Number of bytes read */
+            );
+            if(result == FR_OK)
+            {
+                result =
+                f_read (
+                    &file,        /* [IN] File object */
+                    (void *)0xb2000000,  /* [OUT] Buffer to store read data */
+                    fsize - bytesread,        /* [IN] Number of bytes to read */
+                    &bytesread    /* [OUT] Number of bytes read */
+                );
+            }
+        }
 
-    if (!fast)
-        printText(rom_name, 3, -1, disp);
+        if(result == FR_OK)
+        {
+            printText("Rom loaded", 3, -1, disp);
+            //if (debug) {
+            // for (int i = 0; i < 4; i++)
+            // {
+            //     u8 buff[16];
+            //     dma_read_s(buff, 0xb0000000 + 0x00100000 * i, 1);
+                
+            //     unsigned char probe_str[12];
+            //     TRACEF(disp, "probe: %hhx", buff[0]);
+            // }
+            //}
 
-    //unique cart id for gametype
+            // sleep(1000);
 
-    sprintf(cartID, "%c%c%c%c", headerdata[0x3B], headerdata[0x3C], headerdata[0x3D], headerdata[0x3E]);
-
-    int cic, save;
-
-    cic = get_cic(&headerdata[0x40]);
-
-    unsigned char cartID_short[4];
-    sprintf(cartID_short, "%c%c\0", headerdata[0x3C], headerdata[0x3D]);
-
-    if (get_cic_save(cartID_short, &cic, &save))
-    {
-        if (!fast)
-            printText("found in db", 3, -1, disp);
-        //thanks for the db :>
-        // cart was found, use CIC and SaveRAM type
-    }
-
-    TRACEF(disp, "Info: cic=%i save=%i", cic, save);
-
-    //new rom_config
-    boot_cic = rom_config[1] + 1;
-    boot_save = rom_config[2];
-    force_tv = rom_config[3];
-    cheats_on = rom_config[4];
-    checksum_fix_on = rom_config[5];
-    boot_country = rom_config[7]; //boot_block
-
-    if (gbload == 1)
-        boot_save = 1;
-
-    else if (resp) //TODO: if response is certain ones we should show the error and stop the boot...
-    {
-        sprintf(tmp, "Response: %i", resp);
-        printText(tmp, 3, -1, disp);
-        sleep(2000);
-    }
-
-    TRACE(disp, "Checking SD mode");
-
-    resp = evd_isSDMode();
-
-    TRACEF(disp, "SD mode: %i", resp);
-    TRACEF(disp, "Size: %i", file.sec_available);
-    TRACEF(disp, "File sector: %i", file.sector);
-    TRACE(disp, "Loading:");
-
-    sleep(10);
-
-    if (swapped == 1)
-    {
-        while (evd_isDmaBusy())
-            ;
-        sleep(400);
-        evd_mmcSetDmaSwap(1);
-
-        TRACE(disp, "swapping on");
-
-        sleep(10);
-    }
-
-    if (!fast)
-        printText("loading please wait...", 3, -1, disp);
-    else
-        printText("loading please wait...", 3, 4, disp);
-
-    sleep(10);
-
-    int lower_half = 2048 * 32;
-
-    if (mb <= 32)
-    {
-        resp = sdRead(begin_sector, (void *)0xb0000000, file_sectors); //2048 cluster 1Mb
-    }
-    else
-    {
-        resp = sdRead(begin_sector, (void *)0xb0000000, lower_half);
-        resp = sdRead(begin_sector + lower_half, (void *)0xb2000000, file_sectors - lower_half);
-    }
-
-    if (resp)
-    {
-        TRACEF(disp, "mmcToCart: %i", resp);
-    }
-
-    //if (debug) {
-    for (int i = 0; i < 4; i++)
-    {
-        u8 buff[16];
-        dma_read_s(buff, 0xb0000000 + 0x00100000 * i, 1);
-        TRACEF(disp, "probe: %hhx", buff[0]);
-    }
-    //}
-
-    if (!fast)
-    {
-        sleep(200);
-
-        printText(" ", 3, -1, disp);
-        printText("(C-UP to activate cheats)", 3, -1, disp);
-        printText("(C-RIGHT to force menu tv mode)", 3, -1, disp);
-        printText("done: PRESS START", 3, -1, disp);
-    }
-    else
-    {
-        bootRom(disp, 1);
+            if (!fast)
+            {
+                printText(" ", 3, -1, disp);
+                printText("(C-UP to activate cheats)", 3, -1, disp);
+                printText("(C-RIGHT to force menu tv mode)", 3, -1, disp);
+                printText("done: PRESS START", 3, -1, disp);
+            }
+            else
+            {
+                bootRom(disp, 1);
+            }
+        }
+        else
+        {
+            printText("file open error", 3, -1, disp);
+        }
     }
 }
 
