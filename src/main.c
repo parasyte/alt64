@@ -1724,7 +1724,9 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
     if (result == FR_OK)
     {
         //for savegame
-        uint8_t cartsave_data[size] = {0};
+        uint8_t cartsave_data[size]; //TODO: bring back old initialisation if this doesn't work
+
+
     
         TRACEF(disp, "cartsave_data=%p", &cartsave_data);
     
@@ -2015,173 +2017,185 @@ int readCheatFile(char *filename, u32 *cheat_lists[2])
 
     yaml_parser_initialize(&parser);
 
-    FatRecord rec_tmpf;
 
-    if (fatFindRecord(filename, &rec_tmpf, 0) != 0)
+    FRESULT result;
+    FIL file;
+    UINT bytesread;
+    result = f_open(&file, filename, FA_READ);
+
+    if (result == FR_OK)
+    {
+        int fsize = f_size(&file);
+
+        char *cheatfile = malloc(fsize);
+        if (!cheatfile)
+        {
+            return -2; // Out of memory
+        }
+    
+        /*
+         * Size of the cheat list can never be more than half the size of the YAML
+         * Minimum YAML example:
+         *   A:-80001234 FFFF
+         * Which is exactly 16 bytes.
+         * The cheat list in this case fits into exactly 8 bytes (2 words):
+         *   0x80001234, 0x0000FFFF
+         */
+        list1 = calloc(1, fsize + 2 * sizeof(u32)); // Plus 2 words to be safe
+        if (!list1)
+        {
+            // Free
+            free(cheatfile);
+            return -2; // Out of memory
+        }
+        list2 = &list1[fsize / sizeof(u32) / 2];
+        cheat_lists[0] = list1;
+        cheat_lists[1] = list2;
+
+        result =
+        f_read (
+            &file,        /* [IN] File object */
+            &cheatfile,  /* [OUT] Buffer to store read data */
+            fsize,         /* [IN] Number of bytes to read */
+            &bytesread    /* [OUT] Number of bytes read */
+        );
+
+        result = f_close(&file);
+
+        yaml_parser_set_input_string(&parser, cheatfile, strlen(cheatfile));
+        
+            do
+            {
+                if (!yaml_parser_parse(&parser, &event))
+                {
+                    // Free
+                    yaml_parser_delete(&parser);
+                    yaml_event_delete(&event);
+                    free(cheatfile);
+                    free(cheat_lists[0]);
+                    cheat_lists[0] = 0;
+                    cheat_lists[1] = 0;
+        
+                    return -3; // Parse error
+                }
+        
+                // Process YAML
+                switch (event.type)
+                {
+                case YAML_MAPPING_START_EVENT:
+                    // Begin code block
+                    is_code = 0;
+                    break;
+        
+                case YAML_SEQUENCE_START_EVENT:
+                    // Begin code lines
+                    is_code = 1;
+                    code_on = (event.data.sequence_start.tag ? !!strcasecmp(event.data.sequence_start.tag, "!off") : 1);
+                    break;
+        
+                case YAML_SEQUENCE_END_EVENT:
+                    // End code lines
+                    is_code = 0;
+                    code_on = 1;
+                    repeater = 0;
+                    break;
+        
+                case YAML_SCALAR_EVENT:
+                    // Code line
+                    if (!is_code || !code_on)
+                    {
+                        break;
+                    }
+        
+                    address = strtoul(event.data.scalar.value, &next, 16);
+                    value = strtoul(next, NULL, 16);
+        
+                    // Do not check code types within "repeater data"
+                    if (repeater)
+                    {
+                        repeater--;
+                        *list2++ = address;
+                        *list2++ = value;
+                        break;
+                    }
+        
+                    // Determine destination cheat_list for the code type
+                    switch (address >> 24)
+                    {
+        
+                    // Uncessary code types
+                    case 0x20: // Clear code list
+                    case 0xCC: // Exception Handler Selection
+                    case 0xDE: // Entry Point
+                        break;
+        
+                    // Boot-time cheats
+                    case 0xEE: // Disable Expansion Pak
+                    case 0xF0: // 8-bit Boot-Time Write
+                    case 0xF1: // 16-bit Boot-Time Write
+                    case 0xFF: // Cheat Engine Location
+                        *list1++ = address;
+                        *list1++ = value;
+                        break;
+        
+                    // In-game cheats
+                    case 0x50: // Repeater/Patch
+                        // Validate repeater count
+                        if (address & 0x0000FF00)
+                        {
+                            repeater = 1;
+                            *list2++ = address;
+                            *list2++ = value;
+                        }
+                        break;
+        
+                    // Everything else
+                    default:
+                        if (!address)
+                        {
+                            // TODO: Support special code types! :)
+                        }
+                    // Fall-through!
+        
+                    case 0xD0: // 8-bit Equal-To Conditional
+                    case 0xD1: // 16-bit Equal-To Conditional
+                    case 0xD2: // 8-bit Not-Equal-To Conditional
+                    case 0xD3: // 16-bit Not-Equal-To Conditional
+                        // Validate 16-bit codes
+                        if ((address & 0x01000001) == 0x01000001)
+                        {
+                            break;
+                        }
+        
+                        *list2++ = address;
+                        *list2++ = value;
+                        break;
+                    }
+                    break;
+        
+                case YAML_STREAM_END_EVENT:
+                    // And we're outta here!
+                    done = 1;
+                    break;
+        
+                default:
+                    break;
+                }
+        
+                yaml_event_delete(&event);
+            } while (!done);
+        
+            // Free
+            yaml_parser_delete(&parser);
+            free(cheatfile);
+        
+            return repeater; // Ok or repeater error
+
+    }
+    else
     {
         return -1; //err file not found
     }
-
-    u8 resp = 0;
-    resp = fatOpenFileByName(filename, 0);
-
-    //filesize of the opend file -> is the readfile / 512
-    int fsize = file.sec_available * 512;
-    char *cheatfile = malloc(fsize);
-    if (!cheatfile)
-    {
-        return -2; // Out of memory
-    }
-
-    /*
-     * Size of the cheat list can never be more than half the size of the YAML
-     * Minimum YAML example:
-     *   A:-80001234 FFFF
-     * Which is exactly 16 bytes.
-     * The cheat list in this case fits into exactly 8 bytes (2 words):
-     *   0x80001234, 0x0000FFFF
-     */
-    list1 = calloc(1, fsize + 2 * sizeof(u32)); // Plus 2 words to be safe
-    if (!list1)
-    {
-        // Free
-        free(cheatfile);
-        return -2; // Out of memory
-    }
-    list2 = &list1[fsize / sizeof(u32) / 2];
-    cheat_lists[0] = list1;
-    cheat_lists[1] = list2;
-
-    resp = fatReadFile(cheatfile, fsize / 512); //1 cluster
-
-    yaml_parser_set_input_string(&parser, cheatfile, strlen(cheatfile));
-
-    do
-    {
-        if (!yaml_parser_parse(&parser, &event))
-        {
-            // Free
-            yaml_parser_delete(&parser);
-            yaml_event_delete(&event);
-            free(cheatfile);
-            free(cheat_lists[0]);
-            cheat_lists[0] = 0;
-            cheat_lists[1] = 0;
-
-            return -3; // Parse error
-        }
-
-        // Process YAML
-        switch (event.type)
-        {
-        case YAML_MAPPING_START_EVENT:
-            // Begin code block
-            is_code = 0;
-            break;
-
-        case YAML_SEQUENCE_START_EVENT:
-            // Begin code lines
-            is_code = 1;
-            code_on = (event.data.sequence_start.tag ? !!strcasecmp(event.data.sequence_start.tag, "!off") : 1);
-            break;
-
-        case YAML_SEQUENCE_END_EVENT:
-            // End code lines
-            is_code = 0;
-            code_on = 1;
-            repeater = 0;
-            break;
-
-        case YAML_SCALAR_EVENT:
-            // Code line
-            if (!is_code || !code_on)
-            {
-                break;
-            }
-
-            address = strtoul(event.data.scalar.value, &next, 16);
-            value = strtoul(next, NULL, 16);
-
-            // Do not check code types within "repeater data"
-            if (repeater)
-            {
-                repeater--;
-                *list2++ = address;
-                *list2++ = value;
-                break;
-            }
-
-            // Determine destination cheat_list for the code type
-            switch (address >> 24)
-            {
-
-            // Uncessary code types
-            case 0x20: // Clear code list
-            case 0xCC: // Exception Handler Selection
-            case 0xDE: // Entry Point
-                break;
-
-            // Boot-time cheats
-            case 0xEE: // Disable Expansion Pak
-            case 0xF0: // 8-bit Boot-Time Write
-            case 0xF1: // 16-bit Boot-Time Write
-            case 0xFF: // Cheat Engine Location
-                *list1++ = address;
-                *list1++ = value;
-                break;
-
-            // In-game cheats
-            case 0x50: // Repeater/Patch
-                // Validate repeater count
-                if (address & 0x0000FF00)
-                {
-                    repeater = 1;
-                    *list2++ = address;
-                    *list2++ = value;
-                }
-                break;
-
-            // Everything else
-            default:
-                if (!address)
-                {
-                    // TODO: Support special code types! :)
-                }
-            // Fall-through!
-
-            case 0xD0: // 8-bit Equal-To Conditional
-            case 0xD1: // 16-bit Equal-To Conditional
-            case 0xD2: // 8-bit Not-Equal-To Conditional
-            case 0xD3: // 16-bit Not-Equal-To Conditional
-                // Validate 16-bit codes
-                if ((address & 0x01000001) == 0x01000001)
-                {
-                    break;
-                }
-
-                *list2++ = address;
-                *list2++ = value;
-                break;
-            }
-            break;
-
-        case YAML_STREAM_END_EVENT:
-            // And we're outta here!
-            done = 1;
-            break;
-
-        default:
-            break;
-        }
-
-        yaml_event_delete(&event);
-    } while (!done);
-
-    // Free
-    yaml_parser_delete(&parser);
-    free(cheatfile);
-
-    return repeater; // Ok or repeater error
 }
 
 //TODO: UNUSED CODE, WHAT IS IS FOR? BattleTanx??? but where to insert it???
