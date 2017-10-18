@@ -1074,12 +1074,15 @@ sprite_t *loadPng(u8 *png_filename)
 
 void loadgbrom(display_context_t disp, u8 *buff)
 {
-    FatRecord rec_tmpf;
+    FRESULT fr;
+    FILINFO fno;
 
-    if (fatFindRecord("/ED64/gblite.z64", &rec_tmpf, 0) == 0) //filename already exists?
+    fr = f_stat("/ED64/gblite.z64", &fno);
+    if (fr == FR_OK) 
     {
         u8 gb_sram_file[64];
 
+        FatRecord rec_tmpf;
         u8 resp = 0;
 
         sprintf(gb_sram_file, "/ED64/%s/gblite.SRM", save_path);
@@ -1097,8 +1100,8 @@ void loadgbrom(display_context_t disp, u8 *buff)
 
         resp = fatWriteFile(&sram_buffer, 32768 / 512);
 
-        while (!(disp = display_lock()))
-            ;
+        // while (!(disp = display_lock()))
+        //     ;
 
         sprintf(rom_filename, "gblite");
         gbload = 1;
@@ -1257,14 +1260,16 @@ void loadggrom(display_context_t disp, u8 *rom_path) //TODO: this could be merge
 
 void rom_load_y(void)
 {
-    FatRecord rec_tmpf;
+    FRESULT fr;
+    FILINFO fno;
 
     u8 gb_sram_file[64];
     u8 gb_sram_file2[64];
     sprintf(gb_sram_file, "%c%c%c%c%c%c%c", 'O', 'S', '6', '4', 'P', '/', 'O');
     sprintf(gb_sram_file2, "%s%c%c%c%c%c%c%c%c", gb_sram_file, 'S', '6', '4', 'P', '.', 'v', '6', '4');
 
-    if (fatFindRecord(gb_sram_file2, &rec_tmpf, 0) == 0) //filename already exists?
+    fr = f_stat(gb_sram_file2, &fno);
+    if (fr == FR_OK) 
     {
         gb_load_y = 1;
     }
@@ -1535,16 +1540,26 @@ int backupSaveData(display_context_t disp)
     int save_format;
     uint8_t cfg_data[512]; //TODO: this should be a strut?
 
-    FatRecord rec_tmpf;
 
-    if (fatFindRecord(config_file_path, &rec_tmpf, 0) == 0) //file exists?
+    FRESULT result;
+    FIL file;
+    UINT bytesread;
+    result = f_open(&file, config_file_path, FA_OPEN_ALWAYS);
+
+    if (result == FR_OK)
     {
         printText("updating last played game record...", 3, 4, disp);
 
-        //file to cfg_data buffer
-        u8 resp = 0;
-        fatOpenFileByName(config_file_path, 0);
-        fatReadFile(&cfg_data, 1);
+        int fsize = f_size(&file);
+
+
+        result =
+        f_read (
+            &file,        /* [IN] File object */
+            &cfg_data,  /* [OUT] Buffer to store read data */
+            fsize,         /* [IN] Number of bytes to read */
+            &bytesread    /* [OUT] Number of bytes read */
+        );
 
         //split in save type and cart-id
         save_format = cfg_data[0];
@@ -1557,14 +1572,21 @@ int backupSaveData(display_context_t disp)
             //set savetype to off
             cfg_data[0] = 0;
 
-            resp = fatOpenFileByName(config_file_path, 1); //if sector is set filemode=WR writeable
 
-            TRACEF(disp, "FAT_OpenFileByName returned: %i", resp);
+            result = f_lseek(&file, 0);
 
-            resp = fatWriteFile(&cfg_data, 1); //filemode must be wr
+            UINT* bw;
+            result = f_write (
+                &file,          /* [IN] Pointer to the file object structure */
+                &cfg_data, /* [IN] Pointer to the data to be written */
+                1,         /* [IN] Number of bytes to write */ //only override the first byte!!!
+                bw          /* [OUT] Pointer to the variable to return number of bytes written */
+              );
+
+              result = f_close(&file);
 
             TRACE(disp, "Disabling save for subsequent system reboots");
-            TRACEF(disp, "FAT_WriteFile returned: %i", resp);
+            TRACEF(disp, "FAT_WriteFile returned: %i", result);
 
             volatile u8 save_config_state = 0;
             evd_readReg(0);
@@ -1578,28 +1600,25 @@ int backupSaveData(display_context_t disp)
                 }
                 save_after_reboot = 1;
             }
-        }
-        else
-        {
-            TRACE(disp, "Save not required.");
-            printText("...ready", 3, -1, disp);
+            else
+            {
+                result = f_close(&file);
+                TRACE(disp, "Save not required.");
+                printText("...ready", 3, -1, disp);
+    
+                return 1;
+            }
 
-            sleep(200);
-
-            return 1;
         }
+
     }
-    else
+    else //TODO: check required! I am pretty sure it is not!
     {
         TRACE(disp, "No previous ROM loaded - the file 'last.crt' was not found!");
         printText("...ready", 3, -1, disp);
 
         return 0;
     }
-
-    //if (debug) {
-    //    sleep(5000);
-    //}
 
     //reset with save request
     if (save_after_reboot)
@@ -1618,8 +1637,6 @@ int backupSaveData(display_context_t disp)
     {
         TRACE(disp, "no reset - save request");
         printText("...done", 3, -1, disp);
-
-        sleep(300);
     }
 
     return 1;
@@ -1685,67 +1702,52 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
     rom_load_y();
 
     //after reset create new savefile
-    u8 tmp[32];
-    u8 fname[128]; //filename buffer to small :D
-    u8 found = 0;
-
-    int size;
-    size = saveTypeToSize(stype); // int byte
-
-    TRACEF(disp, "size for save=%i", size);
-
+    u8 fname[128]; //TODO: change filename buffers to 256!!!
     sprintf(fname, "/ED64/%s/%s.%s", save_path, rom_name, saveTypeToExtension(stype, ext_type));
 
-    FatRecord rec_tmpf;
-    found = fatFindRecord(fname, &rec_tmpf, 0);
+    int size = saveTypeToSize(stype); // int byte
+    TRACEF(disp, "size for save=%i", size);
 
-    TRACEF(disp, "found=%i", found);
+    FRESULT result;
+    FIL file;
+    UINT bytesread;
+    result = f_open(&file, fname, FA_OPEN_ALWAYS); //Could use FA_CREATE_ALWAYS but this could lead to the posibility of the file being emptied
 
-    u8 resp = 0;
-
-    //FAT_ERR_NOT_EXIST 100
-    if (found != 0)
+    if (result == FR_OK)
     {
-        //create before save
-        printText("try fatCreateRecIfNotExist", 3, -1, disp);
-        resp = fatCreateRecIfNotExist(fname, 0);
-
-        TRACEF(disp, "fatCreateRecIfNotExist returned: %i", resp); //0 means try to create
-    }
-
-    //open file with stype size
-    resp = fatOpenFileByName(fname, size / 512);
-
-    TRACEF(disp, "fatOpenFileByName returned: %i", resp); //100 not exist
-
-    //for savegame
-    uint8_t cartsave_data[size];
-
-    for (int zero = 0; zero < size; zero++)
-        cartsave_data[zero] = 0;
-
-    TRACEF(disp, "cartsave_data=%p", &cartsave_data);
-
-    //universal dumpfunction
-    //returns data from fpga/cart to save on sd
-
-    if (getSaveFromCart(stype, cartsave_data))
-    {
-        printText("got save from fpga", 3, -1, disp);
-        //write to file
-
-        if (gb_load_y != 1)
-            fatWriteFile(&cartsave_data, size / 512);
-
-        printText("reset-save done...", 3, -1, disp);
-        sleep(3000);
-        return 1;
-    }
-    else
-    {
-        printText("getSaveFromCart error", 3, -1, disp);
-        sleep(3000);
-        return 0;
+        //for savegame
+        uint8_t cartsave_data[size];
+    
+        for (int zero = 0; zero < size; zero++) //TODO: why set all to zero when it should be already?
+            cartsave_data[zero] = 0;
+    
+        TRACEF(disp, "cartsave_data=%p", &cartsave_data);
+    
+        printText("Transfering save data...", 3, -1, disp);
+        if (getSaveFromCart(stype, cartsave_data))
+        {
+            //write to file
+            if (gb_load_y != 1)
+            {
+                UINT* bw;
+                result = f_write (
+                    &file,          /* [IN] Pointer to the file object structure */
+                    &cartsave_data, /* [IN] Pointer to the data to be written */
+                    size,         /* [IN] Number of bytes to write */
+                    bw          /* [OUT] Pointer to the variable to return number of bytes written */
+                  );
+                  result = f_close(&file);
+            }
+    
+            printText("RAM area copied to SD card.", 3, -1, disp);
+            return 1;
+        }
+        else
+        {
+            result = f_close(&file);
+            printText("Error saving game to SD", 3, -1, disp);
+            return 0;
+        }
     }
 }
 
