@@ -821,8 +821,12 @@ static int configHandler(void *user, const char *section, const char *name, cons
 
 void updateFirmware(char *filename)
 { //check that firmware exists on the disk? mainly because it has to be ripped from the official image and may not have been.
-    FatRecord rec_tmpf;
-    if (fatFindRecord(filename, &rec_tmpf, 0) == 0)
+    FRESULT fr;
+    FILINFO fno;
+
+    fr = f_stat(filename, &fno); //TODO: given this is on the ROM (not SD) does it even work??????
+
+    if (fr == FR_OK)
     {
         int fpf = dfs_open(filename);
         firmware = malloc(dfs_size(fpf));
@@ -2606,52 +2610,93 @@ void drawToplistBox(display_context_t disp, int line)
 {
     list_pos_backup[0] = cursor;
     list_pos_backup[1] = page;
-
+    int dsize = 0;
     u8 list_size = 0;
 
     if (line == 0)
     {
-        FatRecord *rec;
-        u8 resp = 0;
+        char* path = "/ED64/CFG";
+        
+        FRESULT res;
+        DIR dir;
+        UINT i;
+        static FILINFO fno;
 
-        count = 1;
-        dir_t buf;
-
-        //load the directory-entry
-        resp = fatLoadDirByName("/ED64/CFG");
-
-        int dsize = dir->size;
-
-        char toplist[dsize][256];
-
-        for (int i = 0; i < dir->size; i++)
-        {
-            rec = dir->rec[i];
-            u8 rom_cfg_file[128];
-
-            //set rom_cfg
-            sprintf(rom_cfg_file, "/ED64/CFG/%s", rec->name);
-
-            static uint8_t cfg_file_data[512] = {0};
-
-            resp = fatOpenFileByName(rom_cfg_file, 0); //512 bytes fix one cluster
-            resp = fatReadFile(&cfg_file_data, 1);
-
-            toplist[i][0] = (char)cfg_file_data[5];     //quality
-            strcpy(toplist[i] + 1, cfg_file_data + 32); //fullpath
+        //TODO: is there a better way we can count the entries perhaps a hashtable?
+        res = f_opendir(&dir, path);                       /* Open the directory */
+        if (res == FR_OK) {
+            for (;;) {
+                res = f_readdir(&dir, &fno);                   /* Read a directory item */
+                if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
+                if (!fno.fattrib & !AM_DIR) { 
+                    dsize++;
+                }
+            }
+            f_closedir(&dir);
         }
 
-        qsort(toplist, dsize, 256, compare_int_reverse);
+        res = f_opendir(&dir, path);                       /* Open the directory */
+        if (res == FR_OK) {
+            char toplist[dsize][256];
+        
+            for (;;) {
+                res = f_readdir(&dir, &fno);                   /* Read a directory item */
+                if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
+                if (fno.fattrib & AM_DIR) {                    /* It is a directory */
+                    //i = strlen(path);
+                    // sprintf(&path[i], "/%s", fno.fname);
+                    // res = scan_files(path);                    /* Enter the directory */
+                    // if (res != FR_OK) break;
+                    // path[i] = 0;
+                } else {                                       /* It is a file. */
+                    u8 rom_cfg_file[128];
+                    
+                    //set rom_cfg
+                    sprintf(rom_cfg_file, path, fno.fname);
+                    
+                    FRESULT result;
+                    FIL file;
+                    UINT bytesread;
+                    result = f_open(&file, rom_cfg_file, FA_READ);
+                
+                    if (result == FR_OK)
+                    {
+                        
+                        static uint8_t cfg_file_data[512] = {0};
 
-        if (dsize > 15)
-            list_size = 15;
-        else
-            list_size = dsize;
+                        int fsize = f_size(&file);
+                
+                        result =
+                        f_read (
+                            &file,        /* [IN] File object */
+                            &cfg_file_data,  /* [OUT] Buffer to store read data */
+                            fsize,         /* [IN] Number of bytes to read */
+                            &bytesread    /* [OUT] Number of bytes read */
+                        );
+                
+                        result = f_close(&file);
+                
+                        toplist[i][0] = (char)cfg_file_data[5];     //quality
+                        strcpy(toplist[i] + 1, cfg_file_data + 32); //fullpath
+                        i++;
+                    }
+                }
+            }
+            f_closedir(&dir);
+        
 
-        for (int c = 0; c < list_size; c++)
-            strcpy(toplist15[c], toplist[c]);
+            qsort(toplist, dsize, 256, compare_int_reverse);
 
-        list_pos_backup[2] = list_size;
+            if (dsize > 15)
+                list_size = 15;
+            else
+                list_size = dsize;
+
+            for (int c = 0; c < list_size; c++)
+                strcpy(toplist15[c], toplist[c]);
+
+            list_pos_backup[2] = list_size;
+        }
     }
 
     list_size = list_pos_backup[2];
@@ -4384,8 +4429,12 @@ int main(void)
         char background_path[64];
         sprintf(background_path, "/ED64/wallpaper/%s", background_image);
 
-        FatRecord rec_tmpf;
-        if (fatFindRecord(background_path, &rec_tmpf, 0) == 0)
+        FRESULT fr;
+        FILINFO fno;
+    
+        fr = f_stat(background_path, &fno);
+    
+        if (fr == FR_OK)
         {
             background = loadPng(background_path);
         }
