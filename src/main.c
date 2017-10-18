@@ -1082,31 +1082,39 @@ void loadgbrom(display_context_t disp, u8 *buff)
     {
         u8 gb_sram_file[64];
 
-        FatRecord rec_tmpf;
-        u8 resp = 0;
-
         sprintf(gb_sram_file, "/ED64/%s/gblite.SRM", save_path);
 
-        resp = fatFindRecord(gb_sram_file, &rec_tmpf, 0); //filename already exists
-        resp = fatCreateRecIfNotExist(gb_sram_file, 0);
-        resp = fatOpenFileByName(gb_sram_file, 32768 / 512);
+        FRESULT result;
+        FIL file;
+        UINT bytesread;
+        result = f_open(&file, gb_sram_file, FA_OPEN_ALWAYS);
+    
+        if (result == FR_OK)
+        {
+            static uint8_t sram_buffer[36928];
+            
+            for (int i = 0; i < 36928; i++)
+                sram_buffer[i] = 0;
+    
+            sprintf(sram_buffer, buff);
 
-        static uint8_t sram_buffer[36928];
+            UINT* bw;
+            result =
+            f_write (
+                &file,          /* [IN] Pointer to the file object structure */
+                &sram_buffer, /* [IN] Pointer to the data to be written */
+                32768,         /* [IN] Number of bytes to write */ //TODO: why is this shorter than the sram buffer?
+                bw          /* [OUT] Pointer to the variable to return number of bytes written */
+              );
+    
+            result = f_close(&file);
 
-        for (int i = 0; i < 36928; i++)
-            sram_buffer[i] = 0;
-
-        sprintf(sram_buffer, buff);
-
-        resp = fatWriteFile(&sram_buffer, 32768 / 512);
-
-        // while (!(disp = display_lock()))
-        //     ;
-
-        sprintf(rom_filename, "gblite");
-        gbload = 1;
-
-        loadrom(disp, "/ED64/gblite.z64", 1);
+            sprintf(rom_filename, "gblite");
+            gbload = 1;
+    
+            loadrom(disp, "/ED64/gblite.z64", 1);
+    
+        }
     }
 }
 
@@ -1579,7 +1587,7 @@ int backupSaveData(display_context_t disp)
             result = f_write (
                 &file,          /* [IN] Pointer to the file object structure */
                 &cfg_data, /* [IN] Pointer to the data to be written */
-                1,         /* [IN] Number of bytes to write */ //only override the first byte!!!
+                512,         /* [IN] Number of bytes to write */
                 bw          /* [OUT] Pointer to the variable to return number of bytes written */
               );
 
@@ -1716,10 +1724,7 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
     if (result == FR_OK)
     {
         //for savegame
-        uint8_t cartsave_data[size];
-    
-        for (int zero = 0; zero < size; zero++) //TODO: why set all to zero when it should be already?
-            cartsave_data[zero] = 0;
+        uint8_t cartsave_data[size] = {0};
     
         TRACEF(disp, "cartsave_data=%p", &cartsave_data);
     
@@ -1844,12 +1849,16 @@ void initFilesystem(void)
     FRESULT result = f_mount(fs,"",1);
     if(result != FR_OK)
     {
+        fat_initialized = 1;
+    }
+    else
+    {
         //printText("mount error", 11, -1, disp);
     }
 
     fatInitRam();
     fatInit();
-    fat_initialized = 1;
+
 }
 
 //prints the sdcard-filesystem content
@@ -2199,38 +2208,41 @@ void bootRom(display_context_t disp, int silent)
         if (boot_save != 0)
         {
             u8 cfg_file[32];
-            u8 found = 0;
-            u8 resp = 0;
-            u8 tmp[32];
 
             //set cfg file with last loaded cart info and save-type
             sprintf(cfg_file, "/ED64/%s/LAST.CRT", save_path);
 
-            resp = fatCreateRecIfNotExist(cfg_file, 0);
-            resp = fatOpenFileByName(cfg_file, 1); //512 bytes fix one cluster
+            FRESULT result;
+            FIL file;
+            result = f_open(&file, cfg_file, FA_OPEN_ALWAYS);
+        
+            if (result == FR_OK)
+            {
+                static uint8_t cfg_file_data[512] = {0};
+                cfg_file_data[0] = boot_save;
+                cfg_file_data[1] = boot_cic;
+                scopy(rom_filename, cfg_file_data + 2);
+        
+                UINT* bw; 
+                result =
+                f_write (
+                    &file,          /* [IN] Pointer to the file object structure */
+                    &cfg_file_data, /* [IN] Pointer to the data to be written */
+                    512,         /* [IN] Number of bytes to write */
+                    bw         /* [OUT] Pointer to the variable to return number of bytes written */
+                  );
+        
+                result = f_close(&file);
 
-            static uint8_t cfg_file_data[512] = {0};
-            cfg_file_data[0] = boot_save;
-            cfg_file_data[1] = boot_cic;
-            scopy(rom_filename, cfg_file_data + 2);
-
-            fatWriteFile(&cfg_file_data, 1);
-            sleep(500);
-
-            //set the fpga cart-save type
-            evd_setSaveType(boot_save);
-
-            TRACE(disp, "try to restore save from sd");
-
-            resp = saveTypeFromSd(disp, rom_filename, boot_save);
-
-            TRACEF(disp, "saveTypeFromSd returned: %i", resp);
+                //set the fpga cart-save type
+                evd_setSaveType(boot_save);
+            
+                saveTypeFromSd(disp, rom_filename, boot_save);
+            }
         }
 
         TRACE(disp, "Cartridge-Savetype set");
         TRACE(disp, "information stored for reboot-save...");
-
-        sleep(50);
 
         u32 cart, country;
         u32 info = *(vu32 *)0xB000003C;
@@ -2250,7 +2262,7 @@ void bootRom(display_context_t disp, int silent)
             if (ok == 0)
             {
                 printText("cheats found...", 3, -1, disp);
-                sleep(600);
+                //sleep(600);
             }
             else
             {
@@ -2273,7 +2285,7 @@ void bootRom(display_context_t disp, int silent)
         }
 
         evd_lockRegs();
-        sleep(1000);
+        //sleep(1000);
 
         while (!(disp = display_lock()))
             ;
@@ -2388,15 +2400,26 @@ void readRomConfig(display_context_t disp, char *short_filename, char *full_file
 
     uint8_t rom_cfg_data[512];
 
-    FatRecord rec_tmpf;
+    FRESULT result;
+    FIL file;
+    UINT bytesread;
+    result = f_open(&file, cfg_filename, FA_READ);
 
-    if (fatFindRecord(cfg_filename, &rec_tmpf, 0) == 0)
+    if (result == FR_OK)
     {
-        //read rom-config
-        u8 resp = 0;
-        resp = fatOpenFileByName(cfg_filename, 0);
-        resp = fatReadFile(&rom_cfg_data, 1);
 
+        result =
+        f_read (
+            &file,        /* [IN] File object */
+            &rom_cfg_data,  /* [OUT] Buffer to store read data */
+            512,         /* [IN] Number of bytes to read */
+            &bytesread    /* [OUT] Number of bytes read */
+        );
+
+        result = f_close(&file);
+
+            
+        rom_config[0] = 1; //preload cursor position 1 cic
         rom_config[1] = rom_cfg_data[0];
         rom_config[2] = rom_cfg_data[1];
         rom_config[3] = rom_cfg_data[2];
@@ -2406,16 +2429,13 @@ void readRomConfig(display_context_t disp, char *short_filename, char *full_file
         rom_config[7] = rom_cfg_data[6];
         rom_config[8] = rom_cfg_data[7];
         rom_config[9] = rom_cfg_data[8];
+
     }
     else
     {
         //preload with header data
-
         romInfoScreen(disp, full_filename, 1); //silent info screen with readout
     }
-
-    //preload cursor position 1 cic
-    rom_config[0] = 1;
 }
 
 void alterRomConfig(int type, int mode)
@@ -3039,22 +3059,42 @@ void loadFile(display_context_t disp)
     case 1:
         if (quick_boot) //write to the file
         {
-            u8 resp = 0;
-            resp = fatCreateRecIfNotExist("/ED64/LASTROM.CFG", 0);
-            resp = fatOpenFileByName("/ED64/LASTROM.CFG", 1); //512 bytes fix one cluster
-            static uint8_t lastrom_file_data[512] = {0};
-            scopy(name_file, lastrom_file_data);
-            fatWriteFile(&lastrom_file_data, 1);
+            FRESULT result;
+            FIL file;
+            UINT bytesread;
+            result = f_open(&file, "/ED64/LASTROM.CFG", FA_OPEN_ALWAYS);
+        
+            if (result == FR_OK)
+            {
+                static uint8_t lastrom_file_data[512] = {0};
+                scopy(name_file, lastrom_file_data);
+        
+                UINT* bw;
+                result =
+                f_write (
+                    &file,          /* [IN] Pointer to the file object structure */
+                    &lastrom_file_data, /* [IN] Pointer to the data to be written */
+                    512,         /* [IN] Number of bytes to write */
+                    bw          /* [OUT] Pointer to the variable to return number of bytes written */
+                  );
+        
+                result = f_close(&file);
+
+                if (result == FR_OK)
+                {
+                    //read rom_config data
+                    readRomConfig(disp, rom_filename, name_file);
+            
+                    loadrom(disp, name_file, 1);
+                    display_show(disp);
+            
+                    //rom loaded mapping
+                    input_mapping = rom_loaded;
+                }
+
+            }
+
         }
-
-        //read rom_config data
-        readRomConfig(disp, rom_filename, name_file);
-
-        loadrom(disp, name_file, 1);
-        display_show(disp);
-
-        //rom loaded mapping
-        input_mapping = rom_loaded;
         break;
     case 2:
         while (!(disp = display_lock()))
@@ -3995,11 +4035,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
         }
         case rom_config_box:
         {
-            //save rom_cfg[] to
-            // /ED64/CFG/Romname.cfg if not exist create
-            // if exist open/write
-
-            //print confirm msg
             char name_file[256];
 
             if (strcmp(pwd, "/") == 0)
@@ -4014,27 +4049,41 @@ void handleInput(display_context_t disp, sprite_t *contr)
             //set rom_cfg
             sprintf(rom_cfg_file, "/ED64/CFG/%s.CFG", rom_filename);
 
-            resp = fatCreateRecIfNotExist(rom_cfg_file, 0);
-            resp = fatOpenFileByName(rom_cfg_file, 1); //512 bytes fix one cluster
 
-            static uint8_t cfg_file_data[512] = {0};
-            cfg_file_data[0] = rom_config[1]; //cic
-            cfg_file_data[1] = rom_config[2]; //save
-            cfg_file_data[2] = rom_config[3]; //tv
-            cfg_file_data[3] = rom_config[4]; //cheat
-            cfg_file_data[4] = rom_config[5]; //chksum
-            cfg_file_data[5] = rom_config[6]; //rating
-            cfg_file_data[6] = rom_config[7]; //country
-            cfg_file_data[7] = rom_config[8];
-            cfg_file_data[8] = rom_config[9];
+            FRESULT result;
+            FIL file;
+            result = f_open(&file, rom_cfg_file, FA_OPEN_ALWAYS);
+        
+            if (result == FR_OK)
+            {
+                static uint8_t cfg_file_data[512] = {0};
+                cfg_file_data[0] = rom_config[1]; //cic
+                cfg_file_data[1] = rom_config[2]; //save
+                cfg_file_data[2] = rom_config[3]; //tv
+                cfg_file_data[3] = rom_config[4]; //cheat
+                cfg_file_data[4] = rom_config[5]; //chksum
+                cfg_file_data[5] = rom_config[6]; //rating
+                cfg_file_data[6] = rom_config[7]; //country
+                cfg_file_data[7] = rom_config[8];
+                cfg_file_data[8] = rom_config[9];
+    
+                //copy full rom path to offset at 32 byte - 32 bytes reversed
+                scopy(name_file, cfg_file_data + 32); //filename to rom_cfg file
+       
+                UINT* bw;
+                result =
+                f_write (
+                    &file,          /* [IN] Pointer to the file object structure */
+                    &cfg_file_data, /* [IN] Pointer to the data to be written */
+                    512,         /* [IN] Number of bytes to write */
+                    bw          /* [OUT] Pointer to the variable to return number of bytes written */
+                  );
+        
+                result = f_close(&file);
 
-            //copy full rom path to offset at 32 byte - 32 bytes reversed
-            scopy(name_file, cfg_file_data + 32); //filename to rom_cfg file
-            fatWriteFile(&cfg_file_data, 1);
-            sleep(200);
-
-            drawShortInfoBox(disp, "         done", 0);
-            toplist_reload = 1;
+                drawShortInfoBox(disp, "         done", 0);
+                toplist_reload = 1;    
+            }
 
             input_mapping = abort_screen;
             break;
