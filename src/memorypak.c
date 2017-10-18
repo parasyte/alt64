@@ -10,7 +10,6 @@
 #include "types.h"
 #include "memorypak.h"
 #include "ff.h"
-#include "fat_old.h"
 #include "menu.h"
 #include "mem.h"
 #include "strlib.h"
@@ -391,44 +390,57 @@ void mpk_to_file(display_context_t disp, char *mpk_filename, int quick)
     else
         sprintf(buff, "%s%s.MPK", mempak_path, mpk_filename);
 
-    FatRecord rec_tmpf;
+    FRESULT fr;
+    FILINFO fno;
 
-    if (!fatFindRecord(buff, &rec_tmpf, 0))
-    { //filename already exists
+    fr = f_stat(buff, &fno);
+    if(fr == FR_OK)
+    {
         printText("File exists", 9, -1, disp);
         if (quick)
             printText("override", 9, -1, disp);
         else
-            while (ok == 0)
+            while (fr == FR_OK)
             {
                 sprintf(buff, "%s%s%i.MPK", mempak_path, mpk_filename, v);
 
-                ok = fatFindRecord(buff, &rec_tmpf, 0);
-                if (ok == 0)
+                fr = f_stat(buff, &fno);
+                if (fr == FR_OK)
                     v++;
                 else
                     break;
             }
     }
 
-    u8 resp = 0;
-    resp = fatCreateRecIfNotExist(buff, 0);
-    resp = fatOpenFileByName(buff, 32768 / 512);
+    FRESULT result;
+    FIL file;
+    result = f_open(&file, buff, FA_OPEN_ALWAYS);
 
-    controller_init();
-
-    int err = 0;
-    for (int j = 0; j < 128; j++)
+    if (result == FR_OK)
     {
-        err |= read_mempak_sector(0, j, &mempak_data[j * 256]);
+        controller_init();
+        
+        int err = 0;
+        for (int j = 0; j < 128; j++)
+        {
+            err |= read_mempak_sector(0, j, &mempak_data[j * 256]);
+        }
+
+        UINT* bw;
+        result =
+        f_write (
+            &file,          /* [IN] Pointer to the file object structure */
+            &mempak_data, /* [IN] Pointer to the data to be written */
+            32768,         /* [IN] Number of bytes to write */
+            bw          /* [OUT] Pointer to the variable to return number of bytes written */
+          );
+
+        result = f_close(&file);
+
+        
+        sprintf(buff, "File: %s%i.MPK", mpk_filename, v);
+    
+        printText(buff, 9, -1, disp);
+        printText("backup done...", 9, -1, disp);
     }
-
-    fatWriteFile(&mempak_data, 32768 / 512);
-
-    sleep(500);
-
-    sprintf(buff, "File: %s%i.MPK", mpk_filename, v);
-
-    printText(buff, 9, -1, disp);
-    printText("backup done...", 9, -1, disp);
 }
