@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "types.h"
+#include "mempak.h"
 #include "memorypak.h"
 #include "ff.h"
 #include "menu.h"
@@ -413,7 +414,7 @@ void mpk_to_file(display_context_t disp, char *mpk_filename, int quick)
 
     FRESULT result;
     FIL file;
-    result = f_open(&file, buff, FA_OPEN_ALWAYS);
+    result = f_open(&file, buff, FA_WRITE | FA_OPEN_ALWAYS);
 
     if (result == FR_OK)
     {

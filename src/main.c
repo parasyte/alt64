@@ -1091,7 +1091,7 @@ void loadgbrom(display_context_t disp, u8 *buff)
         FRESULT result;
         FIL file;
         UINT bytesread;
-        result = f_open(&file, gb_sram_file, FA_OPEN_ALWAYS);
+        result = f_open(&file, gb_sram_file, FA_WRITE | FA_OPEN_ALWAYS);
     
         if (result == FR_OK)
         {
@@ -1556,7 +1556,7 @@ int backupSaveData(display_context_t disp)
     FRESULT result;
     FIL file;
     UINT bytesread;
-    result = f_open(&file, config_file_path, FA_OPEN_ALWAYS);
+    result = f_open(&file, config_file_path, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
 
     if (result == FR_OK)
     {
@@ -1573,64 +1573,71 @@ int backupSaveData(display_context_t disp)
             &bytesread    /* [OUT] Number of bytes read */
         );
 
-        //split in save type and cart-id
-        save_format = cfg_data[0];
-        int last_cic = cfg_data[1];
-        scopy(cfg_data + 2, rom_filename); //string copy
+        TRACEF(disp, "FAT_ReadFile returned: %i", result);
 
-        //set savetype to 0 disable for next boot
-        if (save_format != 0)
+        if (bytesread > 0)
         {
-            //set savetype to off
-            cfg_data[0] = 0;
+            //split in save type and cart-id
+            save_format = cfg_data[0];
+            int last_cic = cfg_data[1];
+            scopy(cfg_data + 2, rom_filename); //string copy
 
+            TRACE(disp, "copied last played game string");
 
-            result = f_lseek(&file, 0);
-
-            UINT* bw;
-            result = f_write (
-                &file,          /* [IN] Pointer to the file object structure */
-                &cfg_data, /* [IN] Pointer to the data to be written */
-                512,         /* [IN] Number of bytes to write */
-                bw          /* [OUT] Pointer to the variable to return number of bytes written */
-              );
-
-              result = f_close(&file);
-
-            TRACE(disp, "Disabling save for subsequent system reboots");
-            TRACEF(disp, "FAT_WriteFile returned: %i", result);
-
-            volatile u8 save_config_state = 0;
-            evd_readReg(0);
-            save_config_state = evd_readReg(REG_SAV_CFG);
-
-            if (save_config_state != 0 || evd_getFirmVersion() >= 0x0300)
-            { //save register set or the firmware is V3
-                if (save_config_state == 0)
-                {                                 //we are V3 and have had a hard reboot
-                    evd_writeReg(REG_SAV_CFG, 1); //so we need to tell the save register it still has data.
-                }
-                save_after_reboot = 1;
-            }
-            else
+            //set savetype to 0 disable for next boot
+            if (save_format != 0)
             {
+                //set savetype to off
+                cfg_data[0] = 0;
+
+
+                result = f_lseek(&file, 0);
+
+                UINT* bw;
+                result = f_write (
+                    &file,          /* [IN] Pointer to the file object structure */
+                    &cfg_data, /* [IN] Pointer to the data to be written */
+                    512,         /* [IN] Number of bytes to write */
+                    bw          /* [OUT] Pointer to the variable to return number of bytes written */
+                );
+
                 result = f_close(&file);
-                TRACE(disp, "Save not required.");
-                printText("...ready", 3, -1, disp);
-    
-                return 1;
+
+                TRACE(disp, "Disabling save for subsequent system reboots");
+                TRACEF(disp, "FAT_WriteFile returned: %i", result);
+
+                volatile u8 save_config_state = 0;
+                evd_readReg(0);
+                save_config_state = evd_readReg(REG_SAV_CFG);
+
+                if (save_config_state != 0 || evd_getFirmVersion() >= 0x0300)
+                { //save register set or the firmware is V3
+                    if (save_config_state == 0)
+                    {                                 //we are V3 and have had a hard reboot
+                        evd_writeReg(REG_SAV_CFG, 1); //so we need to tell the save register it still has data.
+                    }
+                    save_after_reboot = 1;
+                }
+                else
+                {
+                    result = f_close(&file);
+                    TRACE(disp, "Save not required.");
+                    printText("...ready", 3, -1, disp);
+        
+                    return 1;
+                }
+
             }
-
         }
-
+        else
+        {
+            TRACE(disp, "No previous ROM loaded!");
+            printText("...ready", 3, -1, disp);
+    
+            return 0;
+        }
     }
-    else //TODO: check required! I am pretty sure it is not!
-    {
-        TRACE(disp, "No previous ROM loaded - the file 'last.crt' was not found!");
-        printText("...ready", 3, -1, disp);
 
-        return 0;
-    }
 
     //reset with save request
     if (save_after_reboot)
@@ -1723,7 +1730,7 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
     FRESULT result;
     FIL file;
     UINT bytesread;
-    result = f_open(&file, fname, FA_OPEN_ALWAYS); //Could use FA_CREATE_ALWAYS but this could lead to the posibility of the file being emptied
+    result = f_open(&file, fname, FA_WRITE | FA_OPEN_ALWAYS); //Could use FA_CREATE_ALWAYS but this could lead to the posibility of the file being emptied
 
     if (result == FR_OK)
     {
@@ -1855,16 +1862,16 @@ void initFilesystem(void)
     FRESULT result = f_mount(fs,"",1);
     if(result != FR_OK)
     {
-        fat_initialized = 1;
+        //printText("mount error", 11, -1, disp);
     }
     else
     {
-        //printText("mount error", 11, -1, disp);
+        fat_initialized = 1;
     }
 
     fatInitRam();
     fatInit();
-
+    
 }
 
 //prints the sdcard-filesystem content
@@ -2232,7 +2239,7 @@ void bootRom(display_context_t disp, int silent)
 
             FRESULT result;
             FIL file;
-            result = f_open(&file, cfg_file, FA_OPEN_ALWAYS);
+            result = f_open(&file, cfg_file, FA_WRITE | FA_OPEN_ALWAYS);
         
             if (result == FR_OK)
             {
@@ -3121,7 +3128,7 @@ void loadFile(display_context_t disp)
             FRESULT result;
             FIL file;
             UINT bytesread;
-            result = f_open(&file, "/ED64/LASTROM.CFG", FA_OPEN_ALWAYS);
+            result = f_open(&file, "/ED64/LASTROM.CFG", FA_WRITE | FA_OPEN_ALWAYS);
         
             if (result == FR_OK)
             {
@@ -4111,7 +4118,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
 
             FRESULT result;
             FIL file;
-            result = f_open(&file, rom_cfg_file, FA_OPEN_ALWAYS);
+            result = f_open(&file, rom_cfg_file, FA_WRITE | FA_OPEN_ALWAYS);
         
             if (result == FR_OK)
             {
