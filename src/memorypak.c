@@ -11,9 +11,17 @@
 #include "memorypak.h"
 #include "ff.h"
 #include "menu.h"
-#include "mem.h"
+#include "debug.h"
 #include "strlib.h"
 #include "sys.h"
+
+
+enum MemoryPakFormat
+{
+    None,
+    DexDrive,
+    Z64
+};
 
 static uint8_t mempak_data[128 * 256];
 char *mempak_path;
@@ -89,13 +97,11 @@ char ___CountBlocks(char *bMemPakBinary, char *aNoteSizes)
 }
 
 //old method to write a file to the mempak at controller 1
-void file_to_mpk(display_context_t disp, u8 *filename)
+int file_to_mpk(display_context_t disp, u8 *filename)
 {
+    enum MemoryPakFormat memorypak_format;
     u8 buff[64];
 
-    printText(filename, 9, -1, disp);
-    
-    
     FRESULT result;
     FIL file;
     UINT bytesread;
@@ -111,32 +117,26 @@ void file_to_mpk(display_context_t disp, u8 *filename)
 
         if (strcmp(buff, "64") == 0)
         {
-            printText("Dexdrive format", 9, -1, disp);
-            printText("skip header", 9, -1, disp);
-
-            static uint8_t mempak_data_buff[36928];
-
-            result =
-            f_read (
-                &file,        /* [IN] File object */
-                &mempak_data_buff,  /* [OUT] Buffer to store read data */
-                36928,         /* [IN] Number of bytes to read */
-                &bytesread    /* [OUT] Number of bytes read */
-            );
-
-            memcpy(&mempak_data, mempak_data_buff + 4160, 32768);
+            TRACE(disp, "Dexdrive format");
+            memorypak_format = DexDrive;
+            //skip header
+            result = f_lseek (
+                &file,  /* [IN] File object */
+                4160  /* [IN] File read/write pointer */
+              );
         }
-        else
-        {
-            printText("Z64 format", 9, -1, disp);
-            result =
-            f_read (
-                &file,        /* [IN] File object */
-                &mempak_data,  /* [OUT] Buffer to store read data */
-                32768,         /* [IN] Number of bytes to read */
-                &bytesread    /* [OUT] Number of bytes read */
-            );
-        }
+
+        TRACE(disp, "Z64 format");
+        memorypak_format = Z64;
+
+        result =
+        f_read (
+            &file,        /* [IN] File object */
+            &mempak_data,  /* [OUT] Buffer to store read data */
+            32768,         /* [IN] Number of bytes to read */
+            &bytesread    /* [OUT] Number of bytes read */
+        );
+
         result = f_close(&file);
 
         int err = 0;
@@ -145,6 +145,12 @@ void file_to_mpk(display_context_t disp, u8 *filename)
             err |= write_mempak_sector(0, j, &mempak_data[j * MEMPAK_BLOCK_SIZE]);
         }
     }
+    else
+    {
+        memorypak_format = None;
+    }
+
+    return (int)memorypak_format; //TODO: should return enum
 }
 
 void view_mpk_file(display_context_t disp, char *mpk_filename)
@@ -166,32 +172,25 @@ void view_mpk_file(display_context_t disp, char *mpk_filename)
 
         if (strcmp(buff, "64") == 0) //DEXDRIVE format
         {
-            static uint8_t mempak_data_buff[36928];
-
-            result =
-            f_read (
-                &file,        /* [IN] File object */
-                &mempak_data_buff,  /* [OUT] Buffer to store read data */
-                36928,         /* [IN] Number of bytes to read */
-                &bytesread    /* [OUT] Number of bytes read */
-            );
-
-            memcpy(&mempak_data, mempak_data_buff + 4160, 32768);
+            //skip header
+            result = f_lseek (
+                &file,  /* [IN] File object */
+                4160  /* [IN] File read/write pointer */
+              );
         }
-        else //Z64 format
-        {
-            result =
-            f_read (
-                &file,        /* [IN] File object */
-                &mempak_data,  /* [OUT] Buffer to store read data */
-                32768,         /* [IN] Number of bytes to read */
-                &bytesread    /* [OUT] Number of bytes read */
-            );
-        }
+
+        result =
+        f_read (
+            &file,        /* [IN] File object */
+            &mempak_data,  /* [OUT] Buffer to store read data */
+            32768,         /* [IN] Number of bytes to read */
+            &bytesread    /* [OUT] Number of bytes read */
+        );
+        
           
         result = f_close(&file);
 
-        printText("File content:", 11, 5, disp);
+        printText("File contents:", 11, 5, disp);
         printText("   ", 11, -1, disp);
 
         int notes_c = 0;
