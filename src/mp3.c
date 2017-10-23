@@ -115,12 +115,12 @@ static void _f_read(char* fname, unsigned char *readBuffer, int size){
         result =
         f_read (
             &file,        /* [IN] File object */
-            &readBuffer,  /* [OUT] Buffer to store read data */
+            readBuffer,  /* [OUT] Buffer to store read data */
             size,         /* [IN] Number of bytes to read */
             &bytesread    /* [OUT] Number of bytes read */
         );
 
-        result = f_close(&file);
+        f_close(&file);
 
         mp3File_fptr+=size;
         //dma_write_s(buffer, 0xb0000000, fsize);

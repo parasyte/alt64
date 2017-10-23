@@ -182,7 +182,7 @@ int save_after_reboot = 0;
 unsigned char cartID[4];
 char curr_dirname[64];
 char pwd[64];
-char rom_filename[128];
+char rom_filename[256];
 
 u32 rom_buff[128]; //rom buffer
 u8 *rom_buff8;     //rom buffer
@@ -926,12 +926,12 @@ void romInfoScreen(display_context_t disp, u8 *buff, int silent)
         result =
         f_read (
             &file,        /* [IN] File object */
-            &headerdata,  /* [OUT] Buffer to store read data */
+            headerdata,  /* [OUT] Buffer to store read data */
             fsize,        /* [IN] Number of bytes to read */
             &bytesread    /* [OUT] Number of bytes read */
         );
 
-        result = f_close(&file);
+        f_close(&file);
 
         int sw_type = is_valid_rom(headerdata);
 
@@ -1060,12 +1060,12 @@ sprite_t *loadPng(u8 *png_filename)
         result =
         f_read (
             &file,        /* [IN] File object */
-            &png_rawdata,  /* [OUT] Buffer to store read data */
+            png_rawdata,  /* [OUT] Buffer to store read data */
             fsize,        /* [IN] Number of bytes to read */
             &bytesread    /* [OUT] Number of bytes read */
         );
 
-        result = f_close(&file);
+        f_close(&file);
 
         free(filename);
         return loadImage32(png_rawdata, fsize);
@@ -1102,16 +1102,16 @@ void loadgbrom(display_context_t disp, u8 *buff)
     
             sprintf(sram_buffer, buff);
 
-            UINT* bw;
+            UINT bw;
             result =
             f_write (
                 &file,          /* [IN] Pointer to the file object structure */
-                &sram_buffer, /* [IN] Pointer to the data to be written */
+                sram_buffer, /* [IN] Pointer to the data to be written */
                 32768,         /* [IN] Number of bytes to write */ //TODO: why is this shorter than the sram buffer?
-                bw          /* [OUT] Pointer to the variable to return number of bytes written */
+                &bw          /* [OUT] Pointer to the variable to return number of bytes written */
               );
     
-            result = f_close(&file);
+            f_close(&file);
 
             sprintf(rom_filename, "gblite");
             gbload = 1;
@@ -1157,31 +1157,28 @@ void loadmsx2rom(display_context_t disp, u8 *rom_path)
             {
                 int fsize = f_size(&file);
 
-                u8 buffer[romfsize + fsize];
                 
                 result =
                 f_read (
                     &file,        /* [IN] File object */
-                    &buffer,      /* [OUT] Buffer to store read data */
+                    (void *)0xb0000000,      /* [OUT] Buffer to store read data */
                     fsize,        /* [IN] Number of bytes to read */
                     &bytesread    /* [OUT] Number of bytes read */
                 );
         
-                result = f_close(&file);
+                f_close(&file);
             
 
                 romresult =
                 f_read (
                     &romfile,           /* [IN] File object */
-                    &buffer + 0x2df48,  /* [OUT] Buffer to store read data */ //TODO: why is the offset this particular number
+                    (void *)0xb0000000 + 0x2df48,  /* [OUT] Buffer to store read data */ //TODO: why is the offset this particular number
                     romfsize,           /* [IN] Number of bytes to read */
                     &rombytesread       /* [OUT] Number of bytes read */
                 );
 
-                result = f_close(&romfile);
+                f_close(&romfile);
 
-
-                dma_write_s(buffer, 0xb0000000, fsize);
             
                 boot_cic = CIC_6102;
                 boot_save = 0; //save off/cpak
@@ -1231,31 +1228,28 @@ void loadggrom(display_context_t disp, u8 *rom_path) //TODO: this could be merge
             {
                 int fsize = f_size(&file);
 
-                u8 buffer[romfsize + fsize];
                 
                 result =
                 f_read (
                     &file,        /* [IN] File object */
-                    &buffer,      /* [OUT] Buffer to store read data */
+                    (void *)0xb0000000,      /* [OUT] Buffer to store read data */
                     fsize,        /* [IN] Number of bytes to read */
                     &bytesread    /* [OUT] Number of bytes read */
                 );
         
-                result = f_close(&file);
+                f_close(&file);
             
 
                 romresult =
                 f_read (
                     &romfile,           /* [IN] File object */
-                    &buffer + 0x1b410,  /* [OUT] Buffer to store read data */ //TODO: why is the offset this particular number
+                    (void *)0xb0000000 + 0x1b410,  /* [OUT] Buffer to store read data */ //TODO: why is the offset this particular number
                     romfsize,           /* [IN] Number of bytes to read */
                     &rombytesread       /* [OUT] Number of bytes read */
                 );
 
-                result = f_close(&romfile);
+                f_close(&romfile);
 
-
-                dma_write_s(buffer, 0xb0000000, fsize);
             
                 boot_cic = CIC_6102;
                 boot_save = 0; //save off/cpak
@@ -1306,7 +1300,7 @@ void loadnesrom(display_context_t disp, u8 *rom_path)
             &emubytesread    /* [OUT] Number of bytes read */
         );
 
-        result = f_close(&emufile);
+        f_close(&emufile);
 
         //load nes rom
         FIL romfile;
@@ -1325,7 +1319,7 @@ void loadnesrom(display_context_t disp, u8 *rom_path)
                 &rombytesread    /* [OUT] Number of bytes read */
             );
     
-            result = f_close(&romfile);
+            f_close(&romfile);
 
             boot_cic = CIC_6102;
             boot_save = 0; //save off/cpak
@@ -1346,8 +1340,6 @@ void loadrom(display_context_t disp, u8 *buff, int fast)
 
     printText("Loading ROM, Please wait:", 3, 4, disp);
 
-    TRACE(disp, "timing done");
-
     u8 filename[64];
     sprintf(filename, "%s", buff);
     
@@ -1367,12 +1359,12 @@ void loadrom(display_context_t disp, u8 *buff, int fast)
         result =
         f_read (
             &file,        /* [IN] File object */
-            &headerdata,  /* [OUT] Buffer to store read data */
+            headerdata,  /* [OUT] Buffer to store read data */
             headerfsize,        /* [IN] Number of bytes to read */
             &bytesread    /* [OUT] Number of bytes read */
         );
 
-        result = f_close(&file);
+        f_close(&file);
 
         int sw_type = is_valid_rom(headerdata);
 
@@ -1568,76 +1560,70 @@ int backupSaveData(display_context_t disp)
         result =
         f_read (
             &file,        /* [IN] File object */
-            &cfg_data,  /* [OUT] Buffer to store read data */
+            cfg_data,  /* [OUT] Buffer to store read data */
             fsize,         /* [IN] Number of bytes to read */
             &bytesread    /* [OUT] Number of bytes read */
         );
 
-        TRACEF(disp, "FAT_ReadFile returned: %i", result);
 
-        if (bytesread > 0)
+        //split in save type and cart-id
+        save_format = cfg_data[0];
+        int last_cic = cfg_data[1];
+        scopy(cfg_data + 2, rom_filename); //string copy
+
+        TRACE(disp, "copied last played game string");
+
+        //set savetype to 0 disable for next boot
+        if (save_format != 0)
         {
-            //split in save type and cart-id
-            save_format = cfg_data[0];
-            int last_cic = cfg_data[1];
-            scopy(cfg_data + 2, rom_filename); //string copy
+            //set savetype to off
+            cfg_data[0] = 0;
 
-            TRACE(disp, "copied last played game string");
+            result = f_lseek(&file, 0);
 
-            //set savetype to 0 disable for next boot
-            if (save_format != 0)
+            UINT bw;
+            result = f_write (
+                &file,          /* [IN] Pointer to the file object structure */
+                cfg_data, /* [IN] Pointer to the data to be written */
+                512,         /* [IN] Number of bytes to write */
+                &bw          /* [OUT] Pointer to the variable to return number of bytes written */
+            );
+
+
+            TRACE(disp, "Disabling save for subsequent system reboots");
+            TRACEF(disp, "FAT_WriteFile returned: %i", result);
+
+            volatile u8 save_config_state = 0;
+            evd_readReg(0);
+            save_config_state = evd_readReg(REG_SAV_CFG);
+
+            if (save_config_state != 0 || evd_getFirmVersion() >= 0x0300)
+            { //save register set or the firmware is V3
+                if (save_config_state == 0)
+                {                                 //we are V3 and have had a hard reboot
+                    evd_writeReg(REG_SAV_CFG, 1); //so we need to tell the save register it still has data.
+                }
+                save_after_reboot = 1;
+            }
+            else
             {
-                //set savetype to off
-                cfg_data[0] = 0;
-
-
-                result = f_lseek(&file, 0);
-
-                UINT* bw;
-                result = f_write (
-                    &file,          /* [IN] Pointer to the file object structure */
-                    &cfg_data, /* [IN] Pointer to the data to be written */
-                    512,         /* [IN] Number of bytes to write */
-                    bw          /* [OUT] Pointer to the variable to return number of bytes written */
-                );
-
-                result = f_close(&file);
-
-                TRACE(disp, "Disabling save for subsequent system reboots");
-                TRACEF(disp, "FAT_WriteFile returned: %i", result);
-
-                volatile u8 save_config_state = 0;
-                evd_readReg(0);
-                save_config_state = evd_readReg(REG_SAV_CFG);
-
-                if (save_config_state != 0 || evd_getFirmVersion() >= 0x0300)
-                { //save register set or the firmware is V3
-                    if (save_config_state == 0)
-                    {                                 //we are V3 and have had a hard reboot
-                        evd_writeReg(REG_SAV_CFG, 1); //so we need to tell the save register it still has data.
-                    }
-                    save_after_reboot = 1;
-                }
-                else
-                {
-                    result = f_close(&file);
-                    TRACE(disp, "Save not required.");
-                    printText("...ready", 3, -1, disp);
-        
-                    return 1;
-                }
-
+                f_close(&file);
+                TRACE(disp, "Save not required.");
+                printText("...ready", 3, -1, disp);
+    
+                return 1;
             }
         }
-        else
-        {
-            TRACE(disp, "No previous ROM loaded!");
-            printText("...ready", 3, -1, disp);
-    
-            return 0;
-        }
+                
+        f_close(&file);
     }
+    else
+    {
+        TRACE(disp, "No previous ROM loaded!");
+        printText("...ready", 3, -1, disp);
 
+        return 0;
+    }
 
     //reset with save request
     if (save_after_reboot)
@@ -1667,7 +1653,7 @@ int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
 {
     rom_load_y();
 
-    u8 fname[128];
+    u8 fname[256];
     sprintf(fname, "/ED64/%s/%s.%s", save_path, rom_name, saveTypeToExtension(stype, ext_type));
     
     int size = saveTypeToSize(stype); // int byte
@@ -1685,15 +1671,16 @@ int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
         result =
         f_read (
             &file,          /* [IN] File object */
-            &cartsave_data, /* [OUT] Buffer to store read data */
+            cartsave_data, /* [OUT] Buffer to store read data */
             size,           /* [IN] Number of bytes to read */
             &bytesread      /* [OUT] Number of bytes read */
         );
 
-        result = f_close(&file);
+        f_close(&file);
     }
     else
     {
+        printText(fname, 3, -1, disp);
         printText("no save found", 3, -1, disp);
         sleep(1000);
         //todo: clear memory area
@@ -1747,14 +1734,14 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
             //write to file
             if (gb_load_y != 1)
             {
-                UINT* bw;
+                UINT bw;
                 result = f_write (
                     &file,          /* [IN] Pointer to the file object structure */
-                    &cartsave_data, /* [IN] Pointer to the data to be written */
+                    cartsave_data, /* [IN] Pointer to the data to be written */
                     size,         /* [IN] Number of bytes to write */
-                    bw          /* [OUT] Pointer to the variable to return number of bytes written */
+                    &bw          /* [OUT] Pointer to the variable to return number of bytes written */
                   );
-                  result = f_close(&file);
+                  f_close(&file);
             }
     
             printText("RAM area copied to SD card.", 3, -1, disp);
@@ -1762,7 +1749,7 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
         }
         else
         {
-            result = f_close(&file);
+            f_close(&file);
             printText("Error saving game to SD", 3, -1, disp);
             return 0;
         }
@@ -1789,12 +1776,12 @@ int readConfigFile(void)
         result =
         f_read (
             &file,        /* [IN] File object */
-            &config_rawdata,  /* [OUT] Buffer to store read data */
+            config_rawdata,  /* [OUT] Buffer to store read data */
             fsize,         /* [IN] Number of bytes to read */
             &bytesread    /* [OUT] Number of bytes read */
         );
 
-        result = f_close(&file);
+        f_close(&file);
     
         configuration config;
 
@@ -2066,12 +2053,12 @@ int readCheatFile(char *filename, u32 *cheat_lists[2])
         result =
         f_read (
             &file,        /* [IN] File object */
-            &cheatfile,  /* [OUT] Buffer to store read data */
+            cheatfile,  /* [OUT] Buffer to store read data */
             fsize,         /* [IN] Number of bytes to read */
             &bytesread    /* [OUT] Number of bytes read */
         );
 
-        result = f_close(&file);
+        f_close(&file);
 
         yaml_parser_set_input_string(&parser, cheatfile, strlen(cheatfile));
         
@@ -2239,7 +2226,7 @@ void bootRom(display_context_t disp, int silent)
 
             FRESULT result;
             FIL file;
-            result = f_open(&file, cfg_file, FA_WRITE | FA_OPEN_ALWAYS);
+            result = f_open(&file, cfg_file, FA_WRITE | FA_CREATE_ALWAYS);
         
             if (result == FR_OK)
             {
@@ -2248,16 +2235,20 @@ void bootRom(display_context_t disp, int silent)
                 cfg_file_data[1] = boot_cic;
                 scopy(rom_filename, cfg_file_data + 2);
         
-                UINT* bw; 
+                UINT bw; 
                 result =
                 f_write (
                     &file,          /* [IN] Pointer to the file object structure */
-                    &cfg_file_data, /* [IN] Pointer to the data to be written */
-                    512,         /* [IN] Number of bytes to write */
-                    bw         /* [OUT] Pointer to the variable to return number of bytes written */
+                    cfg_file_data, /* [IN] Pointer to the data to be written */
+                    sizeof(cfg_file_data),         /* [IN] Number of bytes to write */
+                    &bw         /* [OUT] Pointer to the variable to return number of bytes written */
                   );
+
+                // f_putc(boot_save, &file);
+                // f_putc(boot_cic, &file);
+                // f_puts(rom_filename, &file);
         
-                result = f_close(&file);
+                f_close(&file);
 
                 //set the fpga cart-save type
                 evd_setSaveType(boot_save);
@@ -2418,7 +2409,7 @@ void drawShortInfoBox(display_context_t disp, char *text, u8 mode)
 
 void readRomConfig(display_context_t disp, char *short_filename, char *full_filename)
 {
-    char cfg_filename[128];
+    char cfg_filename[256];
     sprintf(rom_filename, "%s", short_filename);
     rom_filename[strlen(rom_filename) - 4] = '\0'; // cut extension
     sprintf(cfg_filename, "/ED64/CFG/%s.CFG", rom_filename);
@@ -2436,12 +2427,12 @@ void readRomConfig(display_context_t disp, char *short_filename, char *full_file
         result =
         f_read (
             &file,        /* [IN] File object */
-            &rom_cfg_data,  /* [OUT] Buffer to store read data */
+            rom_cfg_data,  /* [OUT] Buffer to store read data */
             512,         /* [IN] Number of bytes to read */
             &bytesread    /* [OUT] Number of bytes read */
         );
 
-        result = f_close(&file);
+        f_close(&file);
 
             
         rom_config[0] = 1; //preload cursor position 1 cic
@@ -2676,12 +2667,12 @@ void drawToplistBox(display_context_t disp, int line)
                         result =
                         f_read (
                             &file,        /* [IN] File object */
-                            &cfg_file_data,  /* [OUT] Buffer to store read data */
+                            cfg_file_data,  /* [OUT] Buffer to store read data */
                             fsize,         /* [IN] Number of bytes to read */
                             &bytesread    /* [OUT] Number of bytes read */
                         );
                 
-                        result = f_close(&file);
+                        f_close(&file);
                 
                         toplist[i][0] = (char)cfg_file_data[5];     //quality
                         strcpy(toplist[i] + 1, cfg_file_data + 32); //fullpath
@@ -3127,37 +3118,38 @@ void loadFile(display_context_t disp)
         {
             FRESULT result;
             FIL file;
-            UINT bytesread;
-            result = f_open(&file, "/ED64/LASTROM.CFG", FA_WRITE | FA_OPEN_ALWAYS);
-        
+            result = f_open(&file, "/ED64/LASTROM.CFG", FA_WRITE | FA_CREATE_ALWAYS);
             if (result == FR_OK)
             {
-                static uint8_t lastrom_file_data[512] = {0};
-                scopy(name_file, lastrom_file_data);
-        
-                UINT* bw;
-                result =
-                f_write (
-                    &file,          /* [IN] Pointer to the file object structure */
-                    &lastrom_file_data, /* [IN] Pointer to the data to be written */
-                    512,         /* [IN] Number of bytes to write */
-                    bw          /* [OUT] Pointer to the variable to return number of bytes written */
+                f_puts (
+                    name_file, /* [IN] String */
+                    &file           /* [IN] File object */
                   );
-        
-                result = f_close(&file);
+                  
+
+              
+                  f_close(&file);
 
                 if (result == FR_OK)
                 {
                     //read rom_config data
                     readRomConfig(disp, rom_filename, name_file);
-            
+
                     loadrom(disp, name_file, 1);
                     display_show(disp);
             
                     //rom loaded mapping
                     input_mapping = rom_loaded;
                 }
+                else
+                {
+                    TRACE(disp, "Issue writing file...");
+                }
 
+            }
+            else
+            {
+                TRACE(disp, "Couldnt Open file");
             }
 
         }
@@ -3495,17 +3487,19 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 {
                     int fsize = f_size(&file);
                        
-                    result =
-                    f_read (
-                        &file,        /* [IN] File object */
-                        &lastrom_cfg_data,  /* [OUT] Buffer to store read data */
-                        fsize,         /* [IN] Number of bytes to read */
-                        &bytesread    /* [OUT] Number of bytes read */
-                    );
-            
-                    result = f_close(&file);
+                    // result =
+                    // f_read (
+                    //     &file,        /* [IN] File object */
+                    //     lastrom_cfg_data,  /* [OUT] Buffer to store read data */
+                    //     fsize,         /* [IN] Number of bytes to read */
+                    //     &bytesread    /* [OUT] Number of bytes read */
+                    // );
 
-                    u8 *short_s = strrchr(lastrom_cfg_data, '/');
+                    f_gets(lastrom_cfg_data, fsize, &file);
+            
+                    f_close(&file);
+
+                    u8 *end_chr = strrchr(lastrom_cfg_data, '/');
 
                     while (!(disp = display_lock()))
                         ;
@@ -3516,7 +3510,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
 
                     select_mode = 9;
                     //short          fullpath
-                    readRomConfig(disp, short_s + 1, lastrom_cfg_data);
+                    readRomConfig(disp, end_chr + 1, lastrom_cfg_data);
 
                     loadrom(disp, lastrom_cfg_data, 1);
                     display_show(disp);
@@ -4136,16 +4130,16 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 //copy full rom path to offset at 32 byte - 32 bytes reversed
                 scopy(name_file, cfg_file_data + 32); //filename to rom_cfg file
        
-                UINT* bw;
+                UINT bw;
                 result =
                 f_write (
                     &file,          /* [IN] Pointer to the file object structure */
-                    &cfg_file_data, /* [IN] Pointer to the data to be written */
+                    cfg_file_data, /* [IN] Pointer to the data to be written */
                     512,         /* [IN] Number of bytes to write */
-                    bw          /* [OUT] Pointer to the variable to return number of bytes written */
+                    &bw          /* [OUT] Pointer to the variable to return number of bytes written */
                   );
         
-                result = f_close(&file);
+                f_close(&file);
 
                 drawShortInfoBox(disp, "         done", 0);
                 toplist_reload = 1;    

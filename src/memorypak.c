@@ -133,12 +133,12 @@ int file_to_mpk(display_context_t disp, u8 *filename)
         result =
         f_read (
             &file,        /* [IN] File object */
-            &mempak_data,  /* [OUT] Buffer to store read data */
+            mempak_data,  /* [OUT] Buffer to store read data */
             32768,         /* [IN] Number of bytes to read */
             &bytesread    /* [OUT] Number of bytes read */
         );
 
-        result = f_close(&file);
+        f_close(&file);
 
         int err = 0;
         for (int j = 0; j < 128; j++)
@@ -183,13 +183,13 @@ void view_mpk_file(display_context_t disp, char *mpk_filename)
         result =
         f_read (
             &file,        /* [IN] File object */
-            &mempak_data,  /* [OUT] Buffer to store read data */
+            mempak_data,  /* [OUT] Buffer to store read data */
             32768,         /* [IN] Number of bytes to read */
             &bytesread    /* [OUT] Number of bytes read */
         );
         
           
-        result = f_close(&file);
+        f_close(&file);
 
         printText("File contents:", 11, 5, disp);
         printText("   ", 11, -1, disp);
@@ -426,16 +426,16 @@ void mpk_to_file(display_context_t disp, char *mpk_filename, int quick)
             err |= read_mempak_sector(0, j, &mempak_data[j * 256]);
         }
 
-        UINT* bw;
+        UINT bw;
         result =
         f_write (
             &file,          /* [IN] Pointer to the file object structure */
-            &mempak_data, /* [IN] Pointer to the data to be written */
+            mempak_data, /* [IN] Pointer to the data to be written */
             32768,         /* [IN] Number of bytes to write */
-            bw          /* [OUT] Pointer to the variable to return number of bytes written */
+            &bw          /* [OUT] Pointer to the variable to return number of bytes written */
           );
 
-        result = f_close(&file);
+        f_close(&file);
 
         
         sprintf(buff, "File: %s%i.MPK", mpk_filename, v);
