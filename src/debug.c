@@ -19,4 +19,5 @@ void dbg_printf(display_context_t disp, const char *fmt, ...)
     sprintf(tmp, "%s", buf);
     printText(tmp, 3, -1, disp);
     display_show(disp);
+    sleep(5000);
 }
