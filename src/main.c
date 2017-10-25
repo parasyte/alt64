@@ -1566,17 +1566,8 @@ int backupSaveData(display_context_t disp)
 
         //split in save type and cart-id
         save_format = cfg_data[0];
-        TRACEF(disp, "save=%i", save_format);
-        sleep(3000);
-        int last_cic = cfg_data[1];
-        TRACEF(disp, "cic=%i", last_cic);
-        sleep(3000);
 
         f_gets(rom_filename, 256, &file);
-
-        TRACEF(disp, "File: %s", rom_filename);
-        TRACE(disp, "copied last played game string");
-
         f_close(&file);
 
         //set savetype to 0 disable for next boot
@@ -1646,7 +1637,6 @@ int backupSaveData(display_context_t disp)
         printText("...done", 3, -1, disp);
     }
     display_show(disp);
-    sleep(2000);
     return 1;
 }
 
@@ -1718,10 +1708,8 @@ int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
         break;
         default:
         break;
-        }
-        
+        }     
         printText("no save found", 3, -1, disp);
-        sleep(5000);
         //todo: clear memory area
 
         return 0;
@@ -1748,16 +1736,7 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
     //after reset create new savefile
     TCHAR fname[256]; //TODO: change filename buffers to 256!!!
 
-    TRACEF(disp, "rname=%s", rom_name);
-    sleep(3000);
-    TRACEF(disp, "savetype=%i /n", stype);
-    sleep(5000);
-    TRACEF(disp, "ext=%s", saveTypeToExtension(stype, ext_type));
-    sleep(3000);
-
     sprintf(fname, "/ED64/%s/%s.%s", save_path, rom_name, saveTypeToExtension(stype, ext_type));
-    TRACEF(disp, "fname=%s", fname);
-    sleep(3000);
 
     int size = saveTypeToSize(stype); // int byte
     TRACEF(disp, "size for save=%i", size);
@@ -2355,7 +2334,6 @@ void bootRom(display_context_t disp, int silent)
 
         f_mount(0, "", 0);                     /* Unmount the default drive */
         free(fs);                              /* Here the work area can be discarded */
-        sleep(3000);
         simulate_boot(boot_cic, bios_cic, cheat_lists); // boot_cic
     }
 }
