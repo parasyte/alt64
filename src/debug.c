@@ -4,6 +4,7 @@
 #include "types.h"
 #include "debug.h"
 #include "menu.h"
+#include "sys.h"
 
 void dbg_printf(display_context_t disp, const char *fmt, ...)
 {
