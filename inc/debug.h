@@ -11,7 +11,7 @@
     #define TRACE(disp, text)   printText(text, 3, -1, disp);
 #else
     #define TRACEF(disp, text, ...)    do { if (0)  dbg_printf(disp, text, __VA_ARGS__);  } while (0)
-    #define TRACE(disp, text)    do { if (0) printText(text, 3, -1, disp); } while (0)
+    #define TRACE(disp, text)    do { if (0) printText(text, 3, -1, disp); } didplay_show(disp); while (0)
 #endif
 
 void dbg_printf(display_context_t disp, const char *fmt, ...);
