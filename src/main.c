@@ -22,7 +22,7 @@
 //filesystem
 #include "sd.h"
 #include "ff.h"
-#include "fat_old.h"
+
 //utils
 #include "utils.h"
 
@@ -1884,124 +1884,130 @@ void initFilesystem(void)
     else
     {
         fat_initialized = 1;
-    }
-
-    fatInitRam();
-    fatInit();
-    
+    } 
 }
 
 //prints the sdcard-filesystem content
 void readSDcard(display_context_t disp, char *directory)
 {
-    FatRecord *frec;
-    u8 cresp = 0;
+    // FatRecord *frec;
+    // u8 cresp = 0;
+
+    // //load the directory-entry
+    // cresp = fatLoadDirByName("/ED64/CFG");
+
+    // int dsize = dir->size;
+    // char colorlist[dsize][256];
+
+    // if (enable_colored_list)
+    // {
+
+    //     for (int i = 0; i < dir->size; i++)
+    //     {
+    //         frec = dir->rec[i];
+    //         u8 rom_cfg_file[128];
+
+    //         //set rom_cfg
+    //         sprintf(rom_cfg_file, "/ED64/CFG/%s", frec->name);
+
+    //         static uint8_t cfg_file_data[512] = {0};
+
+    //         FRESULT result;
+    //         FIL file;
+    //         UINT bytesread;
+    //         result = f_open(&file, rom_cfg_file, FA_READ);
+        
+    //         if (result == FR_OK)
+    //         {
+    //             int fsize = f_size(&file);
+        
+    //             result =
+    //             f_read (
+    //                 &file,        /* [IN] File object */
+    //                 &cfg_file_data,  /* [OUT] Buffer to store read data */
+    //                 fsize,         /* [IN] Number of bytes to read */
+    //                 &bytesread    /* [OUT] Number of bytes read */
+    //             );
+        
+    //             f_close(&file);
+
+    //             colorlist[i][0] = (char)cfg_file_data[5];     //row i column 0 = colour
+    //             strcpy(colorlist[i] + 1, cfg_file_data + 32); //row i column 1+ = fullpath
+                
+    //         }
+    //     }
+    // }
+
+    // u8 buff[32];
+
+    // //some trash buffer
+    // FatRecord *rec;
+    // u8 resp = 0;
+
     count = 1;
-
-    //load the directory-entry
-    cresp = fatLoadDirByName("/ED64/CFG");
-
-    int dsize = dir->size;
-    char colorlist[dsize][256];
-
-    if (enable_colored_list)
-    {
-        for (int i = 0; i < dir->size; i++)
-        {
-            frec = dir->rec[i];
-            u8 rom_cfg_file[128];
-
-            //set rom_cfg
-            sprintf(rom_cfg_file, "/ED64/CFG/%s", frec->name);
-
-            static uint8_t cfg_file_data[512] = {0};
-            cresp = fatOpenFileByName(rom_cfg_file, 0); //512 bytes fix one cluster
-            cresp = fatReadFile(&cfg_file_data, 1);
-
-            colorlist[i][0] = (char)cfg_file_data[5];     //color
-            strcpy(colorlist[i] + 1, cfg_file_data + 32); //fullpath
-        }
-    }
-
-    clearScreen(disp);
-    printText("SD-Card loading...", 3, 4, disp); //very short display time maybe comment out
-
-    u8 buff[32];
-
-    //some trash buffer
-    FatRecord *rec;
-    u8 resp = 0;
-
-    count = 1;
-    dir_t buf;
-
-    //load the directory-entry
-    resp = fatLoadDirByName(directory);
-
-    if (resp != 0)
-    {
-        char error_msg[32];
-        sprintf(error_msg, "CHDIR ERROR: %i", resp);
-        printText(error_msg, 3, -1, disp);
-        sleep(3000);
-    }
+    //dir_t buf;
 
     //clear screen and print the directory name
     clearScreen(disp);
 
-    //creates string list of files and directories
-    for (int i = 0; i < dir->size; i++)
-    {
-        char name_tmpl[32];
-        rec = dir->rec[i];
 
-        //TODO: this could be just an if statement...
-        if (strcmp(rec->name, "System Volume Information") == 0 || (strcmp(rec->name, "ED64") == 0 && hide_sysfolder == 1))
-        {
-            //don't add
-        }
-        else
-        {
-            if (rec->is_dir)
+    FRESULT res;
+    DIR dir;
+    UINT i;
+    static FILINFO fno;
+
+
+    res = f_opendir(&dir, directory);                       /* Open the directory */
+    if (res == FR_OK) {
+        for (;;) {
+            res = f_readdir(&dir, &fno);                   /* Read a directory item */
+            if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
+            if (!strcmp(fno.fname, "System Volume Information") == 0 || (!strcmp(fno.fname, "ED64") == 0 && hide_sysfolder == 0))
             {
-                list[count - 1].type = DT_DIR; //2 is dir +1
-            }
-            else
-            {
-                list[count - 1].type = DT_REG; //1 is file +1
-            }
-
-            strcpy(list[count - 1].filename, rec->name); //+1
-
-            //new color test
-            list[count - 1].color = 0;
-
-            if (enable_colored_list)
-            {
-                for (int c = 0; c < dsize; c++)
-                {
-
-                    u8 short_name[256];
-
-                    sprintf(short_name, "%s", colorlist[c] + 1);
-
-                    u8 *pch_s; // point-offset
-                    pch_s = strrchr(short_name, '/');
-
-                    if (strcmp(list[count - 1].filename, pch_s + 1) == 0)
-                    {
-
-                        list[count - 1].color = colorlist[c][0];
-                    }
+                if (fno.fattrib & AM_DIR) {                    /* It is a directory */
+                    list[count - 1].type = DT_DIR;
+                } else {                                       /* It is a file. */
+                    //printf("%s/%s\n", path, fno.fname);
+                    list[count - 1].type = DT_REG;
                 }
-                //new color test end
-            }
+                strcpy(list[count - 1].filename, fno.fname);
+                list[count - 1].color = 0;
+                
+                // if (enable_colored_list)
+                // {
+                //     for (int c = 0; c < dsize; c++)
+                //     {
 
-            count++;
-            list = realloc(list, sizeof(direntry_t) * count);
+                //         u8 short_name[256];
+
+                //         sprintf(short_name, "%s", colorlist[c] + 1);
+
+                //         u8 *pch_s; // point-offset
+                //         pch_s = strrchr(short_name, '/');
+
+                //         if (strcmp(list[count - 1].filename, pch_s + 1) == 0)
+                //         {
+
+                //             list[count - 1].color = colorlist[c][0];
+                //         }
+                //     }
+                //     //new color test end
+                // }
+
+                count++;
+                list = realloc(list, sizeof(direntry_t) * count);
+            }
         }
+        f_closedir(&dir);
+        count--;
     }
-    count--;
+    else
+    {
+        char error_msg[32];
+        sprintf(error_msg, "CHDIR ERROR: %i", res);
+        printText(error_msg, 3, -1, disp);
+        sleep(3000);
+    }
 
     page = 0;
     cursor = 0;
