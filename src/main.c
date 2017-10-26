@@ -3125,9 +3125,8 @@ void loadFile(display_context_t disp)
 
         clearScreen(disp);
         u16 msg = 0;
-        sleep(300);
         evd_ulockRegs();
-        sleep(300);
+        sleep(10);
         sprintf(rom_filename, "%s", list[cursor].filename);
         display_show(disp);
         select_mode = 9;
@@ -3526,7 +3525,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
                     clearScreen(disp);
 
                     evd_ulockRegs();
-                    sleep(100);
+                    sleep(10);
 
                     select_mode = 9;
                                         //short          fullpath
