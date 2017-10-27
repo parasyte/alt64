@@ -24,4 +24,4 @@ void sdSetInterface(u32 interface);
 #define DISK_IFACE_SD 1
 
 
-#endif	/* _DISK_H */
+#endif	/* _SD_H */
