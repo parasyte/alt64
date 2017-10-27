@@ -242,7 +242,7 @@ int getSRAM( uint8_t *buffer, int size){
 
     PI_Init();
 
-    sleep(1000); //TODO: really... 1 second
+    sleep(15); //TODO: really... 1 second, changed to 15ms... better check it still works!
 
     while (dma_busy()) ;
 

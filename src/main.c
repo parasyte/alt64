@@ -2270,7 +2270,6 @@ void bootRom(display_context_t disp, int silent)
             if (ok == 0)
             {
                 printText("cheats found...", 3, -1, disp);
-                //sleep(600);
             }
             else
             {
@@ -2293,7 +2292,7 @@ void bootRom(display_context_t disp, int silent)
         }
 
         evd_lockRegs();
-        //sleep(1000);
+        sleep(10);
 
         while (!(disp = display_lock()))
             ;
@@ -2370,7 +2369,7 @@ void drawConfirmBox(display_context_t disp)
     printText(" ", 9, -1, disp);
     printText("      B Cancel", 9, -1, disp);
 
-    sleep(500);
+    sleep(300);
 }
 
 void drawShortInfoBox(display_context_t disp, char *text, u8 mode)
@@ -3259,7 +3258,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
             drawRomConfigBox(disp, 2);
             display_show(disp);
             input_mapping = rom_config_box;
-            sleep(80);
             break;
         case toplist:
             while (!(disp = display_lock()))
@@ -3270,7 +3268,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
 
             display_show(disp);
             input_mapping = toplist;
-            sleep(80);
             break;
 
         default:
@@ -3332,7 +3329,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
 
             display_show(disp);
             input_mapping = rom_config_box;
-            sleep(80);
             break;
         case toplist:
             while (!(disp = display_lock()))
@@ -3343,7 +3339,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
 
             display_show(disp);
             input_mapping = toplist;
-            sleep(80);
             break;
 
         default:
@@ -3392,7 +3387,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
             drawRomConfigBox(disp, 0);
             display_show(disp);
             input_mapping = rom_config_box;
-            sleep(80);
             break;
 
         default:
@@ -3450,7 +3444,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
             drawRomConfigBox(disp, 0);
             display_show(disp);
             input_mapping = rom_config_box;
-            sleep(80);
             break;
 
         default:
@@ -3537,10 +3530,9 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 printText(" ", 9, -1, disp);
                 printText("search...", 9, -1, disp);
                 mpk_to_file(disp, input_text, 0);
-                sleep(300);
 
                 drawShortInfoBox(disp, "         done", 0);
-                sleep(2000);
+                sleep(1000);
 
                 //reread filesystem
                 cursor_line = 0;
@@ -3588,7 +3580,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
             printText("  B: Abort", 9, -1, disp);
             if (sound_on)
                 playSound(2);
-            sleep(500);
+            sleep(1000);
             break;
 
         case mempak_menu:
@@ -3743,7 +3735,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 break;
             }
 
-            sleep(500);
+            sleep(1000);
 
             input_mapping = abort_screen;
             break;
@@ -3757,9 +3749,10 @@ void handleInput(display_context_t disp, sprite_t *contr)
             printText(" ", 9, -1, disp);
 
             file_to_mpk(disp, rom_filename);
-            sleep(300);
 
             drawShortInfoBox(disp, "         done", 0);
+            sleep(1000);
+
             input_mapping = abort_screen;
 
             display_show(disp);
@@ -3775,10 +3768,9 @@ void handleInput(display_context_t disp, sprite_t *contr)
             printText("search...", 9, -1, disp);
 
             mpk_to_file(disp, list[cursor].filename, 1); //quick
-            sleep(300);
 
             drawShortInfoBox(disp, "         done", 0);
-            sleep(500);
+            sleep(1000);
             input_mapping = abort_screen;
             break;
 
@@ -3938,7 +3930,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
                     drawBoxNumber(disp, 3); //rominfo
 
                     u16 msg = 0;
-                    sleep(10);
                     evd_ulockRegs();
                     sleep(10);
                     sprintf(rom_filename, "%s", list[cursor].filename);
