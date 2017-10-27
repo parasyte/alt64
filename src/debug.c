@@ -22,3 +22,11 @@ void dbg_printf(display_context_t disp, const char *fmt, ...)
     display_show(disp);
     sleep(3000);
 }
+
+
+void dbg_print(display_context_t disp, char *fmt)
+{
+    printText(fmt, 3, -1, disp); 
+    display_show(disp); 
+    sleep(3000); 
+}
