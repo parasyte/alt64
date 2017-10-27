@@ -77,26 +77,7 @@ static int mp3_size(char* fd) {
 }
 
 static void _f_read(char* fname, unsigned char *readBuffer, int size){
-/*
-    FatRecord rec_tmpf;
-    u8 resp=0;
-    resp = fatOpenFileByName(fname, 0); //err if not found ^^
-
-    int fsize =  file.sec_available*512; //fsize in bytes
-    mp3File_fsize = fsize;
-
-    //injecting in buffer... slow but working :/
-    if(file.sec_available*512>=size){
-    resp = fatReadPartialFile(readBuffer, size/512, mp3File_fptr);
-    //resp = fatReadFile(readBuffer+mp3File_fptr, size/512);//file.sec_available);
-    mp3File_fptr+=size;
-
-    }
-    //dma_write_s(buffer, 0xb0000000, fsize);
-*/
-
-    mp3_size(fname);
-
+//TODO: function not working... probably worth switching to http://www.underbit.com/products/mad/ anyway...
     FRESULT result;
     FIL file;
     UINT bytesread;
@@ -106,11 +87,9 @@ static void _f_read(char* fname, unsigned char *readBuffer, int size){
     {
         int fsize = f_size(&file);
 
-        if ( fsize > size)
-        {
-            //todo: set the read pointer
-            //readBuffer+mp3File_fptr
-        }
+        mp3File_fsize = fsize;
+
+        f_lseek(&file, mp3File_fptr);
 
         result =
         f_read (
@@ -122,8 +101,7 @@ static void _f_read(char* fname, unsigned char *readBuffer, int size){
 
         f_close(&file);
 
-        mp3File_fptr+=size;
-        //dma_write_s(buffer, 0xb0000000, fsize);
+        mp3File_fptr+=bytesread;
     }
 }
 
