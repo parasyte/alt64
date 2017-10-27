@@ -1,3 +1,10 @@
+//
+// Copyright (c) 2017 The Altra64 project contributors
+// See LICENSE file in the project root for full license information.
+//
+
+#ifndef _CIC_H
+#define	_CIC_H
 
 #define CIC_6101 1
 #define CIC_6102 2
@@ -10,3 +17,4 @@
 
 int get_cic(unsigned char *rom_data);
 
+#endif

@@ -7,16 +7,6 @@
 
 #ifndef _UTILS_H
 #define	_UTILS_H
-// rom.h
-// rom tools - header inspect
-//#include <stdint.h>
-//#include <libdragon.h>
-//#include "rom.h"
-
-
-
-
-
 
 #if !defined(MIN)
     #define MIN(a, b) ({ \

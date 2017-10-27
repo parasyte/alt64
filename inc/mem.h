@@ -33,5 +33,5 @@ void memcopy(void *src, void *dst, u16 len);
 void memSpiSetDma(u8 mode);
 void memRomWrite32(u32 addr, u32 val);
 u32 memRomRead32(u32 addr);
-#endif	/* _MEM_H */
 
+#endif	/* _MEM_H */
