@@ -1450,13 +1450,6 @@ void loadrom(display_context_t disp, u8 *buff, int fast)
         if (gbload == 1)
             boot_save = 1;
 
-        // TRACE(disp, "Checking SD mode");
-
-        // int resp = evd_isSDMode();
-
-        // TRACEF(disp, "SD mode: %i", resp);
-        // TRACE(disp, "Loading:");
-
         if (swapped == 1)
         {
             while (evd_isDmaBusy())
@@ -1502,18 +1495,6 @@ void loadrom(display_context_t disp, u8 *buff, int fast)
         if(result == FR_OK)
         {
             printText("Rom loaded", 3, -1, disp);
-            //if (debug) {
-            // for (int i = 0; i < 4; i++)
-            // {
-            //     u8 buff[16];
-            //     dma_read_s(buff, 0xb0000000 + 0x00100000 * i, 1);
-                
-            //     unsigned char probe_str[12];
-            //     TRACEF(disp, "probe: %hhx", buff[0]);
-            // }
-            //}
-
-            // sleep(1000);
 
             if (!fast)
             {
@@ -1889,7 +1870,7 @@ void initFilesystem(void)
 
 //prints the sdcard-filesystem content
 void readSDcard(display_context_t disp, char *directory)
-{
+{ //TODO: readd coloured list? use a hash table...
     // FatRecord *frec;
     // u8 cresp = 0;
 
@@ -2228,23 +2209,6 @@ int readCheatFile(TCHAR *filename, u32 *cheat_lists[2])
         return -1; //err file not found
     }
 }
-
-//TODO: UNUSED CODE, WHAT IS IS FOR? BattleTanx??? but where to insert it???
-// void timing(display_context_t disp)
-// {
-//     unsigned char tmp[32];
-
-//     IO_WRITE(PI_STATUS_REG, 0x02);
-
-//     u32 pi0 = IO_READ(PI_BSD_DOM1_LAT_REG);
-//     u32 pi1 = IO_READ(PI_BSD_DOM1_PWD_REG);
-//     u32 pi2 = IO_READ(PI_BSD_DOM1_PGS_REG);
-//     u32 pi3 = IO_READ(PI_BSD_DOM1_RLS_REG);
-
-//     printText("timing dom1:", 3, -1, disp);
-//     sprintf(tmp, "lat=%x pwd=%x\npgs=%x rls=%x", pi0, pi1, pi2, pi3);
-//     printText(tmp, 3, -1, disp);
-// }
 
 void bootRom(display_context_t disp, int silent)
 {
