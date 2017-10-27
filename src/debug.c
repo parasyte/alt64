@@ -4,10 +4,11 @@
 #include "types.h"
 #include "debug.h"
 #include "menu.h"
+#include "sys.h"
 
 void dbg_printf(display_context_t disp, const char *fmt, ...)
 {
-    char buf[32];
+    char buf[256] = {0};
     setbuf(stderr, buf);
 
     va_list args;
@@ -15,7 +16,17 @@ void dbg_printf(display_context_t disp, const char *fmt, ...)
     vfprintf(stderr, fmt, args);
     va_end(args);
 
-    u8 tmp[32];
+    u8 tmp[256] = {0};
     sprintf(tmp, "%s", buf);
     printText(tmp, 3, -1, disp);
+    display_show(disp);
+    sleep(3000);
+}
+
+
+void dbg_print(display_context_t disp, char *fmt)
+{
+    printText(fmt, 3, -1, disp); 
+    display_show(disp); 
+    sleep(3000); 
 }

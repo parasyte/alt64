@@ -7,11 +7,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <mad.h>
-#include "fat.h"
-#include "mp3.h"
-
 #include <libdragon.h>
+#include <mad.h>
+#include "mp3.h"
+#include "ff.h"
+
 
 static struct mad_stream Stream;
 static struct mad_header Header;
@@ -68,34 +68,41 @@ static int mp3_seek(char* fd, int offset, int whence) {
 }
 
 static int mp3_size(char* fd) {
-    FatRecord rec_tmpf;
-    u8 resp=0;
-    resp = fatOpenFileByName(fd, 0); //err if not found ^^
-
-    int fsize =  file.sec_available*512; //fsize in bytes
-    mp3File_fsize = fsize;
-    //todo filesize
+    FRESULT result;
+    FILINFO fno;
+    //TODO: error
+    result = f_stat (fd, &fno);
+    mp3File_fsize = fno.fsize;
     return mp3File_fsize;
 }
 
 static void _f_read(char* fname, unsigned char *readBuffer, int size){
-/*
-    FatRecord rec_tmpf;
-    u8 resp=0;
-    resp = fatOpenFileByName(fname, 0); //err if not found ^^
+//TODO: function not working... probably worth switching to http://www.underbit.com/products/mad/ anyway...
+    FRESULT result;
+    FIL file;
+    UINT bytesread;
+    result = f_open(&file, fname, FA_READ);
 
-    int fsize =  file.sec_available*512; //fsize in bytes
-    mp3File_fsize = fsize;
+    if (result == FR_OK)
+    {
+        int fsize = f_size(&file);
 
-    //injecting in buffer... slow but working :/
-    if(file.sec_available*512>=size){
-    resp = fatReadPartialFile(readBuffer, size/512, mp3File_fptr);
-    //resp = fatReadFile(readBuffer+mp3File_fptr, size/512);//file.sec_available);
-    mp3File_fptr+=size;
+        mp3File_fsize = fsize;
 
+        f_lseek(&file, mp3File_fptr);
+
+        result =
+        f_read (
+            &file,        /* [IN] File object */
+            readBuffer,  /* [OUT] Buffer to store read data */
+            size,         /* [IN] Number of bytes to read */
+            &bytesread    /* [OUT] Number of bytes read */
+        );
+
+        f_close(&file);
+
+        mp3File_fptr+=bytesread;
     }
-    //dma_write_s(buffer, 0xb0000000, fsize);
-*/
 }
 
 static int mp3_read(char* fd, unsigned char *ptr, int size)

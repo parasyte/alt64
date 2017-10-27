@@ -26,7 +26,7 @@ void memSpiSetSpeed(u8 speed);
 void spiReadBlock(void *dat);
 void spiWriteBlock(void *dat);
 u8 memSpiRead(void *dst, u16 slen);
-u8 memSpiWrite(void *src);
+u8 memSpiWrite(const void *src);
 //u8 mem_spi(u8 dat);
 void memfill(void *dst, u8 val, u16 len);
 void memcopy(void *src, void *dst, u16 len);

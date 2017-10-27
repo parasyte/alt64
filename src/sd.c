@@ -4,34 +4,40 @@
 // See LICENSE file in the project root for full license information.
 //
 
-#include "disk.h"
+#include "types.h"
+#include "integer.h"
+#include "sd.h"
 #include "mem.h"
 #include "everdrive.h"
 #include "errors.h"
 #include "sys.h"
 
-#define CMD0  0x40    // software reset
-#define CMD1  0x41    // brings card out of idle state
-#define CMD8  0x48    // Reserved
-#define CMD12 0x4C    // stop transmission on multiple block read
-#define CMD17 0x51    // read single block
-#define CMD18 0x52    // read multiple block
-#define CMD58 0x7A    // reads the OCR register
-#define CMD55 0x77
-#define CMD41 0x69
-#define CMD24 0x58    // writes a single block
-#define CMD25 0x59    // writes a multi block
-#define	ACMD41 0x69
-#define	ACMD6 0x46
+#define CMD0  (0x40+0)      // GO_IDLE_STATE, Software reset.
+#define CMD1  (0x40+1)      // SEND_OP_COND, Initiate initialization process.
+#define CMD2  (0x40+2)      //read cid
+#define CMD3  (0x40+3)      //read rca
+#define CMD6  (0x40+6)
+#define CMD7  (0x40+7)
+#define CMD8  (0x40+8)      // SEND_IF_COND, For only SDC V2. Check voltage range.
+#define CMD9  (0x40+9)      // SEND_CSD, Read CSD register.
+#define CMD10 (0x40+10)     // SEND_CID, Read CID register.
+#define CMD12 (0x40+12)     // STOP_TRANSMISSION, Stop to read data.
+#define ACMD13  (0xC0+13)   // SD_STATUS (SDC)
+#define CMD16 (0x40+16)     // SET_BLOCKLEN, Change R/W block size.
+#define CMD17 (0x40+17)     // READ_SINGLE_BLOCK, Read a block.
+#define CMD18 (0x40+18)     // READ_MULTIPLE_BLOCK, Read multiple blocks.
+#define ACMD23  (0xC0+23)   // SET_WR_BLK_ERASE_COUNT (SDC)
+#define CMD24 (0x40+24)     // WRITE_BLOCK, Write a block.
+#define CMD25 (0x40+25)     // WRITE_MULTIPLE_BLOCK, Write multiple blocks.
+#define CMD41 (0x40+41)     // SEND_OP_COND (ACMD)
+#define ACMD41  (0xC0+41)   // SEND_OP_COND (SDC)
+#define CMD55 (0x40+55)     // APP_CMD, Leading command of ACMD<n> command.
+#define CMD58 (0x40+58)     // READ_OCR, Read OCR.
+
 #define SD_V2 2
 #define SD_HC 1
 
 
-#define CMD2 0x42 //read cid
-#define CMD3 0x43 //read rca
-#define CMD7 0x47
-#define CMD9 0x49
-#define CMD6 0x46
 
 #define R1 1
 #define R2 2
@@ -46,19 +52,19 @@ u32 disk_interface;
 
 
 unsigned int diskCrc7(unsigned char *buff, unsigned int len);
-void diskCrc16SD(u8 *data, u16 *crc_out, u16 len);
+void diskCrc16SD(const u8 *data, u16 *crc_out, u16 len);
 u8 diskGetRespTypeSD(u8 cmd);
 u8 diskCmdSD(u8 cmd, u32 arg);
 
 u8 diskInitSD();
-u8 diskReadSD(u32 saddr, void *buff, u16 slen);
-u8 diskWriteSD(u32 saddr, u8 *buff, u16 slen);
+u8 diskReadSD(u32 sector, void *buff, u16 count);
+u8 diskWriteSD(u32 sector, const u8 *buff, u16 count);
 u8 diskStopRwSD();
 
 u8 diskCmdSPI(u8 cmd, u32 arg);
 u8 diskInitSPI();
-u8 diskReadSPI(u32 saddr, void *buff, u16 slen);
-u8 diskWriteSPI(u32 saddr, u8 *buff, u16 slen);
+u8 diskReadSPI(u32 sector, void *buff, u16 count);
+u8 diskWriteSPI(u32 sector, const u8 *buff, u16 count);
 
 
 
@@ -97,17 +103,17 @@ const u16 sd_crc16_table[] = {
     0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
 };
 
-void diskSetInterface(u32 interface) {
+void sdSetInterface(u32 interface) {
 
     disk_interface = interface;
 }
 
-u8 diskGetInterface() {
+u8 sdGetInterface() {
 
     return disk_interface;
 }
 
-u8 diskInit() {
+u8 sdInit() {
 
     if (disk_interface == DISK_IFACE_SD) {
         return diskInitSD();
@@ -116,25 +122,25 @@ u8 diskInit() {
     }
 }
 
-u8 diskRead(u32 saddr, void *buff, u16 slen) {
+u8 sdRead(u32 sector, u8 *buff, u16 count) {
 
     if (disk_interface == DISK_IFACE_SD) {
-        return diskReadSD(saddr, buff, slen);
+        return diskReadSD(sector, buff, count);
     } else {
-        return diskReadSPI(saddr, buff, slen);
+        return diskReadSPI(sector, buff, count);
     }
 }
 
-u8 diskWrite(u32 saddr, u8 *buff, u16 slen) {
+u8 sdWrite(u32 sector, const u8 *buff, u16 count) {
 
     if (disk_interface == DISK_IFACE_SD) {
-        return diskWriteSD(saddr, buff, slen);
+        return diskWriteSD(sector, buff, count);
     } else {
-        return diskWriteSPI(saddr, buff, slen);
+        return diskWriteSPI(sector, buff, count);
     }
 }
 
-void diskCrc16SD(u8 *data, u16 *crc_out, u16 len) {
+void diskCrc16SD(const u8 *data, u16 *crc_out, u16 len) {
 
     ///u16 len = 512;
     u16 i, tmp1, u;
@@ -369,20 +375,20 @@ u8 diskInitSD() {
 
 }
 
-u8 diskReadSD(u32 saddr, void *buff, u16 slen) {
+u8 diskReadSD(u32 sector, void *buff, u16 count) {
 
     u8 resp;
 
 
-    if (!(card_type & 1))saddr *= 512;
-    resp = diskCmdSD(CMD18, saddr);
+    if (!(card_type & 1))sector *= 512;
+    resp = diskCmdSD(CMD18, sector);
     if (resp)return DISK_ERR_RD1;
 
 
-    resp = memSpiRead(buff, slen);
+    resp = memSpiRead(buff, count);
     if (resp)return resp;
 
-    //console_printf("drd: %0X\n", saddr);
+    //console_printf("drd: %0X\n", sector);
     resp = diskStopRwSD();
 
     return resp;
@@ -409,24 +415,24 @@ u8 diskStopRwSD() {
     return 0;
 }
 
-u8 diskWriteSD(u32 saddr, u8 *buff, u16 slen) {
+u8 diskWriteSD(u32 sector, const u8 *buff, u16 count) {
 
     u8 resp;
     u16 crc16[5];
     u16 i;
     u16 u;
     u8 ram_buff[512];
-    u8 *buff_ptr;
+    const u8 *buff_ptr;
 
 
-    if (!(card_type & 1))saddr *= 512;
-    resp = diskCmdSD(CMD25, saddr);
+    if (!(card_type & 1))sector *= 512;
+    resp = diskCmdSD(CMD25, sector);
     if (resp)return DISK_ERR_WR1;
 
     evd_SDdatWriteMode(0);
 
 
-    while (slen--) {
+    while (count--) {
 
         if ((u32) buff >= ROM_ADDR && (u32) buff < ROM_END_ADDR) {
             dma_read_s(ram_buff, (u32) buff, 512);
@@ -626,17 +632,17 @@ u8 diskInitSPI() {
     return 0;
 }
 
-u8 diskReadSPI(u32 saddr, void *buff, u16 slen) {
+u8 diskReadSPI(u32 sector, void *buff, u16 count) {
 
 
     u8 resp;
 
-    if (!(card_type & 1))saddr *= 512;
-    resp = diskCmdSPI(CMD18, saddr);
+    if (!(card_type & 1))sector *= 512;
+    resp = diskCmdSPI(CMD18, sector);
     if (resp != 0)return DISK_ERR_RD1;
     memSpiSSOn();
 
-    resp = memSpiRead(buff, slen);
+    resp = memSpiRead(buff, count);
 
     memSpiSSOff();
     diskCmdSPI(CMD12, 0);
@@ -644,18 +650,18 @@ u8 diskReadSPI(u32 saddr, void *buff, u16 slen) {
     return resp;
 }
 
-u8 diskWriteSPI(u32 saddr, u8 *buff, u16 slen) {
+u8 diskWriteSPI(u32 sector, const u8 *buff, u16 count) {
 
     u8 resp;
     u16 i;
 
-    if (!(card_type & 1))saddr *= 512;
-    resp = diskCmdSPI(CMD25, saddr);
+    if (!(card_type & 1))sector *= 512;
+    resp = diskCmdSPI(CMD25, sector);
     if (resp != 0)return DISK_ERR_WR1;
     memSpiSSOn();
 
 
-    while (slen--) {
+    while (count--) {
 
         mem_spi(0xff);
         mem_spi(0xff);
