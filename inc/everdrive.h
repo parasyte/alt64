@@ -18,7 +18,7 @@
 
 #define SAVE_TYPE_OFF 0
 #define SAVE_TYPE_SRAM 1
-#define SAVE_TYPE_SRAM128 2
+#define SAVE_TYPE_SRAM96 2
 #define SAVE_TYPE_EEP4k 3
 #define SAVE_TYPE_EEP16k 4
 #define SAVE_TYPE_FLASH 5

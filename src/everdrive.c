@@ -536,7 +536,7 @@ void evd_setSaveType(u8 type) {
         case SAVE_TYPE_SRAM:
             sram_on = 1;
             break;
-        case SAVE_TYPE_SRAM128:
+        case SAVE_TYPE_SRAM96:
             sram_on = 1;
             sram_size = 1;
             break;

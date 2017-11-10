@@ -45,14 +45,14 @@ int pushSaveToCart(int stype, uint8_t *buffer);
 
 int getSRAM(  uint8_t *buffer,int size);
 int getSRAM32(  uint8_t *buffer);
-int getSRAM128(  uint8_t *buffer);
+int getSRAM96(  uint8_t *buffer);
 int getEeprom4k(  uint8_t *buffer);
 int getEeprom16k(  uint8_t *buffer);
 int getFlashRAM(  uint8_t *buffer);
 
 int setSRAM(uint8_t *buffer,int size);
 int setSRAM32(  uint8_t *buffer);
-int setSRAM128(  uint8_t *buffer);
+int setSRAM96(  uint8_t *buffer);
 int setEeprom4k(  uint8_t *buffer);
 int setEeprom16k( uint8_t *buffer);
 int setFlashRAM(  uint8_t *buffer);

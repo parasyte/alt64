@@ -129,7 +129,7 @@
 #define	IO_WRITE(addr,data)	(*(volatile u32*)PHYS_TO_K1(addr)=(u32)(data))
 
 #define SAVE_SIZE_SRAM 		32768
-#define SAVE_SIZE_SRAM128 	131072
+#define SAVE_SIZE_SRAM96 	131072
 #define SAVE_SIZE_EEP4k 	4096
 #define SAVE_SIZE_EEP16k 	16384
 #define SAVE_SIZE_FLASH 	131072
