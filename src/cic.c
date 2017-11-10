@@ -12,7 +12,13 @@
 //#include "si/cic.h"
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
+#include <libdragon.h>
+#include "regsinternal.h"
 #include "cic.h"
+#include "types.h"
+#include "rom.h" //TODO: perhaps the pifram defines should be global
+
 
 
 // CIC seeds and status bits passed from PIF to IPL through PIF RAM
@@ -115,3 +121,94 @@ uint32_t si_crc32(const uint8_t *data, size_t size) {
 
   return c ^ 0xFFFFFFFF;
 }
+
+static volatile struct SI_regs_s * const SI_regs = (struct SI_regs_s *) 0xa4800000;
+static void * const PIF_RAM = (void *) 0x1fc007c0;
+
+/** @brief SI DMA busy */
+#define SI_STATUS_DMA_BUSY  ( 1 << 0 )
+/** @brief SI IO busy */
+#define SI_STATUS_IO_BUSY   ( 1 << 1 )
+
+static void __SI_DMA_wait(void) {
+    while (SI_regs->status & (PI_STATUS_DMA_BUSY | PI_STATUS_IO_BUSY));
+}
+
+static void __controller_exec_PIF(void *inblock, void *outblock) {
+  volatile uint64_t inblock_temp[8];
+  volatile uint64_t outblock_temp[8];
+
+  data_cache_hit_writeback_invalidate(inblock_temp, 64);
+  memcpy(UncachedAddr(inblock_temp), inblock, 64);
+
+  /* Be sure another thread doesn't get into a resource fight */
+  disable_interrupts();
+
+  __SI_DMA_wait();
+
+  SI_regs->DRAM_addr = inblock_temp; // only cares about 23:0
+  MEMORY_BARRIER();
+  SI_regs->PIF_addr_write = PIF_RAM; // is it really ever anything else?
+  MEMORY_BARRIER();
+
+  __SI_DMA_wait();
+
+  data_cache_hit_writeback_invalidate(outblock_temp, 64);
+
+  SI_regs->DRAM_addr = outblock_temp;
+  MEMORY_BARRIER();
+  SI_regs->PIF_addr_read = PIF_RAM;
+  MEMORY_BARRIER();
+
+  __SI_DMA_wait();
+
+  /* Now that we've copied, its safe to let other threads go */
+  enable_interrupts();
+
+  memcpy(outblock, UncachedAddr(outblock_temp), 64);
+}
+
+int pifram_x105_response_test() {
+  
+      static unsigned long long SI_eeprom_read_block[8] = {
+      0xFFFFFFFFFFFFFFFF,
+      0xFFFFFFFFFFFFFFFF,
+      0xFFFFFFFFFFFFFFFF,
+      0xFFFFFFFFFFFFFFFF,
+      0xFFFFFFFFFFFFFFFF,
+      0xFFFFFFFFFFFF0F0F,
+      0x8B00620018000600,
+      0x0100C000B0000002 //0x3f=02
+  
+      };
+      static unsigned long long output[8];
+  
+      __controller_exec_PIF(SI_eeprom_read_block,output);
+  
+      /*
+        expected result
+      FF FF FF FF FF FF FF FF
+      FF FF FF FF FF FF FF FF
+      FF FF FF FF FF FF FF FF
+      FF FF FF FF FF FF FF FF
+      FF FF FF FF FF FF FF FF
+      FF FF FF FF FF FF 00 00
+      3E C6 C0 4E BD 37 15 55
+      5A 8C 2A 8C D3 71 71 00
+        */
+  
+      /* We are looking for 0x55 in [6], which
+       * signifies that there is an x105 present.*/
+  
+      if( (output[6] & 0xFF) == 0x55 )
+      {
+          //x105 found!
+          return 1;
+  
+      } else {
+          //x105 not found!
+          return 0;
+  
+      }
+  
+  }
