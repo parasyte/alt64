@@ -68,6 +68,18 @@ make
 make install
 
 cd ..
+# install libmad (custom version)
+git clone https://github.com/networkfusion/libmad-n64
+cd libmad-n64
+export PATH=$PATH:$N64_INST/bin
+CFLAGS="-std=gnu99 -march=vr4300 -mtune=vr4300" \
+LDFLAGS="-L$N64_INST/lib -Tn64ld.x" \
+LIBS="-ldragon -lc -ldragonsys -lnosys" \
+./configure --host=mips64-elf --prefix=$N64_INST
+make
+make install
+
+cd ..
 
 # Perform cleanup
 apt-get -y autoremove

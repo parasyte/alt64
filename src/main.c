@@ -141,7 +141,7 @@ u16 cursor_history[32];
 u16 cursor_history_pos = 0;
 
 u8 empty = 0;
-u8 playing = 0;
+int mp3playing = 0;
 u8 gb_load_y = 0;
 
 FATFS *fs;
@@ -850,7 +850,7 @@ void configure()
     asm_date = memRomRead32(0x38); //TODO: this should be displayed somewhere...
     evd_setCfgBit(ED_CFG_SDRAM_ON, 1);
 
-    firm = evd_readReg(REG_VER); //TODO: why not just use evd_getFirmVersion()
+    firm = evd_getFirmVersion();
 
     if (firm >= 0x0200)
     {
@@ -864,19 +864,22 @@ void configure()
         {
             msg |= 1 << 14;
             evd_writeReg(REG_MAX_MSG, msg);
-            if (firm == 0x0214) //need to take into account different default firmware versions for each ED64 version
-            {//TODO: use a case statement instead
+            
+            switch(firm) //need to take into account different default firmware versions for each ED64 version
+            {
+                case 0x0214:
                 updateFirmware("/firmware/firmware_v2.bin");
-            }
-            else if (firm == 0x0250)
-            {
+                break;
+                case 0x0250:
                 updateFirmware("/firmware/firmware_v2_5.bin");
-            }
-            else if (firm == 0x0300)
-            {
+                break;
+                case 0x0300:
                 updateFirmware("/firmware/firmware_v3.bin");
+                break;
+                default:
+                break;
             }
-
+            
             sleep(1);
             evd_init();
         }
@@ -3171,27 +3174,31 @@ void loadFile(display_context_t disp)
         display_show(disp);
         break;
     case 10:
-        buf_size = audio_get_buffer_length() * 4;
-        buf_ptr = malloc(buf_size);
-
+    {
         while (!(disp = display_lock()))
-            ;
+        ;
         clearScreen(disp);
-        drawShortInfoBox(disp, "      playback", 0);
-
+        drawShortInfoBox(disp, "      Loading...", 0);
+        display_show(disp);
         long long start = 0, end = 0, curr, pause = 0, samples;
         int rate = 44100, last_rate = 44100, channels = 2;
 
-        audio_init(44100, 2);
+        audio_init(44100, 4);
+        buf_size = audio_get_buffer_length() * 4;
+        buf_ptr = malloc(buf_size);
 
         mp3_Start(name_file, &samples, &rate, &channels);
-        playing = 1;
+        mp3playing = 1;
         select_mode = 9;
 
-        input_mapping = mp3; //mp3 stop
-
+        while (!(disp = display_lock()))
+        ;
+        clearScreen(disp);
+        drawShortInfoBox(disp, "    MP3 Playback", 0);
         display_show(disp);
+        input_mapping = mp3; //mp3 stop
         break;
+    }
     default:
         break;
     }
@@ -4291,11 +4298,13 @@ void handleInput(display_context_t disp, sprite_t *contr)
             break;
 
         case mp3:
-
-            //stop mp3
-
             mp3_Stop();
-            playing = 0;
+            mp3playing = 0;
+            audio_close();
+	        free(buf_ptr);
+	        buf_ptr = 0;
+
+
 
             clearScreen(disp); //part clear?
             display_dir(list, cursor, page, MAX_LIST, count, disp);
@@ -4475,8 +4484,15 @@ int main(void)
 
             handleInput(disp, contr);
 
-            if (playing == 1)
-                playing = mp3_Update(buf_ptr, buf_size);
+            if (mp3playing && audio_can_write())
+            {
+                mp3playing = mp3_Update(buf_ptr, buf_size);
+
+                if (mp3playing)
+                {
+                    audio_write((short *)buf_ptr);
+                }
+            }
 
             if (input_mapping == file_manager)
                 sleep(60);
