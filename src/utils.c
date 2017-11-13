@@ -30,6 +30,7 @@ int get_cic_save(char *cartid, int *cic, int *save) {
     int NUM_CARTS = 138;
     int i;
 
+    //TODO: add games http://www.nesworld.com/article.php?system=n64&data=n64releaselist & https://onedrive.live.com/redir?resid=3E0FF504D0091341!182&authkey=!AMZAzZl-G-Y2fDo&ithint=file%2cxlsx
     char *cartIDs[] = {
         "DZ", "B6", "ZY", "ZZ", "AD", "AL", "B7", "BC", "BD", "BH",
         "BK", "BM", "BV", "CC", "CH", "CK", "CR", "CT", "CU", "CW",
@@ -45,7 +46,7 @@ int get_cic_save(char *cartid, int *cic, int *save) {
         "ZS", "AB", "BN", "CG", "CX", "CZ", "D6", "DR", "DZ", "OH",
         "TB", "TC", "VB", "WI", "4W", "AG", "AY", "DA", "D2", "3D",
         "F2", "SI", "HP", "EV", "MG", "GU", "SA", "VP", "A2", "WC", 
-        "GF"
+        "GF", "TG"
     };
 
     // Banjo-Tooie (B7) -> if not using Ultra CIC set to sram, because the crack converts ek16/eep (4) -> sram (1)
@@ -64,7 +65,7 @@ int get_cic_save(char *cartid, int *cic, int *save) {
         0x05, 0x03, 0x03, 0x03, 0x03, 0x04, 0x01, 0x03, 0x01, 0x03,
         0x03, 0x03, 0x01, 0x01, 0x03, 0x03, 0x01, 0x01, 0x04, 0x04,
         0x04, 0x05, 0x03, 0x04, 0x03, 0x03, 0x03, 0x01, 0x01, 0x03,
-        0x03
+        0x03, 0x03
     };
 
     // Banjo-Tooie (B7) -> if not using Ultra CIC set to 2 instead of 5
@@ -83,7 +84,7 @@ int get_cic_save(char *cartid, int *cic, int *save) {
         0x05, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
         0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
         0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
-        0x02
+        0x02, 0x02
     };
 
     // search for cartid
