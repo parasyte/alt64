@@ -47,7 +47,7 @@ make tools-install
 
 cd ..
 # install libmikmod (custom version)
-git clone https://github.com/networkfusion/libmikmod
+git clone https://github.com/n64-sdk/libmikmod
 cd libmikmod/n64
 make
 make install
@@ -69,7 +69,7 @@ make install
 
 cd ..
 # install libmad (custom version)
-git clone https://github.com/networkfusion/libmad-n64
+git clone https://github.com/n64-sdk/libmad-n64
 cd libmad-n64
 export PATH=$PATH:$N64_INST/bin
 CFLAGS="-std=gnu99 -march=vr4300 -mtune=vr4300" \
