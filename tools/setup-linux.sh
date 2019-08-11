@@ -9,7 +9,7 @@ apt-get update
 apt-get -y upgrade
 
 # Install essential packages [sudo req.]
-apt-get -y install build-essential git texinfo libc6 libgmp-dev libmpfr-dev libmpc-dev libpng-dev zlib1g-dev libtool autoconf
+apt-get -y install wget build-essential git texinfo libc6 libgmp-dev libmpfr-dev libmpc-dev libpng-dev zlib1g-dev libtool autoconf
 
 # change to the users root directory
 cd ~/
@@ -22,6 +22,8 @@ export N64_INST=/usr/local/libdragon
 
 # Pull the latest libdragon source code and make a build directory
 git clone https://github.com/dragonminded/libdragon.git
+# set to correct commit
+cd libdragon && git checkout b26fce6 && cd ..
 
 # fix issues with the build scripts
 sed -i -- 's|${N64_INST:-/usr/local}|/usr/local/libdragon|g' libdragon/tools/build
@@ -70,7 +72,7 @@ make install
 cd ..
 # install libmad (custom version)
 git clone https://github.com/n64-tools/libmad
-cd libmad-n64
+cd libmad
 export PATH=$PATH:$N64_INST/bin
 CFLAGS="-std=gnu99 -march=vr4300 -mtune=vr4300" \
 LDFLAGS="-L$N64_INST/lib -Tn64ld.x" \
@@ -84,4 +86,3 @@ cd ..
 # Perform cleanup
 apt-get -y autoremove
 apt-get autoclean
-
