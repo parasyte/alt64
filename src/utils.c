@@ -46,7 +46,7 @@ int get_cic_save(char *cartid, int *cic, int *save) {
         "ZS", "AB", "BN", "CG", "CX", "CZ", "D6", "DR", "DZ", "OH",
         "TB", "TC", "VB", "WI", "4W", "AG", "AY", "DA", "D2", "3D",
         "F2", "SI", "HP", "EV", "MG", "GU", "SA", "VP", "A2", "WC", 
-        "GF", "TG"
+        "GF", "TR", "TX"
     };
 
     // Banjo-Tooie (B7) -> if not using Ultra CIC set to sram, because the crack converts ek16/eep (4) -> sram (1)
@@ -65,7 +65,7 @@ int get_cic_save(char *cartid, int *cic, int *save) {
         0x05, 0x03, 0x03, 0x03, 0x03, 0x04, 0x01, 0x03, 0x01, 0x03,
         0x03, 0x03, 0x01, 0x01, 0x03, 0x03, 0x01, 0x01, 0x04, 0x04,
         0x04, 0x05, 0x03, 0x04, 0x03, 0x03, 0x03, 0x01, 0x01, 0x03,
-        0x03, 0x03
+        0x03, 0x03, 0x03
     };
 
     // Banjo-Tooie (B7) -> if not using Ultra CIC set to 2 instead of 5

@@ -4384,7 +4384,7 @@ int main(void)
             sndInit();
         }
 
-        timer_init();
+        //timer_init(); no use of timers yet...
 
         //background
         display_init(res, DEPTH_32_BPP, 3, GAMMA_NONE, ANTIALIAS_RESAMPLE);
