@@ -130,8 +130,8 @@
 
 #define SAVE_SIZE_SRAM 		32768
 #define SAVE_SIZE_SRAM96 	131072 //TODO: or should this be 98304
-#define SAVE_SIZE_EEP4k 	4096
-#define SAVE_SIZE_EEP16k 	16384
+#define SAVE_SIZE_EEP4k 	512
+#define SAVE_SIZE_EEP16k 	2048
 #define SAVE_SIZE_FLASH 	131072
 
 #define ROM_ADDR 		0xb0000000
