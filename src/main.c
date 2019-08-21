@@ -148,7 +148,6 @@ u16 cursor_history_pos = 0;
 
 u8 empty = 0;
 int mp3playing = 0;
-u8 gb_load_y = 0;
 
 FATFS *fs;
 
@@ -1273,23 +1272,6 @@ void loadggrom(display_context_t disp, TCHAR *rom_path) //TODO: this could be me
     }   
 }
 
-void rom_load_y(void)
-{
-    FRESULT fr;
-    FILINFO fno;
-
-    u8 gb_sram_file[64];
-    u8 gb_sram_file2[64];
-    sprintf(gb_sram_file, "%c%c%c%c%c%c%c", 'O', 'S', '6', '4', 'P', '/', 'O');
-    sprintf(gb_sram_file2, "%s%c%c%c%c%c%c%c%c", gb_sram_file, 'S', '6', '4', 'P', '.', 'v', '6', '4');
-
-    fr = f_stat(gb_sram_file2, &fno);
-    if (fr == FR_OK) 
-    {
-        gb_load_y = 1;
-    }
-}
-
 void loadnesrom(display_context_t disp, TCHAR *rom_path)
 {
     FRESULT result;
@@ -1634,7 +1616,6 @@ int backupSaveData(display_context_t disp)
 //write a cart-save from a file to the fpga/cart
 int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
 {
-    rom_load_y();
     TRACE(disp, rom_filename);
     TCHAR fname[256] = {0};
     sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%s", save_path, rom_name, saveTypeToExtension(stype, ext_type));
@@ -1705,24 +1686,20 @@ int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
         return 0;
     }
 
-    if (gb_load_y != 1)
-    {
-        if (pushSaveToCart(stype, cartsave_data))
-        {
-            printText("transferred save data...", 3, -1, disp);
-        }
-        else
-        {
-            printText("error transfering save data", 3, -1, disp);
-        }
-    }
+	if (pushSaveToCart(stype, cartsave_data))
+	{
+		printText("transferred save data...", 3, -1, disp);
+	}
+	else
+	{
+		printText("error transfering save data", 3, -1, disp);
+	}
 
     return 1;
 }
 
 int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
 {
-    rom_load_y();
     //after reset create new savefile
     TCHAR fname[256]; //TODO: change filename buffers to 256!!!
 
@@ -1748,18 +1725,14 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
         printText("Transfering save data...", 3, -1, disp);
         if (getSaveFromCart(stype, cartsave_data))
         {
-            //write to file
-            if (gb_load_y != 1)
-            {
-                UINT bw;
-                result = f_write (
-                    &file,          /* [IN] Pointer to the file object structure */
-                    cartsave_data, /* [IN] Pointer to the data to be written */
-                    size,         /* [IN] Number of bytes to write */
-                    &bw          /* [OUT] Pointer to the variable to return number of bytes written */
-                  );
-                  f_close(&file);
-            }
+            UINT bw;
+			result = f_write (
+			&file,          /* [IN] Pointer to the file object structure */
+			cartsave_data, /* [IN] Pointer to the data to be written */
+			size,         /* [IN] Number of bytes to write */
+			&bw          /* [OUT] Pointer to the variable to return number of bytes written */
+			);
+			f_close(&file);
     
             printText("RAM area copied to SD card.", 3, -1, disp);
             return 1;
