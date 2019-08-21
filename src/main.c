@@ -49,6 +49,12 @@
 #include "menu.h"
 #include "cic.h"
 
+#ifdef ED64PLUS
+#define ED64_FIRMWARE_PATH "ED64P"
+#else
+#define ED64_FIRMWARE_PATH "ED64"
+#endif
+
 #ifdef USE_TRUETYPE
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
@@ -1015,7 +1021,7 @@ void romInfoScreen(display_context_t disp, u8 *buff, int silent)
 
             sprite_t *n64cover;
 
-            sprintf(box_path, "/ED64/boxart/lowres/%c%c.png", headerdata[0x3C], headerdata[0x3D]);
+            sprintf(box_path, "/"ED64_FIRMWARE_PATH"/boxart/lowres/%c%c.png", headerdata[0x3C], headerdata[0x3D]);
 
             FILINFO fnoba;
             result = f_stat (box_path, &fnoba);
@@ -1023,7 +1029,7 @@ void romInfoScreen(display_context_t disp, u8 *buff, int silent)
             if (result != FR_OK)
             {
                 //not found
-                sprintf(box_path, "/ED64/boxart/lowres/00.png");
+                sprintf(box_path, "/"ED64_FIRMWARE_PATH"/boxart/lowres/00.png");
             }
 
             n64cover = loadPng(box_path);
@@ -1084,12 +1090,12 @@ void loadgbrom(display_context_t disp, u8 *buff)
     FRESULT fr;
     FILINFO fno;
 
-    fr = f_stat("/ED64/gblite.z64", &fno);
+    fr = f_stat("/"ED64_FIRMWARE_PATH"/gblite.z64", &fno);
     if (fr == FR_OK) 
     {
         TCHAR gb_sram_file[64];
 
-        sprintf(gb_sram_file, "/ED64/%s/gblite.SRM", save_path);
+        sprintf(gb_sram_file, "/"ED64_FIRMWARE_PATH"/%s/gblite.SRM", save_path);
 
         FRESULT result;
         FIL file;
@@ -1119,7 +1125,7 @@ void loadgbrom(display_context_t disp, u8 *buff)
             sprintf(rom_filename, "gblite");
             gbload = 1;
     
-            loadrom(disp, "/ED64/gblite.z64", 1);
+            loadrom(disp, "/"ED64_FIRMWARE_PATH"/gblite.z64", 1);
     
         }
     }
@@ -1154,7 +1160,7 @@ void loadmsx2rom(display_context_t disp, TCHAR *rom_path)
             FRESULT result;
             FIL file;
             UINT bytesread;
-            result = f_open(&file, "/ED64/ultraMSX2.z64", FA_READ);
+            result = f_open(&file, "/"ED64_FIRMWARE_PATH"/ultraMSX2.z64", FA_READ);
         
             if (result == FR_OK)
             {
@@ -1225,7 +1231,7 @@ void loadggrom(display_context_t disp, TCHAR *rom_path) //TODO: this could be me
             FRESULT result;
             FIL file;
             UINT bytesread;
-            result = f_open(&file, "/ED64/UltraSMS.z64", FA_READ);
+            result = f_open(&file, "/"ED64_FIRMWARE_PATH"/UltraSMS.z64", FA_READ);
         
             if (result == FR_OK)
             {
@@ -1289,7 +1295,7 @@ void loadnesrom(display_context_t disp, TCHAR *rom_path)
     FRESULT result;
     FIL emufile;
     UINT emubytesread;
-    result = f_open(&emufile, "/ED64/neon64bu.rom", FA_READ);
+    result = f_open(&emufile, "/"ED64_FIRMWARE_PATH"/neon64bu.rom", FA_READ);
 
     if (result == FR_OK)
     {
@@ -1522,7 +1528,7 @@ int backupSaveData(display_context_t disp)
 {
     //backup cart-save on sd after reboot
     TCHAR config_file_path[32];
-    sprintf(config_file_path, "/ED64/%s/LASTROM.CFG", save_path);
+    sprintf(config_file_path, "/"ED64_FIRMWARE_PATH"/%s/LASTROM.CFG", save_path);
 
     u8 save_format;
     u8 cfg_data[2]; //TODO: this should be a strut?
@@ -1631,10 +1637,10 @@ int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
     rom_load_y();
     TRACE(disp, rom_filename);
     TCHAR fname[256] = {0};
-    sprintf(fname, "/ED64/%s/%s.%s", save_path, rom_name, saveTypeToExtension(stype, ext_type));
+    sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%s", save_path, rom_name, saveTypeToExtension(stype, ext_type));
     
     TCHAR fname1[50] = {0};
-    sprintf(fname1, "/ED64/%s/", save_path);
+    sprintf(fname1, "/"ED64_FIRMWARE_PATH"/%s/", save_path);
     printText(fname1, 3, -1, disp);
     TCHAR fname2[50] = {0};
     sprintf(fname2, "%s.%s", rom_name, saveTypeToExtension(stype, ext_type));
@@ -1720,7 +1726,7 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
     //after reset create new savefile
     TCHAR fname[256]; //TODO: change filename buffers to 256!!!
 
-    sprintf(fname, "/ED64/%s/%s.%s", save_path, rom_name, saveTypeToExtension(stype, ext_type));
+    sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%s", save_path, rom_name, saveTypeToExtension(stype, ext_type));
 
     int size = saveTypeToSize(stype); // int byte
     TRACEF(disp, "size for save=%i", size);
@@ -1775,7 +1781,7 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
 int readConfigFile(void)
 {
     TCHAR filename[32];
-    sprintf(filename, "/ED64/ALT64.INI");
+    sprintf(filename, "/"ED64_FIRMWARE_PATH"/ALT64.INI");
     
     FRESULT result;
     FIL file;
@@ -1878,7 +1884,7 @@ void readSDcard(display_context_t disp, char *directory)
     // u8 cresp = 0;
 
     // //load the directory-entry
-    // cresp = fatLoadDirByName("/ED64/CFG");
+    // cresp = fatLoadDirByName("/"ED64_FIRMWARE_PATH"/CFG");
 
     // int dsize = dir->size;
     // char colorlist[dsize][256];
@@ -1892,7 +1898,7 @@ void readSDcard(display_context_t disp, char *directory)
     //         u8 rom_cfg_file[128];
 
     //         //set rom_cfg
-    //         sprintf(rom_cfg_file, "/ED64/CFG/%s", frec->name);
+    //         sprintf(rom_cfg_file, "/"ED64_FIRMWARE_PATH"/CFG/%s", frec->name);
 
     //         static uint8_t cfg_file_data[512] = {0};
 
@@ -2222,7 +2228,7 @@ void bootRom(display_context_t disp, int silent)
             TCHAR cfg_file[32];
 
             //set cfg file with last loaded cart info and save-type
-            sprintf(cfg_file, "/ED64/%s/LASTROM.CFG", save_path);
+            sprintf(cfg_file, "/"ED64_FIRMWARE_PATH"/%s/LASTROM.CFG", save_path);
 
             FRESULT result;
             FIL file;
@@ -2267,7 +2273,7 @@ void bootRom(display_context_t disp, int silent)
             printText("try to load cheat-file...", 3, -1, disp);
 
             char cheat_filename[64];
-            sprintf(cheat_filename, "/ED64/CHEATS/%s.yml", rom_filename);
+            sprintf(cheat_filename, "/"ED64_FIRMWARE_PATH"/CHEATS/%s.yml", rom_filename);
 
             int ok = readCheatFile(cheat_filename, cheat_lists);
             if (ok == 0)
@@ -2405,7 +2411,7 @@ void readRomConfig(display_context_t disp, char *short_filename, char *full_file
     TCHAR cfg_filename[256];
     sprintf(rom_filename, "%s", short_filename);
     rom_filename[strlen(rom_filename) - 4] = '\0'; // cut extension
-    sprintf(cfg_filename, "/ED64/CFG/%s.CFG", rom_filename);
+    sprintf(cfg_filename, "/"ED64_FIRMWARE_PATH"/CFG/%s.CFG", rom_filename);
 
     uint8_t rom_cfg_data[512];
 
@@ -2606,7 +2612,7 @@ void drawToplistBox(display_context_t disp, int line)
 
     if (line == 0)
     {
-        char* path = "/ED64/CFG";
+        char* path = "/"ED64_FIRMWARE_PATH"/CFG";
         
         FRESULT res;
         DIR dir;
@@ -3110,7 +3116,7 @@ void loadFile(display_context_t disp)
         {
             FRESULT result;
             FIL file;
-            result = f_open(&file, "/ED64/LASTROM.CFG", FA_WRITE | FA_CREATE_ALWAYS);
+            result = f_open(&file, "/"ED64_FIRMWARE_PATH"/LASTROM.CFG", FA_WRITE | FA_CREATE_ALWAYS);
             if (result == FR_OK)
             {
                 f_puts (
@@ -3469,7 +3475,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 FRESULT result;
                 FIL file;
                 UINT bytesread;
-                result = f_open(&file, "/ED64/LASTROM.CFG", FA_READ);
+                result = f_open(&file, "/"ED64_FIRMWARE_PATH"/LASTROM.CFG", FA_READ);
             
                 if (result == FR_OK)
                 {
@@ -4028,7 +4034,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
                          * /ED64
                          *
                          * cursor=SAVE
-                         * /ED64/SAVE
+                         * /"ED64_FIRMWARE_PATH"/SAVE
                          */
 
                 if (strcmp(pwd, "/") == 0)
@@ -4094,7 +4100,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
             u8 resp = 0;
 
             //set rom_cfg
-            sprintf(rom_cfg_file, "/ED64/CFG/%s.CFG", rom_filename);
+            sprintf(rom_cfg_file, "/"ED64_FIRMWARE_PATH"/CFG/%s.CFG", rom_filename);
 
 
             FRESULT result;
@@ -4416,7 +4422,7 @@ int main(void)
         }
 
         char background_path[64];
-        sprintf(background_path, "/ED64/wallpaper/%s", background_image);
+        sprintf(background_path, "/"ED64_FIRMWARE_PATH"/wallpaper/%s", background_image);
 
         FRESULT fr;
         FILINFO fno;
