@@ -3,6 +3,30 @@
 // See LICENSE file in the project root for full license information.
 //
 
+#if !defined(SOUND_ENABLED)
+
+void sndInit(void)
+{
+}
+
+void sndPlayBGM(char* filename)
+{
+}
+
+void sndStopAll(void)
+{
+}
+
+void sndPlaySFX(char* filename)
+{
+}
+
+void sndUpdate(void)
+{
+}
+
+#else
+
 #include <mikmod.h>
 #include <libdragon.h> //needed for audio_get_frequency()
 #include "hashtable.h"
@@ -111,3 +135,4 @@ void sndUpdate(void)
 
     }
 }
+#endif
