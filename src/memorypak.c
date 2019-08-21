@@ -314,7 +314,8 @@ void view_mpk(display_context_t disp)
     int err;
 
     printText("Mempak content:", 11, 5, disp);
-    get_accessories_present();
+    struct controller_data output;
+    get_accessories_present( &output);
 
     /* Make sure they don't have a rumble pak inserted instead */
     switch (identify_accessory(0))
