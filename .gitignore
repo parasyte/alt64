@@ -13,3 +13,7 @@
 ## Temporary files
 *.tmp
 *~
+*.VC.db*
+*properties.json
+/.vs
+/.vscode
