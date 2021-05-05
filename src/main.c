@@ -1086,6 +1086,7 @@ sprite_t *loadPng(u8 *png_filename)
 
 void loadgbrom(display_context_t disp, TCHAR *rom_path)
 {
+    drawShortInfoBox(disp, " loading please wait", 0);
     FRESULT result;
     FIL emufile;
     UINT emubytesread;
