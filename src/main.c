@@ -1084,48 +1084,53 @@ sprite_t *loadPng(u8 *png_filename)
 
 }
 
-void loadgbrom(display_context_t disp, u8 *buff)
+void loadgbrom(display_context_t disp, TCHAR *rom_path)
 {
-    FRESULT fr;
-    FILINFO fno;
+    FRESULT result;
+    FIL emufile;
+    UINT emubytesread;
+    result = f_open(&emufile, "/"ED64_FIRMWARE_PATH"/gb.v64", FA_READ);
 
-    fr = f_stat("/"ED64_FIRMWARE_PATH"/gblite.z64", &fno);
-    if (fr == FR_OK) 
+    if (result == FR_OK)
     {
-        TCHAR gb_sram_file[64];
+        int emufsize = f_size(&emufile);
+        //load gb emulator
+        result =
+        f_read (
+            &emufile,        /* [IN] File object */
+            (void *)0xb0000000,  /* [OUT] Buffer to store read data */
+            emufsize,         /* [IN] Number of bytes to read */
+            &emubytesread    /* [OUT] Number of bytes read */
+        );
 
-        sprintf(gb_sram_file, "/"ED64_FIRMWARE_PATH"/%s/gblite.SRM", save_path);
+        f_close(&emufile);
 
-        FRESULT result;
-        FIL file;
-        UINT bytesread;
-        result = f_open(&file, gb_sram_file, FA_WRITE | FA_OPEN_ALWAYS);
+        //load gb rom
+        FIL romfile;
+        UINT rombytesread;
+        result = f_open(&romfile, rom_path, FA_READ);
     
         if (result == FR_OK)
         {
-            static uint8_t sram_buffer[36928];
-            
-            for (int i = 0; i < 36928; i++)
-                sram_buffer[i] = 0;
+            int romfsize = f_size(&romfile);
     
-            sprintf(sram_buffer, buff);
-
-            UINT bw;
             result =
-            f_write (
-                &file,          /* [IN] Pointer to the file object structure */
-                sram_buffer, /* [IN] Pointer to the data to be written */
-                32768,         /* [IN] Number of bytes to write */ //TODO: why is this shorter than the sram buffer?
-                &bw          /* [OUT] Pointer to the variable to return number of bytes written */
-              );
+            f_read (
+                &romfile,        /* [IN] File object */
+                (void *)0xb0200000,  /* [OUT] Buffer to store read data */
+                romfsize,         /* [IN] Number of bytes to read */
+                &rombytesread    /* [OUT] Number of bytes read */
+            );
     
-            f_close(&file);
+            f_close(&romfile);
 
-            sprintf(rom_filename, "gblite");
-            gbload = 1;
+            boot_cic = CIC_6102;
+            boot_save = 5; //flash
+            force_tv = 0;  //no force
+            cheats_on = 0; //cheats off
+            checksum_fix_on = 0;
     
-            loadrom(disp, "/"ED64_FIRMWARE_PATH"/gblite.z64", 1);
-    
+            bootRom(disp, 1);
         }
     }
 }
