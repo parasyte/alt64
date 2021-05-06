@@ -1319,7 +1319,7 @@ void loadnesrom(display_context_t disp, TCHAR *rom_path)
             f_close(&romfile);
 
             boot_cic = CIC_6102;
-            boot_save = 0; //save off/cpak
+            boot_save = 2; //For new neon64
             force_tv = 0;  //no force
             cheats_on = 0; //cheats off
             checksum_fix_on = 0;
