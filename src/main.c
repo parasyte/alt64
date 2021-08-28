@@ -50,7 +50,6 @@
 #include "cic.h"
 
 #define ED64PLUS
-#define USE_TRUETYPE
 
 #ifdef ED64PLUS
 #define ED64_FIRMWARE_PATH "ED64P"
@@ -1625,20 +1624,39 @@ int backupSaveData(display_context_t disp)
 int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
 {
     TRACE(disp, rom_filename);
-    TCHAR fname[256] = {0};
-    sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%s", save_path, rom_name, saveTypeToExtension(stype, ext_type));
     
-    TCHAR fname1[50] = {0};
-    sprintf(fname1, "/"ED64_FIRMWARE_PATH"/%s/", save_path);
-    printText(fname1, 3, -1, disp);
-    TCHAR fname2[50] = {0};
-    sprintf(fname2, "%s.%s", rom_name, saveTypeToExtension(stype, ext_type));
-    printText(fname2, 3, -1, disp);
+    const char* save_type_extension = saveTypeToExtension(stype, ext_type);
+    TCHAR fname[256] = {0};
+    int save_count = 0; //TODO: once this crosses 9999 bad infinite-loop type things happen, look into that one day
+    FRESULT result;
+    FILINFO fnoba;
+    printText("Finding latest save slot...", 3, -1, disp);
+    display_show(disp);
+    while (true) {
+        sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%04x.%s", save_path, rom_name, save_count, save_type_extension);
+        result = f_stat (fname, &fnoba);
+        if (result != FR_OK) {
+            // we found our first missing save slot, break
+            break;
+        }
+        ++save_count;
+    }
+    if (save_count > 0) {
+        // we've went 1 past the end, so back up
+        sprintf(fname, "Found latest save slot: %04x", --save_count);
+        printText(fname, 3, -1, disp);
+        sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%04x.%s", save_path, rom_name, save_count, save_type_extension);
+    } else {
+        // not even a 0000 was found, so look at the original name before numbering was implemented
+        printText("No save slot found!", 3, -1, disp);
+        printText("Looking for non-numbered file...", 3, -1, disp);
+        sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%s", save_path, rom_name, save_type_extension);
+    }
+    display_show(disp);
 
     int size = saveTypeToSize(stype); // int byte
     uint8_t cartsave_data[size];
 
-    FRESULT result;
     FIL file;
     UINT bytesread;
     result = f_open(&file, fname, FA_READ);
@@ -1709,14 +1727,30 @@ int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
 int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
 {
     //after reset create new savefile
+    const char* save_type_extension = saveTypeToExtension(stype, ext_type);
     TCHAR fname[256]; //TODO: change filename buffers to 256!!!
-
-    sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%s", save_path, rom_name, saveTypeToExtension(stype, ext_type));
+    int save_count = 0; //TODO: once this crosses 9999 bad infinite-loop type things happen, look into that one day
+    FRESULT result;
+    FILINFO fnoba;
+    printText("Finding unused save slot...", 3, -1, disp);
+    display_show(disp);
+    while (true) {
+        sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%04x.%s", save_path, rom_name, save_count, save_type_extension);
+        result = f_stat (fname, &fnoba);
+        if (result != FR_OK) {
+            // we found our first missing save slot, break
+            break;
+        }
+        ++save_count;
+    }
+    sprintf(fname, "Found unused save slot: %04x", save_count);
+    printText(fname, 3, -1, disp);
+    display_show(disp);
+    sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%04x.%s", save_path, rom_name, save_count, save_type_extension);
 
     int size = saveTypeToSize(stype); // int byte
     TRACEF(disp, "size for save=%i", size);
 
-    FRESULT result;
     FIL file;
     UINT bytesread;
     result = f_open(&file, fname, FA_WRITE | FA_OPEN_ALWAYS); //Could use FA_CREATE_ALWAYS but this could lead to the posibility of the file being emptied
@@ -1755,6 +1789,7 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
     else
     {
         TRACE(disp, "COULDNT CREATE FILE :-(");
+        printText("Error saving game to SD, couldn't create file!", 3, -1, disp);
     }
 }
 

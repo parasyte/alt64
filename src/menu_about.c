@@ -29,4 +29,5 @@ void menu_about(display_context_t disp)
     printText("ChillyWilly", 9, -1, disp);
     printText("ShaunTaylor", 9, -1, disp);
     printText("Conle", 9, -1, disp);
+    printText("moparisthebest", 9, -1, disp);
 } //TODO: make scrolling text, should include libraries used.
