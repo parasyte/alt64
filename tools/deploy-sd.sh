@@ -6,13 +6,13 @@
 
 #! /bin/bash
 sudo mount /dev/sdb1 /mnt
-file=/mnt/ED64/OS64.v64
+file=/mnt/ED64P/OS64P.V64
 if [ -e $file ]
 then
 	echo -e "File $file exists - mount ok"
 	echo -e "copy..."
-	sudo cp ../bin/OS64.v64 /mnt/ED64/
-	sudo cp ../res/ALT64.INI /mnt/ED64/
+	sudo cp ../bin/OS64P.V64 /mnt/ED64P/
+	sudo cp ../res/ALT64.INI /mnt/ED64P/
 	echo -e "umounting..."
 	sudo umount /mnt
 	echo -e "done..."

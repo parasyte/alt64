@@ -173,7 +173,7 @@ void drawImage(display_context_t dcon, sprite_t *sprite) {
         for (int i=0; i<sprite->hslices; i++) {
             rdp_sync(SYNC_PIPE);
             rdp_load_texture_stride(0, 0, MIRROR_DISABLED, sprite, j*sprite->hslices + i);
-            rdp_draw_sprite(0, x, y);
+            rdp_draw_sprite(0, x, y, 0);
             x += 32;
         }
         y += 16;

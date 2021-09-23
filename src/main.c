@@ -170,6 +170,7 @@ enum InputMap
     mpk_quick_backup,
     mp3,
     abort_screen,
+    control_screen,
 };
 enum InputMap input_mapping = file_manager;
 
@@ -705,7 +706,7 @@ void drawBoxNumber(display_context_t disp, int box)
         break;                           //info screen
     case 9:
         box_color = graphics_make_color(0x00, 0x00, 0x00, 0xB6);
-        drawBox(28, 49, 260, 150, disp);
+        drawBox(28, 20, 260, 200, disp);
         break; //yellow toplist
     case 10:
         box_color = graphics_make_color(0x00, 0x60, 0x00, 0xC3);
@@ -3050,6 +3051,21 @@ void showAboutScreen(display_context_t disp)
 
     menu_about(disp);
 }
+void showControlScreen(display_context_t disp)
+{
+    while (!(disp = display_lock()))
+                ;
+    new_scroll_pos(&cursor, &page, MAX_LIST, count);
+    clearScreen(disp); //part clear?
+    display_dir(list, cursor, page, MAX_LIST, count, disp);
+    drawBoxNumber(disp, 9);
+    display_show(disp);
+
+    if (sound_on)
+        playSound(2);
+
+    menu_controls(disp);
+}
 
 void loadFile(display_context_t disp)
 {
@@ -4053,7 +4069,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
         {
         case file_manager:
             showAboutScreen(disp);
-            input_mapping = none;
+            input_mapping = control_screen;
             break;
 
         case mempak_menu:
@@ -4069,6 +4085,11 @@ void handleInput(display_context_t disp, sprite_t *contr)
             display_show(disp);
             view_mpk(disp);
             input_mapping = abort_screen;
+            break;
+
+        case control_screen:
+            showControlScreen(disp);
+            input_mapping = none;
             break;
 
         default:
