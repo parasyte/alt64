@@ -7,22 +7,27 @@
 
 void sndInit(void)
 {
+    return 0;
 }
 
 void sndPlayBGM(char* filename)
 {
+    return 0;
 }
 
 void sndStopAll(void)
 {
+    return 0;
 }
 
 void sndPlaySFX(char* filename)
 {
+    return 0;
 }
 
 void sndUpdate(void)
 {
+    return 0;
 }
 
 #else

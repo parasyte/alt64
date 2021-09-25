@@ -49,6 +49,9 @@
 #include "menu.h"
 #include "cic.h"
 
+#define ED64PLUS
+#define USE_TRUETYPE
+
 #ifdef ED64PLUS
 #define ED64_FIRMWARE_PATH "ED64P"
 #else
@@ -167,6 +170,7 @@ enum InputMap
     mpk_quick_backup,
     mp3,
     abort_screen,
+    control_screen,
 };
 enum InputMap input_mapping = file_manager;
 
@@ -702,7 +706,7 @@ void drawBoxNumber(display_context_t disp, int box)
         break;                           //info screen
     case 9:
         box_color = graphics_make_color(0x00, 0x00, 0x00, 0xB6);
-        drawBox(28, 49, 260, 150, disp);
+        drawBox(28, 20, 260, 200, disp);
         break; //yellow toplist
     case 10:
         box_color = graphics_make_color(0x00, 0x60, 0x00, 0xC3);
@@ -1084,52 +1088,57 @@ sprite_t *loadPng(u8 *png_filename)
 
 }
 
-void loadgbrom(display_context_t disp, u8 *buff)
+void loadgbrom(display_context_t disp, TCHAR *rom_path)
 {
-    FRESULT fr;
-    FILINFO fno;
+    drawShortInfoBox(disp, " loading please wait", 0);
+    FRESULT result;
+    FIL emufile;
+    UINT emubytesread;
+    result = f_open(&emufile, "/"ED64_FIRMWARE_PATH"/gb.v64", FA_READ);
 
-    fr = f_stat("/"ED64_FIRMWARE_PATH"/gblite.z64", &fno);
-    if (fr == FR_OK) 
+    if (result == FR_OK)
     {
-        TCHAR gb_sram_file[64];
+        int emufsize = f_size(&emufile);
+        //load gb emulator
+        result =
+        f_read (
+            &emufile,        /* [IN] File object */
+            (void *)0xb0000000,  /* [OUT] Buffer to store read data */
+            emufsize,         /* [IN] Number of bytes to read */
+            &emubytesread    /* [OUT] Number of bytes read */
+        );
 
-        sprintf(gb_sram_file, "/"ED64_FIRMWARE_PATH"/%s/gblite.SRM", save_path);
+        f_close(&emufile);
 
-        FRESULT result;
-        FIL file;
-        UINT bytesread;
-        result = f_open(&file, gb_sram_file, FA_WRITE | FA_OPEN_ALWAYS);
+        //load gb rom
+        FIL romfile;
+        UINT rombytesread;
+        result = f_open(&romfile, rom_path, FA_READ);
     
         if (result == FR_OK)
         {
-            static uint8_t sram_buffer[36928];
-            
-            for (int i = 0; i < 36928; i++)
-                sram_buffer[i] = 0;
+            int romfsize = f_size(&romfile);
     
-            sprintf(sram_buffer, buff);
-
-            UINT bw;
             result =
-            f_write (
-                &file,          /* [IN] Pointer to the file object structure */
-                sram_buffer, /* [IN] Pointer to the data to be written */
-                32768,         /* [IN] Number of bytes to write */ //TODO: why is this shorter than the sram buffer?
-                &bw          /* [OUT] Pointer to the variable to return number of bytes written */
-              );
+            f_read (
+                &romfile,        /* [IN] File object */
+                (void *)0xb0200000,  /* [OUT] Buffer to store read data */
+                romfsize,         /* [IN] Number of bytes to read */
+                &rombytesread    /* [OUT] Number of bytes read */
+            );
     
-            f_close(&file);
+            f_close(&romfile);
 
-            sprintf(rom_filename, "gblite");
-            gbload = 1;
+            boot_cic = CIC_6102;
+            boot_save = 5; //flash
+            force_tv = 0;  //no force
+            cheats_on = 0; //cheats off
+            checksum_fix_on = 0;
     
-            loadrom(disp, "/"ED64_FIRMWARE_PATH"/gblite.z64", 1);
-    
+            bootRom(disp, 1);
         }
     }
 }
-
 void loadmsx2rom(display_context_t disp, TCHAR *rom_path)
 {
 
@@ -1313,7 +1322,7 @@ void loadnesrom(display_context_t disp, TCHAR *rom_path)
             f_close(&romfile);
 
             boot_cic = CIC_6102;
-            boot_save = 0; //save off/cpak
+            boot_save = 2; //SRAM
             force_tv = 0;  //no force
             cheats_on = 0; //cheats off
             checksum_fix_on = 0;
@@ -2334,7 +2343,11 @@ void drawTextInput(display_context_t disp, char *msg)
 }
 
 void drawConfirmBox(display_context_t disp)
-{
+{    while (!(disp = display_lock()))
+                ;
+    new_scroll_pos(&cursor, &page, MAX_LIST, count);
+    clearScreen(disp); //part clear?
+    display_dir(list, cursor, page, MAX_LIST, count, disp);
     drawBoxNumber(disp, 5);
     display_show(disp);
 
@@ -2355,8 +2368,14 @@ void drawConfirmBox(display_context_t disp)
 }
 
 void drawShortInfoBox(display_context_t disp, char *text, u8 mode)
-{
+{    while (!(disp = display_lock()))
+                ;
+    new_scroll_pos(&cursor, &page, MAX_LIST, count);
+    clearScreen(disp); //part clear?
+    display_dir(list, cursor, page, MAX_LIST, count, disp);
+    
     if (mode == 0)
+    
         drawBoxNumber(disp, 7);
     else if (mode == 1)
         drawBoxNumber(disp, 8);
@@ -2781,7 +2800,7 @@ void drawRomConfigBox(display_context_t disp, int line)
                 rom_config[0]--;
         }
     }
-
+    
     drawBoxNumber(disp, 6);
 
     drawConfigSelection(disp, rom_config[0]);
@@ -3019,6 +3038,11 @@ void drawSet4(display_context_t disp)
 
 void showAboutScreen(display_context_t disp)
 {
+    while (!(disp = display_lock()))
+                ;
+    new_scroll_pos(&cursor, &page, MAX_LIST, count);
+    clearScreen(disp); //part clear?
+    display_dir(list, cursor, page, MAX_LIST, count, disp);
     drawBoxNumber(disp, 2);
     display_show(disp);
 
@@ -3026,6 +3050,21 @@ void showAboutScreen(display_context_t disp)
         playSound(2);
 
     menu_about(disp);
+}
+void showControlScreen(display_context_t disp)
+{
+    while (!(disp = display_lock()))
+                ;
+    new_scroll_pos(&cursor, &page, MAX_LIST, count);
+    clearScreen(disp); //part clear?
+    display_dir(list, cursor, page, MAX_LIST, count, disp);
+    drawBoxNumber(disp, 9);
+    display_show(disp);
+
+    if (sound_on)
+        playSound(2);
+
+    menu_controls(disp);
 }
 
 void loadFile(display_context_t disp)
@@ -3260,7 +3299,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
             break;
         }
     }
-
+    
     if (keys.c[0].down || keys_held.c[0].down || keys_held.c[0].y < -25)
     {
         switch (input_mapping)
@@ -3516,7 +3555,11 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 printText(" ", 9, -1, disp);
                 printText("search...", 9, -1, disp);
                 mpk_to_file(disp, input_text, 0);
-
+                while (!(disp = display_lock()))
+                ;
+                new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                clearScreen(disp); //part clear?
+                display_dir(list, cursor, page, MAX_LIST, count, disp);
                 drawShortInfoBox(disp, "         done", 0);
                 sleep(1000);
 
@@ -3549,6 +3592,12 @@ void handleInput(display_context_t disp, sprite_t *contr)
         case file_manager:
 
             input_mapping = mempak_menu;
+
+            while (!(disp = display_lock()))
+                ;
+            new_scroll_pos(&cursor, &page, MAX_LIST, count);
+            clearScreen(disp); //part clear?
+            display_dir(list, cursor, page, MAX_LIST, count, disp);
 
             drawBoxNumber(disp, 2);
 
@@ -3600,9 +3649,14 @@ void handleInput(display_context_t disp, sprite_t *contr)
         case mempak_menu:
 
             //c-up or A
-            drawConfirmBox(disp);
-            //confirm format mpk
-            input_mapping = mpk_format;
+            while (!(disp = display_lock()))
+                ;
+                new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                clearScreen(disp); //part clear?
+                display_dir(list, cursor, page, MAX_LIST, count, disp);
+                drawConfirmBox(disp);
+                //confirm format mpk
+                input_mapping = mpk_format;
             break;
 
         case char_input:
@@ -3635,21 +3689,26 @@ void handleInput(display_context_t disp, sprite_t *contr)
         switch (input_mapping)
         {
         case file_manager:
-
+        
             if (list[cursor].type != DT_DIR && empty == 0)
-            {
+            {   
+                while (!(disp = display_lock()))
+                ;
+                new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                clearScreen(disp); //part clear?
+                display_dir(list, cursor, page, MAX_LIST, count, disp);
                 drawBoxNumber(disp, 11);
-
+                display_show(disp);
                 char *part;
 
                 part = malloc(slen(list[cursor].filename));
                 sprintf(part, "%s", list[cursor].filename);
                 part[31] = '\0';
-
+                
                 printText(part, 4, 14, disp);
 
                 if (slen(list[cursor].filename) > 31)
-                {
+                {   
                     sprintf(part, "%s", list[cursor].filename + 31);
                     part[31] = '\0';
                     printText(part, 4, -1, disp);
@@ -3688,6 +3747,11 @@ void handleInput(display_context_t disp, sprite_t *contr)
 
         case mpk_format:
             // format mpk
+            while (!(disp = display_lock()))
+                ;
+            new_scroll_pos(&cursor, &page, MAX_LIST, count);
+            clearScreen(disp); //part clear?
+            display_dir(list, cursor, page, MAX_LIST, count, disp);
             drawBoxNumber(disp, 2);
             display_show(disp);
 
@@ -3711,6 +3775,11 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 }
                 else
                 {
+                    while (!(disp = display_lock()))
+                ;
+                    new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                    clearScreen(disp); //part clear?
+                    display_dir(list, cursor, page, MAX_LIST, count, disp);
                     drawShortInfoBox(disp, "         done", 0);
                     input_mapping = abort_screen;
                 }
@@ -3728,6 +3797,11 @@ void handleInput(display_context_t disp, sprite_t *contr)
 
         case mpk_restore:
             //restore mpk
+            while (!(disp = display_lock()))
+                ;
+                new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                clearScreen(disp); //part clear?
+                display_dir(list, cursor, page, MAX_LIST, count, disp);
             drawBoxNumber(disp, 2);
             display_show(disp);
 
@@ -3735,7 +3809,11 @@ void handleInput(display_context_t disp, sprite_t *contr)
             printText(" ", 9, -1, disp);
 
             file_to_mpk(disp, rom_filename);
-
+            while (!(disp = display_lock()))
+                ;
+            new_scroll_pos(&cursor, &page, MAX_LIST, count);
+            clearScreen(disp); //part clear?
+            display_dir(list, cursor, page, MAX_LIST, count, disp);
             drawShortInfoBox(disp, "         done", 0);
             sleep(1000);
 
@@ -3746,6 +3824,11 @@ void handleInput(display_context_t disp, sprite_t *contr)
 
         case mpk_quick_backup:
             //quick-backup
+            while (!(disp = display_lock()))
+                ;
+                new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                clearScreen(disp); //part clear?
+                display_dir(list, cursor, page, MAX_LIST, count, disp);
             drawBoxNumber(disp, 2);
             display_show(disp);
 
@@ -3754,7 +3837,11 @@ void handleInput(display_context_t disp, sprite_t *contr)
             printText("search...", 9, -1, disp);
 
             mpk_to_file(disp, list[cursor].filename, 1); //quick
-
+            while (!(disp = display_lock()))
+                ;
+            new_scroll_pos(&cursor, &page, MAX_LIST, count);
+            clearScreen(disp); //part clear?
+            display_dir(list, cursor, page, MAX_LIST, count, disp);
             drawShortInfoBox(disp, "         done", 0);
             sleep(1000);
             input_mapping = abort_screen;
@@ -3806,6 +3893,12 @@ void handleInput(display_context_t disp, sprite_t *contr)
 
                     //preload config or file header
                     readRomConfig(disp, rom_filename, name_file);
+                    while (!(disp = display_lock()))
+                ;
+                    new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                    clearScreen(disp); //part clear?
+                    display_dir(list, cursor, page, MAX_LIST, count, disp);
+
 
                     drawRomConfigBox(disp, 0);
                     display_show(disp);
@@ -3913,7 +4006,14 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 if (!strcmp(extension, "Z64") || !strcmp(extension, "V64") || !strcmp(extension, "N64"))
                 { //rom
                     //load rom
+                    while (!(disp = display_lock()))
+                    ;
+                    new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                    clearScreen(disp); //part clear?
+                    display_dir(list, cursor, page, MAX_LIST, count, disp);
+
                     drawBoxNumber(disp, 3); //rominfo
+                    display_show(disp);
 
                     u16 msg = 0;
                     evd_ulockRegs();
@@ -3969,17 +4069,27 @@ void handleInput(display_context_t disp, sprite_t *contr)
         {
         case file_manager:
             showAboutScreen(disp);
-            input_mapping = none;
+            input_mapping = control_screen;
             break;
 
         case mempak_menu:
             if (sound_on)
                 playSound(2);
+            while (!(disp = display_lock()))
+            ;
+            new_scroll_pos(&cursor, &page, MAX_LIST, count);
+            clearScreen(disp); //part clear?
+            display_dir(list, cursor, page, MAX_LIST, count, disp);
 
             drawBoxNumber(disp, 4);
             display_show(disp);
             view_mpk(disp);
             input_mapping = abort_screen;
+            break;
+
+        case control_screen:
+            showControlScreen(disp);
+            input_mapping = none;
             break;
 
         default:
@@ -4041,9 +4151,14 @@ void handleInput(display_context_t disp, sprite_t *contr)
         case mempak_menu:
         {
             //open up charinput screen
+            while (!(disp = display_lock()))
+                ;
+            new_scroll_pos(&cursor, &page, MAX_LIST, count);
+            clearScreen(disp); //part clear?
             input_mapping = char_input;
             input_text[0] = '\0';
             graphics_draw_sprite(disp, 0, 0, contr);
+            display_show(disp);
             break;
         }
         case char_input:
@@ -4106,7 +4221,11 @@ void handleInput(display_context_t disp, sprite_t *contr)
                   );
         
                 f_close(&file);
-
+                
+                while (!(disp = display_lock()))
+                ;
+                drawRomConfigBox(disp, 0);
+                display_show(disp);
                 drawShortInfoBox(disp, "         done", 0);
                 toplist_reload = 1;    
             }
@@ -4227,6 +4346,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 ;
 
             graphics_set_color(graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF), graphics_make_color(0x00, 0x00, 0x00, 0x00));
+            new_scroll_pos(&cursor, &page, MAX_LIST, count);
             clearScreen(disp);
             display_show(disp);
 
