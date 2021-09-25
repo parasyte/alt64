@@ -17,10 +17,3 @@
 *properties.json
 /.vs
 /.vscode
-
-/toolchain/*
-/lib/*
-/include/*
-/temp
-*.zip
-toolchain/

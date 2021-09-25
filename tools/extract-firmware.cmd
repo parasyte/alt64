@@ -52,7 +52,7 @@ MKDIR "%fs%"
 
 SET "rom=%1"
 IF %1.==. (
-SET /P rom="Please enter full path to OS64P.V64 V2.12:"
+SET /P rom="Please enter full path to OS64.v64 V2.12:"
 )
 
 set "drive=%rom:~0,1%"
@@ -98,7 +98,7 @@ echo "Linux rom dir is %rom%"
 
 @echo ON
 
-:: OS64P.V64 - Version 2.12 firmware offsets:
+:: OS64.V64 - Version 2.12 firmware offsets:
 :: cart 	offset (hex)	offset (dec) 	length
 :: v2_old 	0x25070 	151664		61552
 :: v2 		0x15930 	88368		63276

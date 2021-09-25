@@ -28,31 +28,7 @@ void menu_about(display_context_t disp)
     printText("Richard Weick", 9, -1, disp);
     printText("ChillyWilly", 9, -1, disp);
     printText("ShaunTaylor", 9, -1, disp);
-    printText("Conle        Z: Page 2", 9, -1, disp);
+    printText("Conle", 9, -1, disp);
+    printText("Aria Hiro64", 9, -1, disp);
+    printText("moparisthebest", 9, -1, disp);
 } //TODO: make scrolling text, should include libraries used.
-void menu_controls(display_context_t disp)
-{
-    printText("          - Controls -", 4, 4, disp);
-    printText(" ", 4, -1, disp);
-    printText("      L: brings up the mempak", 4, -1, disp);
-    printText("        menu", 5, -1, disp);
-    printText(" ", 4, -1, disp);
-    printText("      Z: about screen", 4, -1, disp);
-    printText(" ", 4, -1, disp);
-    printText("      A: start rom/directory", 4, -1, disp);
-    printText("         mempak", 4, -1, disp);
-    printText(" ", 4, -1, disp);
-    printText("      B: back/cancel", 4, -1, disp);
-    printText(" ", 4, -1, disp);
-    printText("  START: start last rom", 4, -1, disp);
-    printText(" ", 4, -1, disp);
-    printText(" C-left: rom info/mempak", 4, -1, disp);
-    printText("         content view", 4, -1, disp);
-    printText(" ", 4, -1, disp);
-    printText("C-right: rom config creen", 4, -1, disp);
-    printText(" ", 4, -1, disp);
-    printText("   C-up: view full filename", 4, -1, disp);
-    printText(" ", 4, -1, disp);
-    printText(" C-down: Toplist 15", 4, -1, disp);
-
-}
