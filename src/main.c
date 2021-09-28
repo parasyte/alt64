@@ -3611,7 +3611,8 @@ void handleInput(display_context_t disp, sprite_t *contr)
         case file_manager:
 
             input_mapping = mempak_menu;
-
+            if (sound_on)
+                playSound(2);
             while (!(disp = display_lock()))
                 ;
             new_scroll_pos(&cursor, &page, MAX_LIST, count);
@@ -3632,9 +3633,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
             printText("  R: Format", 9, -1, disp);
             printText(" ", 9, -1, disp);
             printText("  B: Abort", 9, -1, disp);
-            if (sound_on)
-                playSound(2);
-            sleep(1000);
             break;
 
         case mempak_menu:
@@ -4094,6 +4092,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
         case mempak_menu:
             if (sound_on)
                 playSound(2);
+            clearScreen(disp);
             while (!(disp = display_lock()))
             ;
             new_scroll_pos(&cursor, &page, MAX_LIST, count);
