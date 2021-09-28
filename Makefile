@@ -19,7 +19,7 @@ OBJDIR = ./obj
 BINDIR = ./bin
 TOOLSDIR = ./tools
 
-LINK_FLAGS = -O1 -L$(ROOTDIR)/lib -L$(ROOTDIR)/mips64-elf/lib -ldragon -lmad -lyaml -lc -lm -ldragonsys -lnosys $(LIBS) -Tn64ld.x
+LINK_FLAGS = -O1 -L$(ROOTDIR)/lib -L$(ROOTDIR)/mips64-elf/lib -ldragon -lmad -lmikmod -lyaml -lc -lm -ldragonsys -lnosys $(LIBS) -Tn64ld.x
 PROG_NAME = OS64P
 CFLAGS = -std=gnu99 -march=vr4300 -mtune=vr4300 -O1 -I$(INCDIR) -I$(ROOTDIR)/include -I$(ROOTDIR)/mips64-elf/include -lpthread -lrt -D_REENTRANT -DUSE_TRUETYPE $(SET_DEBUG)
 ASFLAGS = -mtune=vr4300 -march=vr4300

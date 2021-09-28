@@ -1,3 +1,5 @@
+## Build folder
+/build/*
 ## Build files
 *.v64
 *.elf
