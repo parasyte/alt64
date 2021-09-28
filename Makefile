@@ -19,11 +19,7 @@ OBJDIR = ./obj
 BINDIR = ./bin
 TOOLSDIR = ./tools
 
-<<<<<<< HEAD
 LINK_FLAGS = -O1 -L$(ROOTDIR)/lib -L$(ROOTDIR)/mips64-elf/lib -ldragon -lmad -lmikmod -lyaml -lc -lm -ldragonsys -lnosys $(LIBS) -Tn64ld.x
-=======
-LINK_FLAGS = -O1 -L$(ROOTDIR)/lib -L$(ROOTDIR)/mips64-elf/lib -ldragon -lmad -lyaml -lc -lm -ldragonsys -lnosys $(LIBS) -Tn64ld.x
->>>>>>> 3733e676f9e52632f1015a86a8e422e54fc18f22
 PROG_NAME = OS64P
 CFLAGS = -std=gnu99 -march=vr4300 -mtune=vr4300 -O1 -I$(INCDIR) -I$(ROOTDIR)/include -I$(ROOTDIR)/mips64-elf/include -lpthread -lrt -D_REENTRANT -DUSE_TRUETYPE $(SET_DEBUG)
 ASFLAGS = -mtune=vr4300 -march=vr4300
@@ -31,7 +27,7 @@ CC = $(GCCN64PREFIX)gcc
 AS = $(GCCN64PREFIX)as
 LD = $(GCCN64PREFIX)ld
 OBJCOPY = $(GCCN64PREFIX)objcopy
-  
+
 SOURCES := $(wildcard $(SRCDIR)/*.c)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 

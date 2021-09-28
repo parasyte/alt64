@@ -1624,11 +1624,6 @@ int backupSaveData(display_context_t disp)
 int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
 {
     TRACE(disp, rom_filename);
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> 3733e676f9e52632f1015a86a8e422e54fc18f22
     const char* save_type_extension = saveTypeToExtension(stype, ext_type);
     TCHAR fname[256] = {0};
     int save_count = 0; //TODO: once this crosses 9999 bad infinite-loop type things happen, look into that one day
