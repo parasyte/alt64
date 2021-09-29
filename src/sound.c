@@ -81,7 +81,7 @@ void sndPlayBGM(char* filename)
     if (moduleBGM)
     {
         Player_Start(moduleBGM);
-        Player_SetVolume(20);
+        Player_SetVolume(80);
     }
 }
 
@@ -120,7 +120,7 @@ void sndPlaySFX(char* filename)
     }
 
     //audio_write_silence();
-    Voice_SetVolume(voiceSFX, 200);
+    Voice_SetVolume(voiceSFX, 800);
     voiceSFX = Sample_Play(hashtable_get(samples, filename), 0, 0);
 
     MikMod_Update(); //force an update so that the voice is registered as playing!

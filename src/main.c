@@ -3252,6 +3252,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
         switch (input_mapping)
         {
         case file_manager:
+        playSound(4);
             if (select_mode)
             {
                 if (count != 0)
@@ -3323,6 +3324,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
         switch (input_mapping)
         {
         case file_manager:
+        playSound(4);
             if (select_mode)
             {
                 if (count != 0)
@@ -4544,7 +4546,7 @@ int main(void)
         }
 
         //todo: if bgm is enabled, we should start it...
-        //sndPlayBGM("rom://sounds/bgm21.it");
+        sndPlayBGM("rom://sounds/bgm21.it");
 
         border_color_1 = translate_color(border_color_1_s);
         border_color_2 = translate_color(border_color_2_s);
