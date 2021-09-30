@@ -103,6 +103,7 @@ typedef struct
     char *mempak_path;
     char *save_path;
     int sound_on;
+    int bgm_on;
     int page_display;
     int tv_mode;
     int quick_boot;
@@ -230,6 +231,7 @@ char *list_dir_font_color_s;
 char *save_path;
 
 u8 sound_on = 0;
+u8 bgm_on = 0;
 u8 page_display = 0;
 u8 tv_mode = 0; // 1=ntsc 2=pal 3=mpal 0=default automatic
 u8 quick_boot = 0;
@@ -769,6 +771,10 @@ static int configHandler(void *user, const char *section, const char *name, cons
     else if (MATCH("ed64", "sound_on"))
     {
         pconfig->sound_on = atoi(value);
+    }
+    else if (MATCH("ed64", "bgm_on"))
+    {
+        pconfig->bgm_on = atoi(value);
     }
     else if (MATCH("ed64", "page_display"))
     {
@@ -1838,6 +1844,7 @@ int readConfigFile(void)
             mempak_path = config.mempak_path;
             save_path = config.save_path;
             sound_on = config.sound_on;
+            bgm_on = config.bgm_on;
             page_display = config.page_display;
             tv_mode = config.tv_mode;
             quick_boot = config.quick_boot;
@@ -2346,6 +2353,7 @@ void playSound(int snd)
 
     if (snd == 4)
         sndPlaySFX("rom://sounds/done.wav");
+
 }
 
 //draws the next char at the text input screen
@@ -3252,7 +3260,9 @@ void handleInput(display_context_t disp, sprite_t *contr)
         switch (input_mapping)
         {
         case file_manager:
+        if (sound_on){
         playSound(4);
+      }
             if (select_mode)
             {
                 if (count != 0)
@@ -3324,7 +3334,9 @@ void handleInput(display_context_t disp, sprite_t *contr)
         switch (input_mapping)
         {
         case file_manager:
+        if (sound_on){
         playSound(4);
+      }
             if (select_mode)
             {
                 if (count != 0)
@@ -4546,8 +4558,9 @@ int main(void)
         }
 
         //todo: if bgm is enabled, we should start it...
+        if (sound_on && bgm_on){
         sndPlayBGM("rom://sounds/bgm21.it");
-
+        }
         border_color_1 = translate_color(border_color_1_s);
         border_color_2 = translate_color(border_color_2_s);
         box_color = translate_color(box_color_s);
