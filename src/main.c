@@ -1148,76 +1148,6 @@ void loadgbrom(display_context_t disp, TCHAR *rom_path)
         }
     }
 }
-void loadmsx2rom(display_context_t disp, TCHAR *rom_path)
-{
-
-    FRESULT romresult;
-    FIL romfile;
-    UINT rombytesread;
-    romresult = f_open(&romfile, rom_path, FA_READ);
-
-    if (romresult == FR_OK)
-    {
-        int romfsize = f_size(&romfile);
-
-        //max 128KB rom
-        if (romfsize > 128 * 1024)
-        {
-            //error
-
-            drawShortInfoBox(disp, "  error: rom > 128KB", 1);
-            input_mapping = abort_screen;
-
-            return;
-        }
-        else
-        {
-            drawShortInfoBox(disp, " loading please wait", 0);
-
-            FRESULT result;
-            FIL file;
-            UINT bytesread;
-            result = f_open(&file, "/"ED64_FIRMWARE_PATH"/ultraMSX2.z64", FA_READ);
-
-            if (result == FR_OK)
-            {
-                int fsize = f_size(&file);
-
-
-                result =
-                f_read (
-                    &file,        /* [IN] File object */
-                    (void *)0xb0000000,      /* [OUT] Buffer to store read data */
-                    fsize,        /* [IN] Number of bytes to read */
-                    &bytesread    /* [OUT] Number of bytes read */
-                );
-
-                f_close(&file);
-
-
-                romresult =
-                f_read (
-                    &romfile,           /* [IN] File object */
-                    (void *)0xb0000000 + 0x2df48,  /* [OUT] Buffer to store read data */ //TODO: why is the offset this particular number
-                    romfsize,           /* [IN] Number of bytes to read */
-                    &rombytesread       /* [OUT] Number of bytes read */
-                );
-
-                f_close(&romfile);
-
-
-                boot_cic = CIC_6102;
-                boot_save = 0; //save off/cpak
-                force_tv = 0;  //no force
-                cheats_on = 0; //cheats off
-                checksum_fix_on = 0;
-
-                checksum_sdram();
-                bootRom(disp, 1);
-            }
-        }
-    }
-}
 
 void loadggrom(display_context_t disp, TCHAR *rom_path) //TODO: this could be merged with MSX
 {
@@ -1270,6 +1200,76 @@ void loadggrom(display_context_t disp, TCHAR *rom_path) //TODO: this could be me
                 f_read (
                     &romfile,           /* [IN] File object */
                     (void *)0xb0000000 + 0x1b410,  /* [OUT] Buffer to store read data */ //TODO: why is the offset this particular number
+                    romfsize,           /* [IN] Number of bytes to read */
+                    &rombytesread       /* [OUT] Number of bytes read */
+                );
+
+                f_close(&romfile);
+
+
+                boot_cic = CIC_6102;
+                boot_save = 0; //save off/cpak
+                force_tv = 0;  //no force
+                cheats_on = 0; //cheats off
+                checksum_fix_on = 0;
+
+                checksum_sdram();
+                bootRom(disp, 1);
+            }
+        }
+    }
+}
+void loadmsx2rom(display_context_t disp, TCHAR *rom_path)
+{
+
+    FRESULT romresult;
+    FIL romfile;
+    UINT rombytesread;
+    romresult = f_open(&romfile, rom_path, FA_READ);
+
+    if (romresult == FR_OK)
+    {
+        int romfsize = f_size(&romfile);
+
+        //max 128KB rom
+        if (romfsize > 128 * 1024)
+        {
+            //error
+
+            drawShortInfoBox(disp, "  error: rom > 512KB", 1);
+            input_mapping = abort_screen;
+
+            return;
+        }
+        else
+        {
+            drawShortInfoBox(disp, " loading please wait", 0);
+
+            FRESULT result;
+            FIL file;
+            UINT bytesread;
+            result = f_open(&file, "/"ED64_FIRMWARE_PATH"/ultraMSX2.z64", FA_READ);
+
+            if (result == FR_OK)
+            {
+                int fsize = f_size(&file);
+
+
+                result =
+                f_read (
+                    &file,        /* [IN] File object */
+                    (void *)0xb0000000,      /* [OUT] Buffer to store read data */
+                    fsize,        /* [IN] Number of bytes to read */
+                    &bytesread    /* [OUT] Number of bytes read */
+                );
+
+                f_close(&file);
+
+
+                romresult =
+                f_read (
+                    &romfile,           /* [IN] File object */
+                    (void *)0xb0000000 + 0x2df48,  /* [OUT] Buffer to store read data */ //TODO: why is the offset this particular number
                     romfsize,           /* [IN] Number of bytes to read */
                     &rombytesread       /* [OUT] Number of bytes read */
                 );
@@ -4079,6 +4079,8 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 }
                 else if (!strcmp(extension, "MPK"))
                 { //mpk file
+                  while (!(disp = display_lock()))
+                  ;
                     clearScreen(disp);
                     drawBoxNumber(disp, 4);
                     display_show(disp);
@@ -4131,8 +4133,8 @@ void handleInput(display_context_t disp, sprite_t *contr)
                         new_scroll_pos(&cursor, &page, MAX_LIST, count);
                         clearScreen(disp); //part clear?
                         display_dir(list, cursor, page, MAX_LIST, count, disp);
-                        view_mpk(disp);
                         drawBoxNumber(disp, 4);
+                        view_mpk(disp);
                         display_show(disp);
                         if (sound_on)
                             playSound(2);
