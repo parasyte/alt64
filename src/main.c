@@ -3140,20 +3140,18 @@ void loadFile(display_context_t disp)
         ft = 1;
     else if (!strcmp(extension, "MPK"))
         ft = 2;
-    if (!strcmp(extension, "GB"))
-        ft = 5;
-    else if (!strcmp(extension, "GBC"))
-        ft = 6;
+    else if (!strcmp(extension, "GB") || !strcmp(extension, "GBC") || !strcmp(extension, "SGB"))
+        ft = 3;
     else if (!strcmp(extension, "NES"))
-        ft = 7;
+        ft = 4;
     else if (!strcmp(extension, "GG"))
-        ft = 8;
-    else if (!strcmp(extension, "MSX"))
-        ft = 9;
+        ft = 5;
+    else if (!strcmp(extension, "MSX") || !strcmp(extension, "ROM"))
+        ft = 6;
     else if (!strcmp(extension, "MP3"))
-        ft = 10;
+        ft = 7;
 
-    if (ft != 10 || ft != 2)
+    if (ft != 7 || ft != 2)
     {
         while (!(disp = display_lock()))
             ;
@@ -3219,24 +3217,23 @@ void loadFile(display_context_t disp)
         input_mapping = mpk_choice;
         sprintf(rom_filename, "%s", name_file);
         break;
-    case 5:
-    case 6:
+    case 3:
         loadgbrom(disp, name_file);
         display_show(disp);
         break;
-    case 7:
+    case 4:
         loadnesrom(disp, name_file);
         display_show(disp);
         break;
-    case 8:
+    case 5:
         loadggrom(disp, name_file);
         display_show(disp);
         break;
-    case 9:
+    case 6:
         loadmsx2rom(disp, name_file);
         display_show(disp);
         break;
-    case 10:
+    case 7:
     {
         while (!(disp = display_lock()))
         ;
@@ -4454,12 +4451,14 @@ void handleInput(display_context_t disp, sprite_t *contr)
         case mp3:
             mp3_Stop();
             mp3playing = 0;
-            audio_close();
+            //this causes bugs why is it here?
+            //audio_close();
 	        free(buf_ptr);
 	        buf_ptr = 0;
 
 
-
+            while (!(disp = display_lock()))
+            ;
             clearScreen(disp); //part clear?
             display_dir(list, cursor, page, MAX_LIST, count, disp);
 
