@@ -25,7 +25,6 @@ export N64_INST=/usr/local/libdragon
 # Pull the latest libdragon source code and make a build directory
 git clone https://github.com/dragonminded/libdragon.git
 # set to correct commit
-cd libdragon && git checkout b26fce6 && cd ..
 
 # fix issues with the build scripts
 sed -i -- 's|${N64_INST:-/usr/local}|/usr/local/libdragon|g' libdragon/tools/build
@@ -36,11 +35,11 @@ sed -i -- 's| -Werror| -w|g' libdragon/tools/mksprite/Makefile
 
 # make a build folder for libdragon
 mkdir libdragon/build_gcc
-cp libdragon/tools/build libdragon/build_gcc
+cp libdragon/tools/build-toolchain.sh libdragon/build/build-toolchain.sh
 
 # run the build script (this will take a while! and if not sudo, will ask for password mid flow!)
-cd libdragon/build_gcc
-./build
+cd libdragon/build
+./build-toolchain.sh
 
 cd ..
 # run the install script [sudo req]

@@ -3243,8 +3243,8 @@ void loadFile(display_context_t disp)
         long long start = 0, end = 0, curr, pause = 0, samples;
         int rate = 44100, last_rate = 44100, channels = 2;
 
-        audio_init(44100, 4);
-        buf_size = audio_get_buffer_length() * 4;
+        audio_init(44100, 8);
+        buf_size = audio_get_buffer_length() * 6;
         buf_ptr = malloc(buf_size);
 
         mp3_Start(name_file, &samples, &rate, &channels);
@@ -3254,9 +3254,10 @@ void loadFile(display_context_t disp)
         while (!(disp = display_lock()))
         ;
         clearScreen(disp);
-        drawShortInfoBox(disp, "    MP3 Playback", 0);
+        drawShortInfoBox(disp, "    Playing MP3", 0);
         display_show(disp);
         input_mapping = mp3; //mp3 stop
+
         break;
     }
     default:
@@ -4127,14 +4128,12 @@ void handleInput(display_context_t disp, sprite_t *contr)
 
                         while (!(disp = display_lock()))
                         ;
-                        new_scroll_pos(&cursor, &page, MAX_LIST, count);
-                        clearScreen(disp); //part clear?
-                        display_dir(list, cursor, page, MAX_LIST, count, disp);
-                        drawBoxNumber(disp, 4);
-                        view_mpk(disp);
-                        display_show(disp);
                         if (sound_on)
-                            playSound(2);
+                          playSound(2);
+
+                        drawBoxNumber(disp, 4);
+                        display_show(disp);
+                        view_mpk(disp);
 
                         input_mapping = abort_screen;
                         break;
@@ -4451,20 +4450,22 @@ void handleInput(display_context_t disp, sprite_t *contr)
         case mp3:
             mp3_Stop();
             mp3playing = 0;
-            //this causes bugs why is it here?
-            //audio_close();
-	        free(buf_ptr);
-	        buf_ptr = 0;
+            audio_close();
+	           free(buf_ptr);
+	         buf_ptr = 0;
+            audio_init(44100, 8);
 
+          while (!(disp = display_lock()))
+              ;
 
-            while (!(disp = display_lock()))
-            ;
-            clearScreen(disp); //part clear?
-            display_dir(list, cursor, page, MAX_LIST, count, disp);
+          graphics_set_color(graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF), graphics_make_color(0x00, 0x00, 0x00, 0x00));
+          new_scroll_pos(&cursor, &page, MAX_LIST, count);
+          clearScreen(disp);
+          display_show(disp);
 
-            display_show(disp);
-
-            input_mapping = file_manager;
+          display_dir(list, cursor, page, MAX_LIST, count, disp);
+          input_mapping = file_manager;
+          display_show(disp);
             break;
 
         default:
@@ -4533,7 +4534,7 @@ int main(void)
         if (sound_on)
         {
             //load soundsystem
-            audio_init(44100, 2);
+            audio_init(44100, 8);
             sndInit();
         }
 
