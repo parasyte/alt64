@@ -187,8 +187,8 @@ void view_mpk_file(display_context_t disp, char *mpk_filename)
             32768,         /* [IN] Number of bytes to read */
             &bytesread    /* [OUT] Number of bytes read */
         );
-        
-          
+
+
         f_close(&file);
 
         printText("File contents:", 11, 5, disp);
@@ -305,7 +305,7 @@ void view_mpk_file(display_context_t disp, char *mpk_filename)
         else
         {
             printText("empty", 11, -1, disp);
-        }    
+        }
     }
 }
 
@@ -420,7 +420,7 @@ void mpk_to_file(display_context_t disp, char *mpk_filename, int quick)
     if (result == FR_OK)
     {
         controller_init();
-        
+
         int err = 0;
         for (int j = 0; j < 128; j++)
         {
@@ -438,9 +438,9 @@ void mpk_to_file(display_context_t disp, char *mpk_filename, int quick)
 
         f_close(&file);
 
-        
+
         sprintf(buff, "File: %s%i.MPK", mpk_filename, v);
-    
+
         printText(buff, 9, -1, disp);
         printText("backup done...", 9, -1, disp);
     }

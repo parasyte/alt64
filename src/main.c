@@ -50,7 +50,6 @@
 #include "cic.h"
 
 #define ED64PLUS
-#define USE_TRUETYPE
 
 #ifdef ED64PLUS
 #define ED64_FIRMWARE_PATH "ED64P"
@@ -104,6 +103,7 @@ typedef struct
     char *mempak_path;
     char *save_path;
     int sound_on;
+    int bgm_on;
     int page_display;
     int tv_mode;
     int quick_boot;
@@ -232,6 +232,7 @@ char *list_dir_font_color_s;
 char *save_path;
 
 u8 sound_on = 0;
+u8 bgm_on = 0;
 u8 page_display = 0;
 u8 tv_mode = 0; // 1=ntsc 2=pal 3=mpal 0=default automatic
 u8 quick_boot = 0;
@@ -706,7 +707,7 @@ void drawBoxNumber(display_context_t disp, int box)
         break;                           //info screen
     case 9:
         box_color = graphics_make_color(0x00, 0x00, 0x00, 0xB6);
-        drawBox(28, 20, 260, 200, disp);
+        drawBox(28, 49, 260, 150, disp);
         break; //yellow toplist
     case 10:
         box_color = graphics_make_color(0x00, 0x60, 0x00, 0xC3);
@@ -716,6 +717,10 @@ void drawBoxNumber(display_context_t disp, int box)
         box_color = graphics_make_color(0x00, 0x60, 0x00, 0xC3);
         drawBox(28, 105, 260, 30, disp);
         break; //green full filename
+    case 12:
+        box_color = graphics_make_color(0x00, 0x60, 0x00, 0xC3);
+        drawBox(20, 24, 277, 193, disp);
+        break; //filebrowser
 
     default:
         break;
@@ -771,6 +776,10 @@ static int configHandler(void *user, const char *section, const char *name, cons
     else if (MATCH("ed64", "sound_on"))
     {
         pconfig->sound_on = atoi(value);
+    }
+    else if (MATCH("ed64", "bgm_on"))
+    {
+        pconfig->bgm_on = atoi(value);
     }
     else if (MATCH("ed64", "page_display"))
     {
@@ -873,7 +882,7 @@ void configure()
         {
             msg |= 1 << 14;
             evd_writeReg(REG_MAX_MSG, msg);
-            
+
             switch(firm) //need to take into account different default firmware versions for each ED64 version
             {
                 case 0x0214:
@@ -888,7 +897,7 @@ void configure()
                 default:
                 break;
             }
-            
+
             sleep(1);
             evd_init();
         }
@@ -919,11 +928,11 @@ void romInfoScreen(display_context_t disp, u8 *buff, int silent)
 {
     TCHAR filename[64];
     sprintf(filename, "%s", buff);
-    
+
     int swapped = 0;
 
     FRESULT result;
-  
+
     int fsize = 512;                 //rom-headersize 4096 but the bootcode is not needed
     unsigned char headerdata[fsize]; //1*512
 
@@ -973,7 +982,7 @@ void romInfoScreen(display_context_t disp, u8 *buff, int silent)
             //rom size
             sprintf(rom_name, "Size: %iMB", fsizeMB);
             printText(rom_name, 11, -1, disp);
-        
+
 
             //unique cart id for gametype
             unsigned char cartID_str[12];
@@ -1114,11 +1123,11 @@ void loadgbrom(display_context_t disp, TCHAR *rom_path)
         FIL romfile;
         UINT rombytesread;
         result = f_open(&romfile, rom_path, FA_READ);
-    
+
         if (result == FR_OK)
         {
             int romfsize = f_size(&romfile);
-    
+
             result =
             f_read (
                 &romfile,        /* [IN] File object */
@@ -1126,7 +1135,7 @@ void loadgbrom(display_context_t disp, TCHAR *rom_path)
                 romfsize,         /* [IN] Number of bytes to read */
                 &rombytesread    /* [OUT] Number of bytes read */
             );
-    
+
             f_close(&romfile);
 
             boot_cic = CIC_6102;
@@ -1134,78 +1143,8 @@ void loadgbrom(display_context_t disp, TCHAR *rom_path)
             force_tv = 0;  //no force
             cheats_on = 0; //cheats off
             checksum_fix_on = 0;
-    
+
             bootRom(disp, 1);
-        }
-    }
-}
-void loadmsx2rom(display_context_t disp, TCHAR *rom_path)
-{
-
-    FRESULT romresult;
-    FIL romfile;
-    UINT rombytesread;
-    romresult = f_open(&romfile, rom_path, FA_READ);
-
-    if (romresult == FR_OK)
-    {
-        int romfsize = f_size(&romfile);
-
-        //max 128KB rom
-        if (romfsize > 128 * 1024)
-        {
-            //error
-
-            drawShortInfoBox(disp, "  error: rom > 128KB", 1);
-            input_mapping = abort_screen;
-
-            return;
-        }
-        else
-        {
-            drawShortInfoBox(disp, " loading please wait", 0);
-
-            FRESULT result;
-            FIL file;
-            UINT bytesread;
-            result = f_open(&file, "/"ED64_FIRMWARE_PATH"/ultraMSX2.z64", FA_READ);
-        
-            if (result == FR_OK)
-            {
-                int fsize = f_size(&file);
-
-                
-                result =
-                f_read (
-                    &file,        /* [IN] File object */
-                    (void *)0xb0000000,      /* [OUT] Buffer to store read data */
-                    fsize,        /* [IN] Number of bytes to read */
-                    &bytesread    /* [OUT] Number of bytes read */
-                );
-        
-                f_close(&file);
-            
-
-                romresult =
-                f_read (
-                    &romfile,           /* [IN] File object */
-                    (void *)0xb0000000 + 0x2df48,  /* [OUT] Buffer to store read data */ //TODO: why is the offset this particular number
-                    romfsize,           /* [IN] Number of bytes to read */
-                    &rombytesread       /* [OUT] Number of bytes read */
-                );
-
-                f_close(&romfile);
-
-            
-                boot_cic = CIC_6102;
-                boot_save = 0; //save off/cpak
-                force_tv = 0;  //no force
-                cheats_on = 0; //cheats off
-                checksum_fix_on = 0;
-            
-                checksum_sdram();
-                bootRom(disp, 1);
-            }
         }
     }
 }
@@ -1240,12 +1179,12 @@ void loadggrom(display_context_t disp, TCHAR *rom_path) //TODO: this could be me
             FIL file;
             UINT bytesread;
             result = f_open(&file, "/"ED64_FIRMWARE_PATH"/UltraSMS.z64", FA_READ);
-        
+
             if (result == FR_OK)
             {
                 int fsize = f_size(&file);
 
-                
+
                 result =
                 f_read (
                     &file,        /* [IN] File object */
@@ -1253,9 +1192,9 @@ void loadggrom(display_context_t disp, TCHAR *rom_path) //TODO: this could be me
                     fsize,        /* [IN] Number of bytes to read */
                     &bytesread    /* [OUT] Number of bytes read */
                 );
-        
+
                 f_close(&file);
-            
+
 
                 romresult =
                 f_read (
@@ -1267,18 +1206,88 @@ void loadggrom(display_context_t disp, TCHAR *rom_path) //TODO: this could be me
 
                 f_close(&romfile);
 
-            
+
                 boot_cic = CIC_6102;
                 boot_save = 0; //save off/cpak
                 force_tv = 0;  //no force
                 cheats_on = 0; //cheats off
                 checksum_fix_on = 0;
-            
+
                 checksum_sdram();
                 bootRom(disp, 1);
             }
         }
-    }   
+    }
+}
+void loadmsx2rom(display_context_t disp, TCHAR *rom_path)
+{
+
+    FRESULT romresult;
+    FIL romfile;
+    UINT rombytesread;
+    romresult = f_open(&romfile, rom_path, FA_READ);
+
+    if (romresult == FR_OK)
+    {
+        int romfsize = f_size(&romfile);
+
+        //max 128KB rom
+        if (romfsize > 128 * 1024)
+        {
+            //error
+
+            drawShortInfoBox(disp, "  error: rom > 512KB", 1);
+            input_mapping = abort_screen;
+
+            return;
+        }
+        else
+        {
+            drawShortInfoBox(disp, " loading please wait", 0);
+
+            FRESULT result;
+            FIL file;
+            UINT bytesread;
+            result = f_open(&file, "/"ED64_FIRMWARE_PATH"/ultraMSX2.z64", FA_READ);
+
+            if (result == FR_OK)
+            {
+                int fsize = f_size(&file);
+
+
+                result =
+                f_read (
+                    &file,        /* [IN] File object */
+                    (void *)0xb0000000,      /* [OUT] Buffer to store read data */
+                    fsize,        /* [IN] Number of bytes to read */
+                    &bytesread    /* [OUT] Number of bytes read */
+                );
+
+                f_close(&file);
+
+
+                romresult =
+                f_read (
+                    &romfile,           /* [IN] File object */
+                    (void *)0xb0000000 + 0x2df48,  /* [OUT] Buffer to store read data */ //TODO: why is the offset this particular number
+                    romfsize,           /* [IN] Number of bytes to read */
+                    &rombytesread       /* [OUT] Number of bytes read */
+                );
+
+                f_close(&romfile);
+
+
+                boot_cic = CIC_6102;
+                boot_save = 0; //save off/cpak
+                force_tv = 0;  //no force
+                cheats_on = 0; //cheats off
+                checksum_fix_on = 0;
+
+                checksum_sdram();
+                bootRom(disp, 1);
+            }
+        }
+    }
 }
 
 void loadnesrom(display_context_t disp, TCHAR *rom_path)
@@ -1306,11 +1315,11 @@ void loadnesrom(display_context_t disp, TCHAR *rom_path)
         FIL romfile;
         UINT rombytesread;
         result = f_open(&romfile, rom_path, FA_READ);
-    
+
         if (result == FR_OK)
         {
             int romfsize = f_size(&romfile);
-    
+
             result =
             f_read (
                 &romfile,        /* [IN] File object */
@@ -1318,7 +1327,7 @@ void loadnesrom(display_context_t disp, TCHAR *rom_path)
                 romfsize,         /* [IN] Number of bytes to read */
                 &rombytesread    /* [OUT] Number of bytes read */
             );
-    
+
             f_close(&romfile);
 
             boot_cic = CIC_6102;
@@ -1326,7 +1335,7 @@ void loadnesrom(display_context_t disp, TCHAR *rom_path)
             force_tv = 0;  //no force
             cheats_on = 0; //cheats off
             checksum_fix_on = 0;
-    
+
             bootRom(disp, 1);
         }
     }
@@ -1342,7 +1351,7 @@ void loadrom(display_context_t disp, u8 *buff, int fast)
 
     TCHAR filename[64];
     sprintf(filename, "%s", buff);
-    
+
     FRESULT result;
     FIL file;
     UINT bytesread = 0;
@@ -1394,7 +1403,7 @@ void loadrom(display_context_t disp, u8 *buff, int fast)
             //rom size
             sprintf(rom_name, "Size: %iMB", fsizeMB);
             printText(rom_name, 3, -1, disp);
-        
+
 
             //unique cart id for gametype
             unsigned char cartID_str[12];
@@ -1565,7 +1574,7 @@ int backupSaveData(display_context_t disp)
                 1,         /* [IN] Number of bytes to write */
                 &bw          /* [OUT] Pointer to the variable to return number of bytes written */
               );
-            
+
             f_close(&file);
 
             TRACE(disp, "Disabling save for subsequent system reboots");
@@ -1626,20 +1635,38 @@ int backupSaveData(display_context_t disp)
 int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
 {
     TRACE(disp, rom_filename);
+    const char* save_type_extension = saveTypeToExtension(stype, ext_type);
     TCHAR fname[256] = {0};
-    sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%s", save_path, rom_name, saveTypeToExtension(stype, ext_type));
-    
-    TCHAR fname1[50] = {0};
-    sprintf(fname1, "/"ED64_FIRMWARE_PATH"/%s/", save_path);
-    printText(fname1, 3, -1, disp);
-    TCHAR fname2[50] = {0};
-    sprintf(fname2, "%s.%s", rom_name, saveTypeToExtension(stype, ext_type));
-    printText(fname2, 3, -1, disp);
+    int save_count = 0; //TODO: once this crosses 9999 bad infinite-loop type things happen, look into that one day
+    FRESULT result;
+    FILINFO fnoba;
+    printText("Finding latest save slot...", 3, -1, disp);
+    display_show(disp);
+    while (true) {
+        sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%04x.%s", save_path, rom_name, save_count, save_type_extension);
+        result = f_stat (fname, &fnoba);
+        if (result != FR_OK) {
+            // we found our first missing save slot, break
+            break;
+        }
+        ++save_count;
+    }
+    if (save_count > 0) {
+        // we've went 1 past the end, so back up
+        sprintf(fname, "Found latest save slot: %04x", --save_count);
+        printText(fname, 3, -1, disp);
+        sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%04x.%s", save_path, rom_name, save_count, save_type_extension);
+    } else {
+        // not even a 0000 was found, so look at the original name before numbering was implemented
+        printText("No save slot found!", 3, -1, disp);
+        printText("Looking for non-numbered file...", 3, -1, disp);
+        sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%s", save_path, rom_name, save_type_extension);
+    }
+    display_show(disp);
 
     int size = saveTypeToSize(stype); // int byte
     uint8_t cartsave_data[size];
 
-    FRESULT result;
     FIL file;
     UINT bytesread;
     result = f_open(&file, fname, FA_READ);
@@ -1674,10 +1701,10 @@ int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
         case FR_INVALID_NAME:
         printText("invalid name error", 11, -1, disp);
         break;
-        case FR_DENIED: 
+        case FR_DENIED:
         printText("denied error", 11, -1, disp);
         break;
-        case FR_EXIST: 
+        case FR_EXIST:
         printText("exist error", 11, -1, disp);
         break;
         case FR_TIMEOUT:
@@ -1688,7 +1715,7 @@ int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
         break;
         default:
         break;
-        }     
+        }
         printText("no save found", 3, -1, disp);
         //todo: clear memory area
 
@@ -1710,14 +1737,30 @@ int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
 int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
 {
     //after reset create new savefile
+    const char* save_type_extension = saveTypeToExtension(stype, ext_type);
     TCHAR fname[256]; //TODO: change filename buffers to 256!!!
-
-    sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%s", save_path, rom_name, saveTypeToExtension(stype, ext_type));
+    int save_count = 0; //TODO: once this crosses 9999 bad infinite-loop type things happen, look into that one day
+    FRESULT result;
+    FILINFO fnoba;
+    printText("Finding unused save slot...", 3, -1, disp);
+    display_show(disp);
+    while (true) {
+        sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%04x.%s", save_path, rom_name, save_count, save_type_extension);
+        result = f_stat (fname, &fnoba);
+        if (result != FR_OK) {
+            // we found our first missing save slot, break
+            break;
+        }
+        ++save_count;
+    }
+    sprintf(fname, "Found unused save slot: %04x", save_count);
+    printText(fname, 3, -1, disp);
+    display_show(disp);
+    sprintf(fname, "/"ED64_FIRMWARE_PATH"/%s/%s.%04x.%s", save_path, rom_name, save_count, save_type_extension);
 
     int size = saveTypeToSize(stype); // int byte
     TRACEF(disp, "size for save=%i", size);
 
-    FRESULT result;
     FIL file;
     UINT bytesread;
     result = f_open(&file, fname, FA_WRITE | FA_OPEN_ALWAYS); //Could use FA_CREATE_ALWAYS but this could lead to the posibility of the file being emptied
@@ -1728,9 +1771,9 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
         uint8_t cartsave_data[size]; //TODO: bring back old initialisation if this doesn't work
 
 
-    
+
         TRACEF(disp, "cartsave_data=%p", &cartsave_data);
-    
+
         printText("Transfering save data...", 3, -1, disp);
         if (getSaveFromCart(stype, cartsave_data))
         {
@@ -1742,7 +1785,7 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
 			&bw          /* [OUT] Pointer to the variable to return number of bytes written */
 			);
 			f_close(&file);
-    
+
             printText("RAM area copied to SD card.", 3, -1, disp);
             return 1;
         }
@@ -1756,6 +1799,7 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
     else
     {
         TRACE(disp, "COULDNT CREATE FILE :-(");
+        printText("Error saving game to SD, couldn't create file!", 3, -1, disp);
     }
 }
 
@@ -1764,7 +1808,7 @@ int readConfigFile(void)
 {
     TCHAR filename[32];
     sprintf(filename, "/"ED64_FIRMWARE_PATH"/ALT64.INI");
-    
+
     FRESULT result;
     FIL file;
     UINT bytesread;
@@ -1785,7 +1829,7 @@ int readConfigFile(void)
         );
 
         f_close(&file);
-    
+
         configuration config;
 
         if (ini_parse_str(config_rawdata, configHandler, &config) < 0)
@@ -1805,6 +1849,7 @@ int readConfigFile(void)
             mempak_path = config.mempak_path;
             save_path = config.save_path;
             sound_on = config.sound_on;
+            bgm_on = config.bgm_on;
             page_display = config.page_display;
             tv_mode = config.tv_mode;
             quick_boot = config.quick_boot;
@@ -1856,7 +1901,7 @@ void initFilesystem(void)
     else
     {
         fat_initialized = 1;
-    } 
+    }
 }
 
 //prints the sdcard-filesystem content
@@ -1888,11 +1933,11 @@ void readSDcard(display_context_t disp, char *directory)
     //         FIL file;
     //         UINT bytesread;
     //         result = f_open(&file, rom_cfg_file, FA_READ);
-        
+
     //         if (result == FR_OK)
     //         {
     //             int fsize = f_size(&file);
-        
+
     //             result =
     //             f_read (
     //                 &file,        /* [IN] File object */
@@ -1900,12 +1945,12 @@ void readSDcard(display_context_t disp, char *directory)
     //                 fsize,         /* [IN] Number of bytes to read */
     //                 &bytesread    /* [OUT] Number of bytes read */
     //             );
-        
+
     //             f_close(&file);
 
     //             colorlist[i][0] = (char)cfg_file_data[5];     //row i column 0 = colour
     //             strcpy(colorlist[i] + 1, cfg_file_data + 32); //row i column 1+ = fullpath
-                
+
     //         }
     //     }
     // }
@@ -1944,7 +1989,7 @@ void readSDcard(display_context_t disp, char *directory)
                 }
                 strcpy(list[count - 1].filename, fno.fname);
                 list[count - 1].color = 0;
-                
+
                 // if (enable_colored_list)
                 // {
                 //     for (int c = 0; c < dsize; c++)
@@ -2035,7 +2080,7 @@ int readCheatFile(TCHAR *filename, u32 *cheat_lists[2])
         {
             return -2; // Out of memory
         }
-    
+
         /*
          * Size of the cheat list can never be more than half the size of the YAML
          * Minimum YAML example:
@@ -2066,7 +2111,7 @@ int readCheatFile(TCHAR *filename, u32 *cheat_lists[2])
         f_close(&file);
 
         yaml_parser_set_input_string(&parser, cheatfile, strlen(cheatfile));
-        
+
             do
             {
                 if (!yaml_parser_parse(&parser, &event))
@@ -2078,10 +2123,10 @@ int readCheatFile(TCHAR *filename, u32 *cheat_lists[2])
                     free(cheat_lists[0]);
                     cheat_lists[0] = 0;
                     cheat_lists[1] = 0;
-        
+
                     return -3; // Parse error
                 }
-        
+
                 // Process YAML
                 switch (event.type)
                 {
@@ -2089,30 +2134,30 @@ int readCheatFile(TCHAR *filename, u32 *cheat_lists[2])
                     // Begin code block
                     is_code = 0;
                     break;
-        
+
                 case YAML_SEQUENCE_START_EVENT:
                     // Begin code lines
                     is_code = 1;
                     code_on = (event.data.sequence_start.tag ? !!strcasecmp(event.data.sequence_start.tag, "!off") : 1);
                     break;
-        
+
                 case YAML_SEQUENCE_END_EVENT:
                     // End code lines
                     is_code = 0;
                     code_on = 1;
                     repeater = 0;
                     break;
-        
+
                 case YAML_SCALAR_EVENT:
                     // Code line
                     if (!is_code || !code_on)
                     {
                         break;
                     }
-        
+
                     address = strtoul(event.data.scalar.value, &next, 16);
                     value = strtoul(next, NULL, 16);
-        
+
                     // Do not check code types within "repeater data"
                     if (repeater)
                     {
@@ -2121,17 +2166,17 @@ int readCheatFile(TCHAR *filename, u32 *cheat_lists[2])
                         *list2++ = value;
                         break;
                     }
-        
+
                     // Determine destination cheat_list for the code type
                     switch (address >> 24)
                     {
-        
+
                     // Uncessary code types
                     case 0x20: // Clear code list
                     case 0xCC: // Exception Handler Selection
                     case 0xDE: // Entry Point
                         break;
-        
+
                     // Boot-time cheats
                     case 0xEE: // Disable Expansion Pak
                     case 0xF0: // 8-bit Boot-Time Write
@@ -2140,7 +2185,7 @@ int readCheatFile(TCHAR *filename, u32 *cheat_lists[2])
                         *list1++ = address;
                         *list1++ = value;
                         break;
-        
+
                     // In-game cheats
                     case 0x50: // Repeater/Patch
                         // Validate repeater count
@@ -2151,7 +2196,7 @@ int readCheatFile(TCHAR *filename, u32 *cheat_lists[2])
                             *list2++ = value;
                         }
                         break;
-        
+
                     // Everything else
                     default:
                         if (!address)
@@ -2159,7 +2204,7 @@ int readCheatFile(TCHAR *filename, u32 *cheat_lists[2])
                             // TODO: Support special code types! :)
                         }
                     // Fall-through!
-        
+
                     case 0xD0: // 8-bit Equal-To Conditional
                     case 0xD1: // 16-bit Equal-To Conditional
                     case 0xD2: // 8-bit Not-Equal-To Conditional
@@ -2169,29 +2214,29 @@ int readCheatFile(TCHAR *filename, u32 *cheat_lists[2])
                         {
                             break;
                         }
-        
+
                         *list2++ = address;
                         *list2++ = value;
                         break;
                     }
                     break;
-        
+
                 case YAML_STREAM_END_EVENT:
                     // And we're outta here!
                     done = 1;
                     break;
-        
+
                 default:
                     break;
                 }
-        
+
                 yaml_event_delete(&event);
             } while (!done);
-        
+
             // Free
             yaml_parser_delete(&parser);
             free(cheatfile);
-        
+
             return repeater; // Ok or repeater error
 
     }
@@ -2215,7 +2260,7 @@ void bootRom(display_context_t disp, int silent)
             FRESULT result;
             FIL file;
             result = f_open(&file, cfg_file, FA_WRITE | FA_CREATE_ALWAYS);
-        
+
             if (result == FR_OK)
             {
                 uint8_t cfg_data[2] = {boot_save, boot_cic};
@@ -2230,7 +2275,7 @@ void bootRom(display_context_t disp, int silent)
                   );
 
                 f_puts(rom_filename, &file);
-        
+
                 f_close(&file);
 
                 //set the fpga cart-save type
@@ -2313,6 +2358,7 @@ void playSound(int snd)
 
     if (snd == 4)
         sndPlaySFX("rom://sounds/done.wav");
+
 }
 
 //draws the next char at the text input screen
@@ -2373,9 +2419,9 @@ void drawShortInfoBox(display_context_t disp, char *text, u8 mode)
     new_scroll_pos(&cursor, &page, MAX_LIST, count);
     clearScreen(disp); //part clear?
     display_dir(list, cursor, page, MAX_LIST, count, disp);
-    
+
     if (mode == 0)
-    
+
         drawBoxNumber(disp, 7);
     else if (mode == 1)
         drawBoxNumber(disp, 8);
@@ -2425,7 +2471,7 @@ void readRomConfig(display_context_t disp, char *short_filename, char *full_file
 
         f_close(&file);
 
-            
+
         rom_config[0] = 1; //preload cursor position 1 cic
         rom_config[1] = rom_cfg_data[0];
         rom_config[2] = rom_cfg_data[1];
@@ -2605,7 +2651,7 @@ void drawToplistBox(display_context_t disp, int line)
     if (line == 0)
     {
         char* path = "/"ED64_FIRMWARE_PATH"/CFG";
-        
+
         FRESULT res;
         DIR dir;
         UINT i;
@@ -2617,7 +2663,7 @@ void drawToplistBox(display_context_t disp, int line)
             for (;;) {
                 res = f_readdir(&dir, &fno);                   /* Read a directory item */
                 if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
-                if (!fno.fattrib & !AM_DIR) { 
+                if (!fno.fattrib & !AM_DIR) {
                     dsize++;
                 }
             }
@@ -2627,7 +2673,7 @@ void drawToplistBox(display_context_t disp, int line)
         res = f_opendir(&dir, path);                       /* Open the directory */
         if (res == FR_OK) {
             char toplist[dsize][256];
-        
+
             for (;;) {
                 res = f_readdir(&dir, &fno);                   /* Read a directory item */
                 if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
@@ -2639,22 +2685,22 @@ void drawToplistBox(display_context_t disp, int line)
                     // path[i] = 0;
                 } else {                                       /* It is a file. */
                     TCHAR rom_cfg_file[128];
-                    
+
                     //set rom_cfg
                     sprintf(rom_cfg_file, path, fno.fname);
-                    
+
                     FRESULT result;
                     FIL file;
                     UINT bytesread;
                     result = f_open(&file, rom_cfg_file, FA_READ);
-                
+
                     if (result == FR_OK)
                     {
-                        
+
                         static uint8_t cfg_file_data[512] = {0};
 
                         int fsize = f_size(&file) + 1;
-                
+
                         result =
                         f_read (
                             &file,        /* [IN] File object */
@@ -2662,9 +2708,9 @@ void drawToplistBox(display_context_t disp, int line)
                             fsize,         /* [IN] Number of bytes to read */
                             &bytesread    /* [OUT] Number of bytes read */
                         );
-                
+
                         f_close(&file);
-                
+
                         toplist[i][0] = (char)cfg_file_data[5];     //quality
                         strcpy(toplist[i] + 1, cfg_file_data + 32); //fullpath
                         i++;
@@ -2672,7 +2718,7 @@ void drawToplistBox(display_context_t disp, int line)
                 }
             }
             f_closedir(&dir);
-        
+
 
             qsort(toplist, dsize, 256, compare_int_reverse);
 
@@ -2800,7 +2846,7 @@ void drawRomConfigBox(display_context_t disp, int line)
                 rom_config[0]--;
         }
     }
-    
+
     drawBoxNumber(disp, 6);
 
     drawConfigSelection(disp, rom_config[0]);
@@ -3058,7 +3104,7 @@ void showControlScreen(display_context_t disp)
     new_scroll_pos(&cursor, &page, MAX_LIST, count);
     clearScreen(disp); //part clear?
     display_dir(list, cursor, page, MAX_LIST, count, disp);
-    drawBoxNumber(disp, 9);
+    drawBoxNumber(disp, 12);
     display_show(disp);
 
     if (sound_on)
@@ -3066,7 +3112,6 @@ void showControlScreen(display_context_t disp)
 
     menu_controls(disp);
 }
-
 void loadFile(display_context_t disp)
 {
     char name_file[256];
@@ -3095,20 +3140,18 @@ void loadFile(display_context_t disp)
         ft = 1;
     else if (!strcmp(extension, "MPK"))
         ft = 2;
-    if (!strcmp(extension, "GB"))
-        ft = 5;
-    else if (!strcmp(extension, "GBC"))
-        ft = 6;
+    else if (!strcmp(extension, "GB") || !strcmp(extension, "GBC") || !strcmp(extension, "SGB"))
+        ft = 3;
     else if (!strcmp(extension, "NES"))
-        ft = 7;
+        ft = 4;
     else if (!strcmp(extension, "GG"))
-        ft = 8;
-    else if (!strcmp(extension, "MSX"))
-        ft = 9;
+        ft = 5;
+    else if (!strcmp(extension, "MSX") || !strcmp(extension, "ROM"))
+        ft = 6;
     else if (!strcmp(extension, "MP3"))
-        ft = 10;
+        ft = 7;
 
-    if (ft != 10 || ft != 2)
+    if (ft != 7 || ft != 2)
     {
         while (!(disp = display_lock()))
             ;
@@ -3135,9 +3178,9 @@ void loadFile(display_context_t disp)
                     name_file, /* [IN] String */
                     &file           /* [IN] File object */
                   );
-                  
 
-              
+
+
                   f_close(&file);
 
                 if (result == FR_OK)
@@ -3147,7 +3190,7 @@ void loadFile(display_context_t disp)
 
                     loadrom(disp, name_file, 1);
                     display_show(disp);
-            
+
                     //rom loaded mapping
                     input_mapping = rom_loaded;
                 }
@@ -3174,24 +3217,23 @@ void loadFile(display_context_t disp)
         input_mapping = mpk_choice;
         sprintf(rom_filename, "%s", name_file);
         break;
-    case 5:
-    case 6:
+    case 3:
         loadgbrom(disp, name_file);
         display_show(disp);
         break;
-    case 7:
+    case 4:
         loadnesrom(disp, name_file);
         display_show(disp);
         break;
-    case 8:
+    case 5:
         loadggrom(disp, name_file);
         display_show(disp);
         break;
-    case 9:
+    case 6:
         loadmsx2rom(disp, name_file);
         display_show(disp);
         break;
-    case 10:
+    case 7:
     {
         while (!(disp = display_lock()))
         ;
@@ -3201,8 +3243,8 @@ void loadFile(display_context_t disp)
         long long start = 0, end = 0, curr, pause = 0, samples;
         int rate = 44100, last_rate = 44100, channels = 2;
 
-        audio_init(44100, 4);
-        buf_size = audio_get_buffer_length() * 4;
+        audio_init(44100, 8);
+        buf_size = audio_get_buffer_length() * 6;
         buf_ptr = malloc(buf_size);
 
         mp3_Start(name_file, &samples, &rate, &channels);
@@ -3212,9 +3254,10 @@ void loadFile(display_context_t disp)
         while (!(disp = display_lock()))
         ;
         clearScreen(disp);
-        drawShortInfoBox(disp, "    MP3 Playback", 0);
+        drawShortInfoBox(disp, "    Playing MP3", 0);
         display_show(disp);
         input_mapping = mp3; //mp3 stop
+
         break;
     }
     default:
@@ -3234,6 +3277,10 @@ void handleInput(display_context_t disp, sprite_t *contr)
         switch (input_mapping)
         {
         case file_manager:
+
+        if (sound_on)
+        playSound(4);
+
             if (select_mode)
             {
                 if (count != 0)
@@ -3299,12 +3346,16 @@ void handleInput(display_context_t disp, sprite_t *contr)
             break;
         }
     }
-    
+
     if (keys.c[0].down || keys_held.c[0].down || keys_held.c[0].y < -25)
     {
         switch (input_mapping)
         {
         case file_manager:
+
+        if (sound_on)
+        playSound(4);
+
             if (select_mode)
             {
                 if (count != 0)
@@ -3488,12 +3539,12 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 FIL file;
                 UINT bytesread;
                 result = f_open(&file, "/"ED64_FIRMWARE_PATH"/LASTROM.CFG", FA_READ);
-            
+
                 if (result == FR_OK)
                 {
                     int fsize = f_size(&file) + 1; //extra char needed for null terminator '/0'
                     uint8_t lastrom_cfg_data[fsize];
-                       
+
                     // result =
                     // f_read (
                     //     &file,        /* [IN] File object */
@@ -3503,7 +3554,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
                     // );
 
                     f_gets(lastrom_cfg_data, fsize, &file);
-            
+
                     f_close(&file);
 
                     u8 *file_name = strrchr(lastrom_cfg_data, '/');
@@ -3592,7 +3643,8 @@ void handleInput(display_context_t disp, sprite_t *contr)
         case file_manager:
 
             input_mapping = mempak_menu;
-
+            if (sound_on)
+                playSound(2);
             while (!(disp = display_lock()))
                 ;
             new_scroll_pos(&cursor, &page, MAX_LIST, count);
@@ -3613,9 +3665,6 @@ void handleInput(display_context_t disp, sprite_t *contr)
             printText("  R: Format", 9, -1, disp);
             printText(" ", 9, -1, disp);
             printText("  B: Abort", 9, -1, disp);
-            if (sound_on)
-                playSound(2);
-            sleep(1000);
             break;
 
         case mempak_menu:
@@ -3689,9 +3738,9 @@ void handleInput(display_context_t disp, sprite_t *contr)
         switch (input_mapping)
         {
         case file_manager:
-        
+
             if (list[cursor].type != DT_DIR && empty == 0)
-            {   
+            {
                 while (!(disp = display_lock()))
                 ;
                 new_scroll_pos(&cursor, &page, MAX_LIST, count);
@@ -3704,11 +3753,11 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 part = malloc(slen(list[cursor].filename));
                 sprintf(part, "%s", list[cursor].filename);
                 part[31] = '\0';
-                
+
                 printText(part, 4, 14, disp);
 
                 if (slen(list[cursor].filename) > 31)
-                {   
+                {
                     sprintf(part, "%s", list[cursor].filename + 31);
                     part[31] = '\0';
                     printText(part, 4, -1, disp);
@@ -4028,6 +4077,9 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 }
                 else if (!strcmp(extension, "MPK"))
                 { //mpk file
+                  while (!(disp = display_lock()))
+                  ;
+                    clearScreen(disp);
                     drawBoxNumber(disp, 4);
                     display_show(disp);
 
@@ -4072,22 +4124,21 @@ void handleInput(display_context_t disp, sprite_t *contr)
             input_mapping = control_screen;
             break;
 
-        case mempak_menu:
-            if (sound_on)
-                playSound(2);
-            while (!(disp = display_lock()))
-            ;
-            new_scroll_pos(&cursor, &page, MAX_LIST, count);
-            clearScreen(disp); //part clear?
-            display_dir(list, cursor, page, MAX_LIST, count, disp);
+            case mempak_menu:
 
-            drawBoxNumber(disp, 4);
-            display_show(disp);
-            view_mpk(disp);
-            input_mapping = abort_screen;
-            break;
+                        while (!(disp = display_lock()))
+                        ;
+                        if (sound_on)
+                          playSound(2);
 
-        case control_screen:
+                        drawBoxNumber(disp, 4);
+                        display_show(disp);
+                        view_mpk(disp);
+
+                        input_mapping = abort_screen;
+                        break;
+
+          case control_screen:
             showControlScreen(disp);
             input_mapping = none;
             break;
@@ -4194,7 +4245,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
             FRESULT result;
             FIL file;
             result = f_open(&file, rom_cfg_file, FA_WRITE | FA_OPEN_ALWAYS);
-        
+
             if (result == FR_OK)
             {
                 static uint8_t cfg_file_data[512] = {0};
@@ -4207,10 +4258,10 @@ void handleInput(display_context_t disp, sprite_t *contr)
                 cfg_file_data[6] = rom_config[7]; //country
                 cfg_file_data[7] = rom_config[8];
                 cfg_file_data[8] = rom_config[9];
-    
+
                 //copy full rom path to offset at 32 byte - 32 bytes reversed
                 scopy(name_file, cfg_file_data + 32); //filename to rom_cfg file
-       
+
                 UINT bw;
                 result =
                 f_write (
@@ -4219,15 +4270,15 @@ void handleInput(display_context_t disp, sprite_t *contr)
                     512,         /* [IN] Number of bytes to write */
                     &bw          /* [OUT] Pointer to the variable to return number of bytes written */
                   );
-        
+
                 f_close(&file);
-                
+
                 while (!(disp = display_lock()))
                 ;
                 drawRomConfigBox(disp, 0);
                 display_show(disp);
                 drawShortInfoBox(disp, "         done", 0);
-                toplist_reload = 1;    
+                toplist_reload = 1;
             }
 
             input_mapping = abort_screen;
@@ -4400,26 +4451,30 @@ void handleInput(display_context_t disp, sprite_t *contr)
             mp3_Stop();
             mp3playing = 0;
             audio_close();
-	        free(buf_ptr);
-	        buf_ptr = 0;
+	           free(buf_ptr);
+	         buf_ptr = 0;
+            audio_init(44100, 8);
 
+          while (!(disp = display_lock()))
+              ;
 
+          graphics_set_color(graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF), graphics_make_color(0x00, 0x00, 0x00, 0x00));
+          new_scroll_pos(&cursor, &page, MAX_LIST, count);
+          clearScreen(disp);
+          display_show(disp);
 
-            clearScreen(disp); //part clear?
-            display_dir(list, cursor, page, MAX_LIST, count, disp);
-
-            display_show(disp);
-
-            input_mapping = file_manager;
+          display_dir(list, cursor, page, MAX_LIST, count, disp);
+          input_mapping = file_manager;
+          display_show(disp);
             break;
 
         default:
             while (!(disp = display_lock()))
                 ;
-            
+
             clearScreen(disp); //part clear?
             display_dir(list, cursor, page, MAX_LIST, count, disp);
-            
+
             display_show(disp);
 
             //rom info screen
@@ -4479,7 +4534,7 @@ int main(void)
         if (sound_on)
         {
             //load soundsystem
-            audio_init(44100, 2);
+            audio_init(44100, 8);
             sndInit();
         }
 
@@ -4519,9 +4574,9 @@ int main(void)
 
         FRESULT fr;
         FILINFO fno;
-    
+
         fr = f_stat(background_path, &fno);
-    
+
         if (fr == FR_OK)
         {
             background = loadPng(background_path);
@@ -4532,8 +4587,9 @@ int main(void)
         }
 
         //todo: if bgm is enabled, we should start it...
-        //sndPlayBGM("rom://sounds/bgm21.it");
-
+        if (sound_on && bgm_on){
+        sndPlayBGM("rom://sounds/bgm21.it");
+        }
         border_color_1 = translate_color(border_color_1_s);
         border_color_2 = translate_color(border_color_2_s);
         box_color = translate_color(box_color_s);

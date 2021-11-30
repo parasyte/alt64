@@ -2,32 +2,27 @@
 // Copyright (c) 2017 The Altra64 project contributors
 // See LICENSE file in the project root for full license information.
 //
-
+#define SOUND_ENABLED
 #if !defined(SOUND_ENABLED)
 
 void sndInit(void)
 {
-    return 0;
 }
 
 void sndPlayBGM(char* filename)
 {
-    return 0;
 }
 
 void sndStopAll(void)
 {
-    return 0;
 }
 
 void sndPlaySFX(char* filename)
 {
-    return 0;
 }
 
 void sndUpdate(void)
 {
-    return 0;
 }
 
 #else
@@ -69,7 +64,7 @@ void sndInit(void)
     /* get ready to play */
     MikMod_EnableOutput();
 
-    
+
 }
 
 void sndPlayBGM(char* filename)
@@ -86,7 +81,7 @@ void sndPlayBGM(char* filename)
     if (moduleBGM)
     {
         Player_Start(moduleBGM);
-        Player_SetVolume(20);
+        Player_SetVolume(80);
     }
 }
 
@@ -117,7 +112,7 @@ void sndPlaySFX(char* filename)
     {
         Voice_Stop(voiceSFX);
     }
-        
+
 
     if (hashtable_get(samples, filename) == NULL)
     {
@@ -125,9 +120,9 @@ void sndPlaySFX(char* filename)
     }
 
     //audio_write_silence();
-    Voice_SetVolume(voiceSFX, 200);
+    Voice_SetVolume(voiceSFX, 800);
     voiceSFX = Sample_Play(hashtable_get(samples, filename), 0, 0);
-    
+
     MikMod_Update(); //force an update so that the voice is registered as playing!
 
 }
