@@ -171,6 +171,7 @@ enum InputMap
     mp3,
     abort_screen,
     control_screen,
+    delete_prompt,
 };
 enum InputMap input_mapping = file_manager;
 
@@ -721,7 +722,10 @@ void drawBoxNumber(display_context_t disp, int box)
         box_color = graphics_make_color(0x00, 0x60, 0x00, 0xC3);
         drawBox(20, 24, 277, 193, disp);
         break; //filebrowser
-
+    case 13:
+        box_color = graphics_make_color(0x60, 0x00, 0x00, 0xD3);
+        drawBox(28, 105, 260, 40, disp);
+        break; //delete
     default:
         break;
     }
@@ -1722,14 +1726,14 @@ int saveTypeFromSd(display_context_t disp, char *rom_name, int stype)
         return 0;
     }
 
-	if (pushSaveToCart(stype, cartsave_data))
-	{
-		printText("transferred save data...", 3, -1, disp);
-	}
-	else
-	{
-		printText("error transfering save data", 3, -1, disp);
-	}
+    if (pushSaveToCart(stype, cartsave_data))
+    {
+        printText("transferred save data...", 3, -1, disp);
+    }
+    else
+    {
+        printText("error transfering save data", 3, -1, disp);
+    }
 
     return 1;
 }
@@ -1778,13 +1782,13 @@ int saveTypeToSd(display_context_t disp, char *rom_name, int stype)
         if (getSaveFromCart(stype, cartsave_data))
         {
             UINT bw;
-			result = f_write (
-			&file,          /* [IN] Pointer to the file object structure */
-			cartsave_data, /* [IN] Pointer to the data to be written */
-			size,         /* [IN] Number of bytes to write */
-			&bw          /* [OUT] Pointer to the variable to return number of bytes written */
-			);
-			f_close(&file);
+            result = f_write (
+            &file,          /* [IN] Pointer to the file object structure */
+            cartsave_data, /* [IN] Pointer to the data to be written */
+            size,         /* [IN] Number of bytes to write */
+            &bw          /* [OUT] Pointer to the variable to return number of bytes written */
+            );
+            f_close(&file);
 
             printText("RAM area copied to SD card.", 3, -1, disp);
             return 1;
@@ -3082,6 +3086,25 @@ void drawSet4(display_context_t disp)
     graphics_draw_text(disp, 209, 100, "_");
 }
 
+
+void showDeletePrompt(display_context_t disp)
+{
+    while (!(disp = display_lock()))
+                ;
+    new_scroll_pos(&cursor, &page, MAX_LIST, count);
+    clearScreen(disp);
+    display_dir(list, cursor, page, MAX_LIST, count, disp);
+    drawBoxNumber(disp, 13);
+    display_show(disp);
+
+    bool isdir = list[cursor].type == DT_DIR;
+    
+    if (sound_on)
+        playSound(2 + isdir);
+
+    menu_delete(disp, isdir);
+}
+
 void showAboutScreen(display_context_t disp)
 {
     while (!(disp = display_lock()))
@@ -3636,7 +3659,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
             break;
         }
     }
-    else if (keys.c[0].L)
+    else if (keys.c[0].L && !keys.c[0].R)
     {
         switch (input_mapping)
         {
@@ -3688,7 +3711,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
             break;
         }
     }
-    else if (keys.c[0].R)
+    else if (keys.c[0].R && !keys.c[0].L)
     {
         switch (input_mapping)
         {
@@ -4147,6 +4170,19 @@ void handleInput(display_context_t disp, sprite_t *contr)
             break;
         }
     }
+    else if (keys.c[0].R && keys.c[0].L)
+    {
+        switch (input_mapping)
+        {
+            case file_manager:
+                showDeletePrompt(disp);
+                input_mapping = delete_prompt;
+                break;
+                
+            default:
+                break;
+        }       
+    }
     else if (keys.c[0].A)
     {
         switch (input_mapping)
@@ -4313,6 +4349,32 @@ void handleInput(display_context_t disp, sprite_t *contr)
             input_mapping = file_manager;
             break;
         }
+        case delete_prompt:
+        {
+            if (list[cursor].type != DT_DIR)
+            {
+                char name_file[256];
+
+                if (strcmp(pwd, "/") == 0)
+                    sprintf(name_file, "/%s", list[cursor].filename);
+                else
+                    sprintf(name_file, "%s/%s", pwd, list[cursor].filename);    
+                
+                f_unlink(name_file);
+
+                while (!(disp = display_lock()))
+                    ;
+                graphics_set_color(graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF), graphics_make_color(0x00, 0x00, 0x00, 0x00));
+                new_scroll_pos(&cursor, &page, MAX_LIST, count);
+                clearScreen(disp);
+                display_show(disp);             
+
+                input_mapping = file_manager;
+                readSDcard(disp, pwd);
+                display_show(disp);
+            }
+            break;
+        }
         default:
             break;
         }
@@ -4392,6 +4454,7 @@ void handleInput(display_context_t disp, sprite_t *contr)
             break;
 
         case mempak_menu:
+        case delete_prompt:
 
             while (!(disp = display_lock()))
                 ;
@@ -4451,8 +4514,8 @@ void handleInput(display_context_t disp, sprite_t *contr)
             mp3_Stop();
             mp3playing = 0;
             audio_close();
-	           free(buf_ptr);
-	         buf_ptr = 0;
+            free(buf_ptr);
+            buf_ptr = 0;
             audio_init(44100, 8);
 
           while (!(disp = display_lock()))
