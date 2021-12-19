@@ -20,6 +20,5 @@ void menu_delete(display_context_t disp, bool isdir)
 		printText("Delete this file?", 10, 14, disp);
 		printText("A: Confirm", 13, 16, disp);
 		printText("B: Cancel", 13, 17, disp);
-		
 	}
 } 
