@@ -751,12 +751,14 @@ patcher_start:
         // Run code engine
         "lui    $k0, 0x8000;"
         "lw     $k0, 0x0188($k0);"
-        "addiu  $k0, $k0, -0x28;"
+        "addiu  $k0, $k0, -0x38;"
         "sd     $v1, 0x0000($k0);"
         "sd     $v0, 0x0008($k0);"
         "sd     $t9, 0x0010($k0);"
         "sd     $t8, 0x0018($k0);"
         "sd     $t7, 0x0020($k0);"
+        "sd     $t6, 0x0028($k0);"
+        "sd     $t5, 0x0030($k0);"
 
         // Handle cheats
         "lui    $t9, 0x8000;"
@@ -789,8 +791,18 @@ patcher_start:
         "lw     $k1, 0x0004($t9);"      // Load value
         "addiu  $t9, $t9, 0x0008;"
 
+        "lui    $t6, 0x0100;"
+        "and    $t6, $v0, $t6;"         // Test for 8-bit or 16-bit code type
+        "li     $t5, 0xA07FFFFF;"
+        "and    $v0, $v0, $t5;"
+        "lui    $t5, 0x8000;"
+        "or     $v0, $v0, $t5;"         // Mask address
+
     "2:"
-        "sh     $k1, 0x0000($v0);"      // Repeater/Patch write
+        "beqzl  $t6, 5f;"
+        "sb     $k1, 0x0000($v0);"      // Repeated 8-bit write
+        "sh     $k1, 0x0000($v0);"      // Repeated 16-bit write
+    "5:"
         "addiu  $t8, $t8, -1;"
         "addu   $v0, $v0, $t7;"
         "bnez   $t8, 2b;"
@@ -832,6 +844,8 @@ patcher_start:
 
     "4:"
         // Restore registers from our temporary stack, and back to the game!
+        "ld     $t5, 0x0030($k0);"
+        "ld     $t6, 0x0028($k0);"
         "ld     $t7, 0x0020($k0);"
         "ld     $t8, 0x0018($k0);"
         "ld     $t9, 0x0010($k0);"
