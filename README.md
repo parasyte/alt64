@@ -1,3 +1,6 @@
+# NOTE: THIS REPO WILL SOON BE ARCHIVED.
+Please see [N64FlashcartMenu](https://github.com/Polprzewodnikowy/N64FlashcartMenu) for a more modern codebase.
+
 # Altra64
 
 Alternative Everdrive64 menu
